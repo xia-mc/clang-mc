@@ -1,0 +1,6 @@
+{
+    "pack": {
+        "description": "Clang-MC Standard Library (stdlib).",
+        "pack_format": 61
+    }
+}
