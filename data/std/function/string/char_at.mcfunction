@@ -11,4 +11,4 @@ function std:string/to_char
 # 此时rax为结果
 
 # 释放substring切下来的字符串，防止内存泄漏
-function std:free_str
+function std:string/free_str

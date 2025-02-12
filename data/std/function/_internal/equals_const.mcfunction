@@ -5,4 +5,4 @@
 # 调用者需要确保Minecraft函数传入的storage与函数参数的storage是同一个
 
 scoreboard players set rax vm_regs 0
-$execute if data storage std:vm r5{left: $(left), right: $(right)} run scoreboard players set rax vm_regs 1
+$execute if data storage std:vm s4{left: $(left), right: $(right)} run scoreboard players set rax vm_regs 1

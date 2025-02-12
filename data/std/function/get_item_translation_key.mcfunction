@@ -1,40 +1,43 @@
 # 函数原型：String get_item_translation_key(String itemName)
 # 获取一个物品的翻译键。
-# 函数默认参数是有效的物品命名空间名称
+# 函数默认参数是有效的字符串指针
 
-function std:alloc_str {string: ":", length: 1}
-
-# 找到冒号
-scoreboard players operation r1 vm_regs = rax vm_regs
+# 查找冒号在itemName的下标
+# 冒号的ascii为58
+function std:stack/push_r0
+scoreboard players set r1 vm_regs 58
 function std:string/find
-# 此时rax为冒号的下标
 
-# 释放资源
-scoreboard players operation t0 vm_regs = r0 vm_regs
-scoreboard players operation r0 vm_regs = r1 vm_regs
-function std:free_str
-scoreboard players operation r0 vm_regs = t0 vm_regs
+# 没找到就清理资源返回
+# rax已经是-1，不用再设置
+execute if score rax vm_regs matches -1 run function std:stack/pop_ignore
+execute if score rax vm_regs matches -1 run return 0
 
-# 获取字符串长度
+# 获取itemName长度
+function std:stack/peek_r0
+function std:stack/push_rax
 function std:string/get_length
-scoreboard players operation t0 vm_regs = rax vm_regs
 
-# 获取物品名的后半段
-# 此时rax为冒号的下标，t0为字符串长度
-scoreboard players operation r1 vm_regs = rax vm_regs
-scoreboard players operation r2 vm_regs = t0 vm_regs
+# 分割物品名，如diamond
+scoreboard players operation r2 vm_regs = rax vm_regs
+function std:stack/pop_r1
+scoreboard players add r1 vm_regs 1
+function std:stack/pop_r0
 function std:string/substring
-# 此时rax为物品名的后半段（如diamond_sword）
+function std:stack/push_rax
 
-# 拼接字符串
+# 拼接字符串，alloc_str为特殊函数，不会影响rax以外的寄存器
 scoreboard players operation r1 vm_regs = rax vm_regs
-# 创建前缀
-function std:alloc_str {string: "item.minecraft", length: 14}
+function std:string/alloc_str {string: "item.minecraft.", length: 14}
+function std:stack/push_rax
 scoreboard players operation r0 vm_regs = rax vm_regs
-scoreboard players operation t1 vm_regs = rax vm_regs
 function std:string/merge_string
-# 此时rax为结果
 
-# 释放资源
-scoreboard players operation r0 vm_regs = t1 vm_regs
-function std:free_str
+# 释放资源，free_str为特殊函数，不会影响寄存器
+# 底下这两个注释掉的代码，取消注释哪一个都会莫名其妙爆炸
+function std:stack/pop_r0
+function std:string/free_str
+function std:stack/pop_r0
+function std:string/free_str
+
+# 此时rax为merge_string的结果，直接返回
