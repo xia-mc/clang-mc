@@ -1,0 +1,49 @@
+<div align="center">
+
+[English](./README.md) | 简体中文
+
+# clang-mc
+
+## 一个面向 Minecraft 数据包的开发工具链
+
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Issues](https://img.shields.io/github/issues/xia-mc/clang-mc)](https://github.com/xia-mc/clang-mc/issues)
+
+</div>
+
+> [!NOTE]
+> clang-mc 正处于早期开发阶段，大部分功能还尚未完成，欢迎贡献和反馈！
+
+## 简介
+
+`clang-mc` 是一个专为 **Minecraft 数据包开发** 设计的编译工具链，旨在提供更高效、更易维护的开发环境，并提供标准库来减少重复实现常见功能。
+
+Minecraft 数据包的开发一直面临 **可读性差、维护困难、功能受限** 等问题。例如：
+- **缺乏现代编程语言的功能**：字符串处理、浮点数计算、大整数运算等非常困难。
+- **代码组织混乱**：数据包通常依赖大量手写命令，相当多需求必须使用多个.mcfunction间接实现，难以复用和扩展。
+
+本项目希望能在一定程度上解决这些问题。
+
+## 开发路线图
+
+- [x] 基本实现stdlib标准库，在mcfunction上搭出一个低开销虚拟机模型。
+- [ ] 写一个wiki文档，规定调用约定、寄存器约定、栈约定等。
+- [ ] 实现一个汇编器（IR），把IR翻译成基于stdlib的mcfunction代码。
+- [ ] 实现一个parser，把汇编代码翻译成IR对象。
+- [ ] 做一个showcase，展示我的项目的优势，如何避免数据包令人难绷的可读性和造轮子的问题。
+- [ ] 进一步完善stdlib，提供更多高级抽象。
+- [ ] (长期目标) 实现一个LLVM后端，生成汇编代码（IR）。
+- [ ] (长期目标) 兼容C/C++/Rust生态，利用LLVM扩展mcfunction的能力。
+
+## 贡献
+
+欢迎贡献！请随时提交问题或拉取请求。请注意，项目处于早期阶段，我们非常感谢任何反馈或建议。
+
+## 感谢
+
+没有这些项目，就没有`clang-mc`: 
+
+- [Minecraft](https://www.minecraft.net): Mojang Studios 开发的 Minecraft 游戏。
+- [LLVM](https://llvm.org): 先进的编译器基础设施，遵循 Apache License 2.0 开源协议。
+
+感谢所有开源社区的贡献者们！
