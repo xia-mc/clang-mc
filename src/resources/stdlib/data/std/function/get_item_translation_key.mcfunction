@@ -34,7 +34,6 @@ scoreboard players operation r0 vm_regs = rax vm_regs
 function std:string/merge_string
 
 # 释放资源，free_str为特殊函数，不会影响寄存器
-# 底下这两个注释掉的代码，取消注释哪一个都会莫名其妙爆炸
 function std:stack/pop_r0
 function std:string/free_str
 function std:stack/pop_r0
