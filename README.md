@@ -25,6 +25,8 @@ Minecraft datapack development has long suffered from **poor readability, mainte
 
 This project seeks to address these issues to some extent.
 
+Check out [Wiki](https://github.com/xia-mc/clang-mc/wiki) to learn more.
+
 ---
 
 ## Roadmap

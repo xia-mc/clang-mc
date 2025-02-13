@@ -25,6 +25,8 @@ Minecraft 数据包的开发一直面临 **可读性差、维护困难、功能�
 
 本项目希望能在一定程度上解决这些问题。
 
+查看 [Wiki](https://github.com/xia-mc/clang-mc/wiki) 以了解更多。
+
 ## 开发路线图
 
 - [x] 基本实现stdlib标准库，在mcfunction上搭出一个低开销虚拟机模型。
