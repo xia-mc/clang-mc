@@ -1,5 +1,5 @@
 # 函数原型：char char_at(String string, int index)
-# 不会检查index是否有效
+# 获取字符串在index处的字符，不会检查index是否有效
 
 scoreboard players operation r2 vm_regs = r1 vm_regs
 scoreboard players add r2 vm_regs 1
