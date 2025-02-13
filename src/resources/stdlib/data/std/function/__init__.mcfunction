@@ -6,8 +6,6 @@ scoreboard objectives add vm_regs dummy
 # 寄存器
 # 函数返回值 caller-saved
 scoreboard players set rax vm_regs 0
-# 栈指针
-scoreboard players set rsp vm_regs 0
 # 参数1或临时寄存器 caller-saved
 scoreboard players set r0 vm_regs 0
 # 参数2或临时寄存器 caller-saved
@@ -24,6 +22,8 @@ scoreboard players set t3 vm_regs 0
 # VM内部保留寄存器
 # 程序计数器（未实现）
 scoreboard players set rip vm_regs 0
+# 栈指针
+scoreboard players set rsp vm_regs 0
 # 堆大小
 scoreboard players set shp vm_regs 0
 # 字符串堆大小

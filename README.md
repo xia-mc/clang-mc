@@ -30,7 +30,7 @@ This project seeks to address these issues to some extent.
 ## Roadmap
 
 - [x] **Basic implementation of the `stdlib` standard library**, establishing a low-overhead virtual machine model on `mcfunction`.
-- [ ] **Write a wiki** to define calling conventions, register conventions, stack conventions, etc.
+- [x] **Write a wiki** to define calling conventions, register conventions, stack conventions, etc.
 - [ ] **Implement an assembler (IR)** to translate IR into `mcfunction` code based on `stdlib`.
 - [ ] **Develop a parser** to convert assembly code into IR objects.
 - [ ] **Create a showcase** to demonstrate the advantages of this project and how it improves datapack readability while reducing redundant implementations.
