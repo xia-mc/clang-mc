@@ -16,7 +16,7 @@ private:
 public:
     explicit Mov(ValuePtr left, ValuePtr right)
             : Op("mov"), left(std::move(left)), right(std::move(right)) {
-        if (INSTANCEOF_SHARED(this->left, Immediate)) {
+        if (UNLIKELY(INSTANCEOF_SHARED(this->left, Immediate))) {
             throw ParseException("The left value of mov can't be an immediate value.");
         }
     }
@@ -25,8 +25,8 @@ public:
         return fmt::format("mov {}, {}", left->toString(), right->toString());
     }
 
-    McFunction compile() override {
-        if (!INSTANCEOF_SHARED(left, RegisterImpl)) {
+    std::string compile() override {
+        if (UNLIKELY(!INSTANCEOF_SHARED(left, RegisterImpl))) {
             NOT_IMPLEMENTED();
         }
         auto result = CAST_SHARED(left, RegisterImpl)->getName();
@@ -37,7 +37,7 @@ public:
         } else if (INSTANCEOF_SHARED(right, RegisterImpl)) {
             return fmt::format("scoreboard players operation {} vm_regs = {} vm_regs",
                                result, CAST_SHARED(right, RegisterImpl)->getName());
-        } else {
+        } else [[unlikely]] {
             NOT_IMPLEMENTED();
         }
     }

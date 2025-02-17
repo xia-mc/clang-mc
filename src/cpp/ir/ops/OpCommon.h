@@ -12,7 +12,6 @@
 
 class Op;
 
-using McFunction = std::string;
 using ValuePtr = std::shared_ptr<Value>;
 using OpPtr = std::unique_ptr<Op>;
 

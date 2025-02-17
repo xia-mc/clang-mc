@@ -3,7 +3,7 @@
 //
 
 #include "ClangMc.h"
-#include "ir/IR.h"
+#include "utils/StringUtils.h"
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
@@ -12,7 +12,7 @@ static inline bool isInClion() {
     return result;
 }
 
-[[maybe_unused]] ClangMc *ClangMc::INSTANCE;
+ClangMc *ClangMc::INSTANCE;
 
 ClangMc::ClangMc(const Config &config) : config(config) {
     INSTANCE = this;
@@ -26,8 +26,9 @@ ClangMc::ClangMc(const Config &config) : config(config) {
 
     logger = std::make_shared<spdlog::logger>("multi_sink", sinks.begin(), sinks.end());
 #ifndef NDEBUG
-    console_sink->set_level(spdlog::level::debug);
-    file_sink->set_level(spdlog::level::debug);
+    for (const auto &sink: sinks) {
+        sink->set_level(spdlog::level::debug);
+    }
     logger->set_level(spdlog::level::debug);
 #endif
     if (isInClion()) { // Clion不知道为什么不能解析ANSI颜色代码
@@ -37,8 +38,19 @@ ClangMc::ClangMc(const Config &config) : config(config) {
     }
 }
 
+ClangMc::~ClangMc() {
+    spdlog::drop_all();
+}
+
 void ClangMc::start() {
     ensureValidConfig();
+    ensureBuildDir();
+}
+
+[[noreturn]] void ClangMc::exit() {
+    spdlog::drop_all();
+    std::exit(0);
+    UNREACHABLE();
 }
 
 void ClangMc::ensureValidConfig() {
@@ -57,11 +69,15 @@ void ClangMc::ensureValidConfig() {
     }
 }
 
-ClangMc::~ClangMc() {
-    spdlog::drop_all();
-}
-
-void ClangMc::exit() {
-    spdlog::drop_all();
-    ::exit(0);
+void ClangMc::ensureBuildDir() {
+    const Path &dir = config.getBuildDir();
+    try {
+        if (exists(dir)) {
+            remove_all(dir);
+        }
+        create_directory(dir);
+    } catch (const std::filesystem::filesystem_error &e) {
+        logger->error("failed to init build directory.");
+        printStacktrace(e);
+    }
 }

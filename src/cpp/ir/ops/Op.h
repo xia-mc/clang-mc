@@ -20,7 +20,6 @@ public:
 
     /**
      * 生成指令的字符串表示
-     * 如"mov rax, r0"，toString()的返回值应为"rax, r0"，不包括指令本身
      * @return 字符串表示
      */
     virtual std::string toString() = 0;
@@ -29,7 +28,7 @@ public:
      * 编译指令到McFunction
      * @return McFunction代码
      */
-    virtual McFunction compile() = 0;
+    virtual std::string compile() = 0;
 };
 
 
