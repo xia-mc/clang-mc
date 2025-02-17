@@ -13,7 +13,7 @@ public:
     static inline constexpr std::string NAME = "clang-mc";
     static inline constexpr std::string VERSION = "0.0.0-dev";
 
-    [[maybe_unused]] static ClangMc *INSTANCE;
+    static ClangMc *INSTANCE;
 
     const Config &config;
     Logger logger;
@@ -25,10 +25,11 @@ public:
     void start();
 
 private:
+    [[noreturn]] static inline void exit();
+
     void ensureValidConfig();
 
-    __attribute__((noreturn))
-    static inline void exit();
+    void ensureBuildDir();
 };
 
 #endif //CLANG_MC_CLANGMC_H

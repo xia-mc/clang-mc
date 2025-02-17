@@ -55,10 +55,16 @@ static inline constexpr ui64 hash(std::string_view str) {
 #define GETTER_POD(name, field) __forceinline auto get##name() const noexcept { return field; }
 #define SETTER(name, field) __forceinline void set##name(const auto &value) noexcept { field = value; }
 #define SETTER_POD(name, field) __forceinline void set##name(auto value) noexcept { field = value; }
+
 #define DATA(name, field) GETTER(name, field) SETTER(name, field)
 #define DATA_POD(name, field) GETTER_POD(name, field) SETTER_POD(name, field)
+
 #define CAST_SHARED(sharedPtr, type) (dynamic_pointer_cast<type>(sharedPtr))
 #define INSTANCEOF_SHARED(sharedPtr, type) (CAST_SHARED(sharedPtr, type) != nullptr)
+
 #define NOT_IMPLEMENTED() throw NotImplementedException()
+#define LIKELY(x)   __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
+#define UNREACHABLE() __builtin_unreachable()
 
 #endif //CLANG_MC_COMMON_H

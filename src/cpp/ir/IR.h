@@ -7,16 +7,22 @@
 
 #include "vector"
 #include "IRCommon.h"
-
+#include "ClangMc.h"
 
 class IR {
 private:
-    const std::vector<OpPtr> values = std::vector<OpPtr>();
+    const Logger &logger;
+    const Path &file;
+    std::vector<OpPtr> values = std::vector<OpPtr>();
 public:
-    explicit IR() = default;
+    explicit IR(const Path &file) : file(file), logger(ClangMc::INSTANCE->logger) {
+    }
 
-public:
+    void parse(const std::string &code);
 
+    std::unordered_map<Path, std::string> compile();
+
+    GETTER(Values, values);
 };
 
 
