@@ -6,27 +6,93 @@
 #define CLANG_MC_STRINGUTILS_H
 
 #include <vector>
+#include "iostream"
 #include "string"
 #include "algorithm"
+#include "Stacktrace.h"
 
-constexpr inline std::vector<std::string_view> split(const std::string_view &str, const char delimiter) {
-    if (str.empty()) {
-        return {};
+namespace string {
+    static inline constexpr std::vector<std::string_view> split(const std::string_view &str, const char delimiter,
+                                                                size_t maxCount = SIZE_MAX) noexcept {
+        if (str.empty()) {
+            return {};
+        }
+
+        auto result = std::vector<std::string_view>();
+        size_t start = 0, end;
+
+        while ((end = str.find(delimiter, start)) != std::string_view::npos && maxCount-- > 1) {
+            assert(end != start);
+            result.emplace_back(str.substr(start, end - start));
+            start = end + 1;
+        }
+
+        if (start < str.size()) {
+            result.emplace_back(str.substr(start));  // 最后一个部分
+        }
+        return result;
     }
 
-    auto result = std::vector<std::string_view>();
-    size_t start = 0, end;
+    static inline constexpr std::string_view trim(const std::string_view &str) noexcept {
+        if (str.empty()) {
+            return "";
+        }
 
-    while ((end = str.find(delimiter, start)) != std::string_view::npos) {
-        // assert end != start;
-        result.emplace_back(str.substr(start, end - start));
-        start = end + 1;
-    }
+        auto start = str.find_first_not_of(' ');
+        if (start == std::string_view::npos) {
+            return "";
+        }
 
-    if (start < str.size()) {
-        result.emplace_back(str.substr(start));  // 最后一个部分
+        auto end = str.find_last_not_of(' ');
+        return str.substr(start, end - start + 1);
     }
-    return result;
+}
+
+static inline void printStacktrace(const std::exception &exception) noexcept {
+    const auto threadName = getThreadName();
+    const auto stacktrace = getStacktrace();
+
+    std::cerr << fmt::format("Exception in thread \"{}\" {}: {}\n",
+                             threadName, typeid(exception).name(), exception.what());
+
+    size_t unknownCount = 0;
+    for (const auto &element: stacktrace) {
+        if (element.empty()) {
+            unknownCount++;
+            continue;
+        }
+
+        if (unknownCount > 0) {
+            std::cerr << fmt::format("        Suppressed {} unknown stack traces.\n", unknownCount);
+            unknownCount = 0;
+        }
+
+        std::cerr << fmt::format("        at {}\n", element);
+    }
+    std::flush(std::cerr);
+}
+
+static inline void printStacktrace() noexcept {
+    const auto threadName = getThreadName();
+    const auto stacktrace = getStacktrace();
+
+    std::cerr << fmt::format("Exception in thread \"{}\" with an unknown exception.", threadName);
+
+    size_t unknownCount = 0;
+    for (const auto &element: stacktrace) {
+        if (element.empty()) {
+            unknownCount++;
+            continue;
+        }
+
+        if (unknownCount > 0) {
+            std::cerr << fmt::format("        Suppressed {} unknown stack traces.\n", unknownCount);
+            unknownCount = 0;
+        }
+
+        std::cerr << fmt::format("        at {}\n", element);
+    }
+    std::flush(std::cerr);
 }
 
 #endif //CLANG_MC_STRINGUTILS_H

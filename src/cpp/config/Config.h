@@ -7,18 +7,27 @@
 
 #include <vector>
 #include <string>
-#include <utils/Helper.h>
+#include <utils/Common.h>
 
 class Config {
 private:
-    std::vector<Path> input;
-    Path output;
+    std::vector<Path> input = std::vector<Path>();
+    Path output = Path("output");
+    Path buildDir = Path("build");
+    bool compileOnly = false;
+    bool logFile = false;
 public:
     explicit Config() = default;
 
-    DATA(std::vector<Path>, Input, input);
+    DATA(Input, input);
 
-    DATA(Path, Output, output);
+    DATA(Output, output);
+
+    DATA(BuildDir, buildDir);
+
+    DATA_POD(CompileOnly, compileOnly)
+
+    DATA_POD(LogFile, logFile)
 };
 
 
