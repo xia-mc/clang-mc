@@ -49,3 +49,5 @@ bin/
 /latest.log
 /generated/
 /cache/
+/cmake-build-debug/
+/cmake-build-release/
