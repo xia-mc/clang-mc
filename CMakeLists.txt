@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
-project(clang_mc CXX)
+project(clang-mc CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
@@ -14,7 +14,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 include_directories(src/cpp)
-add_executable(clang_mc
+add_executable(clang-mc
         src/cpp/main.cpp
         src/cpp/ClangMc.cpp
         src/cpp/ClangMc.h
@@ -53,14 +53,14 @@ endif ()
 # Libraries
 #find_package(LLVM REQUIRED CONFIG)
 #llvm_map_components_to_libnames(LLVM_LIBS option support core)
-#target_link_libraries(clang_mc PRIVATE ${LLVM_LIBS})
+#target_link_libraries(clang-mc PRIVATE ${LLVM_LIBS})
 
 find_package(fmt CONFIG REQUIRED)
-target_link_libraries(clang_mc PRIVATE fmt::fmt)
+target_link_libraries(clang-mc PRIVATE fmt::fmt)
 
 find_package(spdlog CONFIG REQUIRED)
-target_link_libraries(clang_mc PRIVATE spdlog::spdlog_header_only)
+target_link_libraries(clang-mc PRIVATE spdlog::spdlog_header_only)
 
 if (WIN32)
-    target_link_libraries(clang_mc PRIVATE dbghelp)
+    target_link_libraries(clang-mc PRIVATE dbghelp)
 endif()

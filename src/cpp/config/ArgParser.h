@@ -17,15 +17,17 @@ static inline const std::unordered_set<ui64> DATA_ARGS = {
         hash("--build-dir"), hash("-B")
 };
 
-// 帮助信息
-static inline std::string HELP_MESSAGE = \
-    "USAGE: clang_mc.exe [options] file...\n"
-    "\n"
-    "OPTIONS:\n"
-    "   --output (-o) <name>    \tSpecify output file name\n"
-    "   --build-dir (-B) <name> \tSpecify build directory\n"
-    "   --compile-only (-c)     \tCompile only, do not link as .zip\n"
-    "   --log-file (-l)         \tWrite logs to file";
+static constexpr auto HELP_MESSAGE_TEMPLATE = "USAGE: {} [options] file...\n"
+                                "\n"
+                                "OPTIONS:\n"
+                                "   --output (-o) <name>    \tSpecify output file name\n"
+                                "   --build-dir (-B) <name> \tSpecify build directory\n"
+                                "   --compile-only (-c)     \tCompile only, do not link as .zip\n"
+                                "   --log-file (-l)         \tWrite logs to file";
+
+static inline std::string getHelpMessage(const std::string &exeName) noexcept {
+    return fmt::format(HELP_MESSAGE_TEMPLATE, exeName);
+}
 
 class ArgParser {
 private:
