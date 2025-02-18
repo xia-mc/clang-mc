@@ -2,21 +2,20 @@
 // Created by xia__mc on 2025/2/13.
 //
 
+#define _CRT_SECURE_NO_WARNINGS(any) any
+
 #include "ClangMc.h"
 #include "utils/StringUtils.h"
+#include "utils/FileUtils.h"
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
 static inline bool isInClion() {
-    static bool result = std::getenv("CLION_IDE") != nullptr;
+    static bool result = _CRT_SECURE_NO_WARNINGS(std::getenv("CLION_IDE")) != nullptr;
     return result;
 }
 
-ClangMc *ClangMc::INSTANCE;
-
 ClangMc::ClangMc(const Config &config) : config(config) {
-    INSTANCE = this;
-
     auto consoleSink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
     auto sinks = std::vector<spdlog::sink_ptr>{consoleSink};
     if (this->config.getLogFile()) {
@@ -45,6 +44,10 @@ ClangMc::~ClangMc() {
 void ClangMc::start() {
     ensureValidConfig();
     ensureBuildDir();
+
+    auto irs = loadIRCode();
+    auto mcFunctions = std::vector<McFunctions>(irs.size());
+    std::transform(irs.begin(), irs.end(), mcFunctions.begin(), compileIR);
 }
 
 [[noreturn]] void ClangMc::exit() {
@@ -80,4 +83,21 @@ void ClangMc::ensureBuildDir() {
         logger->error("failed to init build directory.");
         printStacktrace(e);
     }
+}
+
+std::vector<IR> ClangMc::loadIRCode() {
+    auto irs = std::vector<IR>();
+    try {
+        for (const auto &path: config.getInput()) {
+            irs.emplace_back(path, logger).parse(readFile(path));
+        }
+        return irs;
+    } catch (const IOException &e) {
+        logger->error(e.what());
+    } catch (const ParseException &e) {
+        logger->error(e.what());
+    }
+
+    logger->error("unable to build input file");
+    exit();
 }

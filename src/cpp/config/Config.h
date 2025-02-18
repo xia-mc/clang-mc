@@ -25,9 +25,9 @@ public:
 
     DATA(BuildDir, buildDir);
 
-    DATA_POD(CompileOnly, compileOnly)
+    DATA_POD(CompileOnly, compileOnly);
 
-    DATA_POD(LogFile, logFile)
+    DATA_POD(LogFile, logFile);
 };
 
 

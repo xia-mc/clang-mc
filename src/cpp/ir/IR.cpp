@@ -31,6 +31,6 @@ void IR::parse(const std::string &code) {
     }
 }
 
-std::unordered_map<Path, std::string> IR::compile() {
+[[nodiscard]] McFunctions IR::compile() const {
     NOT_IMPLEMENTED();
 }

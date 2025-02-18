@@ -12,7 +12,7 @@
 #include "Stacktrace.h"
 
 namespace string {
-    static inline constexpr std::vector<std::string_view> split(const std::string_view &str, const char delimiter,
+    PURE static inline constexpr std::vector<std::string_view> split(const std::string_view &str, const char delimiter,
                                                                 size_t maxCount = SIZE_MAX) noexcept {
         if (UNLIKELY(str.empty())) {
             return {};
@@ -33,7 +33,7 @@ namespace string {
         return result;
     }
 
-    static inline constexpr std::string_view trim(const std::string_view &str) noexcept {
+    PURE static inline constexpr std::string_view trim(const std::string_view &str) noexcept {
         if (UNLIKELY(str.empty())) {
             return "";
         }
@@ -47,7 +47,7 @@ namespace string {
         return str.substr(start, end - start + 1);
     }
 
-    static inline constexpr std::string_view removeComment(const std::string_view &str) noexcept {
+    PURE static inline constexpr std::string_view removeComment(const std::string_view &str) noexcept {
         if (UNLIKELY(str.empty())) {
             return "";
         }

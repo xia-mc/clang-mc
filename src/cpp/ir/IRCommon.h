@@ -8,6 +8,8 @@
 #include "utils/Common.h"
 #include "ops/OpCommon.h"
 
+using McFunctions = std::unordered_map<Path, std::string>;
+
 OpPtr createOp(const std::string_view &string);
 
 #endif //CLANG_MC_IRCOMMON_H

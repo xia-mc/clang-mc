@@ -7,7 +7,6 @@
 
 #include "vector"
 #include "IRCommon.h"
-#include "ClangMc.h"
 
 class IR {
 private:
@@ -15,15 +14,18 @@ private:
     const Path &file;
     std::vector<OpPtr> values = std::vector<OpPtr>();
 public:
-    explicit IR(const Path &file) : file(file), logger(ClangMc::INSTANCE->logger) {
+    explicit IR(const Path &file, const Logger &logger) : logger(logger), file(file) {
     }
+
+    GETTER(Values, values);
 
     void parse(const std::string &code);
 
-    std::unordered_map<Path, std::string> compile();
-
-    GETTER(Values, values);
+    [[nodiscard]] McFunctions compile() const;
 };
 
+[[nodiscard]] static __forceinline McFunctions compileIR(const IR &ir) {
+    return ir.compile();
+}
 
 #endif //CLANG_MC_IR_H
