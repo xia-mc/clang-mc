@@ -5,8 +5,6 @@
 #ifndef CLANG_MC_OP_H
 #define CLANG_MC_OP_H
 
-#include "OpCommon.h"
-
 class Op {
 private:
     const std::string name;

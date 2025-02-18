@@ -5,15 +5,10 @@
 #ifndef CLANG_MC_COMMON_H
 #define CLANG_MC_COMMON_H
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "bugprone-reserved-identifier"
-#pragma ide diagnostic ignored "OCUnusedMacroInspection"
 #ifndef _MSC_VER
 // 我不知道为什么，就算是spdlog-mingw-static也会用这个MSVC特有的函数导致我编译失败
 #define _fwrite_nolock fwrite
 #endif
-#pragma clang diagnostic pop
-
 
 #include "filesystem"
 #include "spdlog/spdlog.h"
@@ -42,16 +37,13 @@ public:
     }
 };
 
-static inline constexpr ui64 hash(std::string_view str) {
-    ui64 hash = 14695981039346656037ULL;
-    for (char c : str) {
-        hash ^= static_cast<uint64_t>(c);
-        hash *= 1099511628211ULL;
+class IOException : public std::runtime_error {
+public:
+    explicit IOException(const std::string &string) : std::runtime_error(string) {
     }
-    return hash;
-}
+};
 
-#define GETTER(name, field) __forceinline auto &get##name() noexcept { return field; } const auto &get##name() const noexcept { return field; }
+#define GETTER(name, field) __forceinline auto &get##name() noexcept { return field; } const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
 #define GETTER_POD(name, field) __forceinline auto get##name() const noexcept { return field; }
 #define SETTER(name, field) __forceinline void set##name(const auto &value) noexcept { field = value; }
 #define SETTER_POD(name, field) __forceinline void set##name(auto value) noexcept { field = value; }
@@ -66,5 +58,15 @@ static inline constexpr ui64 hash(std::string_view str) {
 #define LIKELY(x)   __builtin_expect(!!(x), 1)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define UNREACHABLE() __builtin_unreachable()
+#define PURE [[nodiscard]] [[gnu::const]]
+
+PURE static inline constexpr ui64 hash(const std::string_view str) noexcept {
+    ui64 hash = 14695981039346656037ULL;
+    for (const char c: str) {
+        hash ^= static_cast<uint64_t>(c);
+        hash *= 1099511628211ULL;
+    }
+    return hash;
+}
 
 #endif //CLANG_MC_COMMON_H

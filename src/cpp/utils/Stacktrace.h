@@ -47,14 +47,14 @@ static inline std::vector<std::string> getStacktrace() {
     SYMBOL_INFO *symbol;
     HANDLE process = GetCurrentProcess();
 
-    SymInitialize(process, NULL, TRUE);
-    frames = CaptureStackBackTrace(0, 100, stack, NULL);
+    SymInitialize(process, nullptr, TRUE);
+    frames = CaptureStackBackTrace(0, 100, stack, nullptr);
     symbol = (SYMBOL_INFO *) calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
     symbol->MaxNameLen = 255;
     symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 
     for (int i = 0; i < frames; i++) {
-        SymFromAddr(process, (DWORD64) (stack[i]), 0, symbol);
+        SymFromAddr(process, (DWORD64) (stack[i]), nullptr, symbol);
         if (symbol->Address == 0) {
             result.emplace_back(symbol->Name);
         } else {
@@ -90,7 +90,7 @@ static inline std::string getThreadName() noexcept {
     if (GetThreadDescription(id, &name) == S_OK) {
         std::wstring wname(name);
         LocalFree(name);
-        return std::string(wname.begin(), wname.end());
+        return {wname.begin(), wname.end()};
     }
     return fmt::format("0x{:x}", reinterpret_cast<uintptr_t>(id));
 

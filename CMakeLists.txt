@@ -1,21 +1,33 @@
 cmake_minimum_required(VERSION 3.26)
-project(clang-mc CXX)
+project(clang-mc C CXX)
 
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_RELEASE_INIT "-O3 -flto -ffunction-sections -fdata-sections -Wl,--gc-sections")
-set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Og -g -Wall -Wextra")
+add_compile_options(-Wall -Wextra -Werror -Wunknown-pragmas)
 
-set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++ -fuse-ld=lld")
-set(CMAKE_LINKER "lld")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -flto -ffunction-sections -fdata-sections -DNDEBUG")
+set(CMAKE_C_FLAGS_DEBUG "-Og -g")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_C_FLAGS_DEBUG}")
+
+if (NOT WIN32)
+    set(CMAKE_EXE_LINKER_FLAGS "-Wl,-static-libgcc -Wl,-static-libstdc++")
+endif ()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s")
+    if (WIN32)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,/OPT:REF -Wl,/OPT:ICF")
+    else ()
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections -Wl,-s")
+    endif ()
 endif()
 
 include_directories(src/cpp)
 add_executable(clang-mc
-        src/cpp/main.cpp
+        src/cpp/Main.cpp
         src/cpp/ClangMc.cpp
         src/cpp/ClangMc.h
         src/cpp/config/Config.h
@@ -35,6 +47,11 @@ add_executable(clang-mc
         src/cpp/ir/IRCommon.cpp
         src/cpp/utils/Stacktrace.h
         src/cpp/ir/ops/Label.h
+        src/cpp/utils/FileUtils.h
+        src/cpp/utils/OOMHandler.h
+        src/cpp/utils/CLIUtils.h
+        src/cpp/Start.c
+        src/cpp/Main.h
 )
 
 
@@ -51,11 +68,12 @@ endif ()
 
 
 # Libraries
-#find_package(LLVM REQUIRED CONFIG)
+#find_package(LLVM CONFIG REQUIRED)
 #llvm_map_components_to_libnames(LLVM_LIBS option support core)
 #target_link_libraries(clang-mc PRIVATE ${LLVM_LIBS})
 
 find_package(fmt CONFIG REQUIRED)
+add_compile_definitions(FMT_HEADER_ONLY)
 target_link_libraries(clang-mc PRIVATE fmt::fmt)
 
 find_package(spdlog CONFIG REQUIRED)

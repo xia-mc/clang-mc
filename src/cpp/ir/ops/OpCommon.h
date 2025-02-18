@@ -6,16 +6,15 @@
 #define CLANG_MC_OPCOMMON_H
 
 #include "utils/Common.h"
+#include "Op.h"
 #include "ir/values/Value.h"
 #include "ir/values/Immediate.h"
 #include "ir/values/Register.h"
 
-class Op;
-
 using ValuePtr = std::shared_ptr<Value>;
 using OpPtr = std::unique_ptr<Op>;
 
-static ValuePtr createValue(const std::string &string) {
+static inline ValuePtr createValue(const std::string &string) {
     if (string.empty()) {
         throw ParseException("Value can't be empty.");
     }

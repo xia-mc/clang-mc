@@ -2,12 +2,14 @@
 // Created by xia__mc on 2025/2/13.
 //
 
-
+#include "Main.h"
 #include <iostream>
 #include <exception>
 #include "config/Config.h"
 #include "config/ArgParser.h"
 #include "ClangMc.h"
+#include "utils/OOMHandler.h"
+#include "utils/CLIUtils.h"
 
 static inline Config parseArgs(const int argc, const char *argv[]) {
     auto config = Config();
@@ -25,29 +27,17 @@ static inline Config parseArgs(const int argc, const char *argv[]) {
     return config;
 }
 
-static inline std::string getExecutableName(const std::string& argv0) {
-    if (argv0.empty()) {  // 基本不可能发生，我想
-#ifdef _WIN32
-        return "clang-mc.exe";
-#else
-        return "clang-mc"
-#endif
-    }
-    return std::filesystem::path(argv0).filename().string();
-}
+extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
+    std::set_new_handler(onOOM);
 
-int main(const int argc, const char *argv[]) {
     assert(argc >= 1);
     if (argc == 2) {
         switch (hash(argv[1])) {
             case hash("--help"):
-                std::cout << getHelpMessage(getExecutableName(argv[0])) << '\n';
+                std::cout << getHelpMessage(argv[0]) << std::endl;
                 return 0;
             case hash("--version"):
-                std::cout << fmt::format("{} version {}\n", ClangMc::NAME, ClangMc::VERSION);
-#ifndef NDEBUG
-                std::cout << "Debug Mode\n";
-#endif
+                std::cout << getVersionMessage(argv[0]) << std::endl;
                 return 0;
         }
     }
@@ -68,4 +58,6 @@ int main(const int argc, const char *argv[]) {
     } catch (...) {
         printStacktrace();
     }
+
+    return 0;
 }

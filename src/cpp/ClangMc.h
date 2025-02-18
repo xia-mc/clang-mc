@@ -7,13 +7,12 @@
 
 #include "config/Config.h"
 #include "utils/Common.h"
+#include "ir/IR.h"
 
 class ClangMc {
 public:
-    static inline constexpr std::string NAME = "clang-mc";
-    static inline constexpr std::string VERSION = "0.0.0-dev";
-
-    static ClangMc *INSTANCE;
+    static inline constexpr auto NAME = "clang-mc";
+    static inline constexpr auto VERSION = "0.0.0-dev";
 
     const Config &config;
     Logger logger;
@@ -30,6 +29,8 @@ private:
     void ensureValidConfig();
 
     void ensureBuildDir();
+
+    [[nodiscard]] std::vector<IR> loadIRCode();
 };
 
 #endif //CLANG_MC_CLANGMC_H

@@ -8,6 +8,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Issues](https://img.shields.io/github/issues/xia-mc/clang-mc)](https://github.com/xia-mc/clang-mc/issues)
+![Lines of code](https://tokei.rs/b1/github/xia-mc/clang-mc?category=code&style=flat)
 ![Version](https://img.shields.io/badge/Minecraft-1.21_and_later-blue)
 
 </div>
