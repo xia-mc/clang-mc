@@ -60,7 +60,7 @@ public:
 #define UNREACHABLE() __builtin_unreachable()
 #define PURE [[nodiscard]] [[gnu::const]]
 
-PURE static inline constexpr ui64 hash(const std::string_view str) noexcept {
+PURE static inline constexpr ui64 hash(const std::string_view &str) noexcept {
     ui64 hash = 14695981039346656037ULL;
     for (const char c: str) {
         hash ^= static_cast<uint64_t>(c);
@@ -68,5 +68,8 @@ PURE static inline constexpr ui64 hash(const std::string_view str) noexcept {
     }
     return hash;
 }
+
+#define SWITCH_STR(string) switch (hash(string))
+#define CASE_STR(string) case hash(string)
 
 #endif //CLANG_MC_COMMON_H

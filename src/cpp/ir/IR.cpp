@@ -27,7 +27,7 @@ void IR::parse(const std::string &code) {
     }
 
     if (UNLIKELY(errors != 0)) {
-        throw ParseException(fmt::format("{}: {} errors generated.", file.string(), errors));
+        throw ParseException(i18nFormat("ir.errors_generated", file.string(), errors));
     }
 }
 

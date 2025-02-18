@@ -8,6 +8,7 @@
 #include "Op.h"
 #include "ir/values/Value.h"
 #include "utils/StringUtils.h"
+#include "i18n/I18n.h"
 
 class Mov : public Op {
 private:
@@ -17,7 +18,7 @@ public:
     explicit Mov(ValuePtr left, ValuePtr right)
             : Op("mov"), left(std::move(left)), right(std::move(right)) {
         if (UNLIKELY(INSTANCEOF_SHARED(this->left, Immediate))) {
-            throw ParseException("The left value of mov can't be an immediate value.");
+            throw ParseException(i18n("ir.op.mov.immediate_left"));
         }
     }
 

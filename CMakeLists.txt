@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-Wall -Wextra -Werror -Wunknown-pragmas)
 
 set(CMAKE_C_FLAGS_RELEASE "-O3 -flto -ffunction-sections -fdata-sections -DNDEBUG")
-set(CMAKE_C_FLAGS_DEBUG "-Og -g")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_C_FLAGS_DEBUG}")
 
@@ -52,8 +52,25 @@ add_executable(clang-mc
         src/cpp/utils/CLIUtils.h
         src/cpp/Start.c
         src/cpp/Main.h
+        src/cpp/i18n/I18n.h
+        src/cpp/i18n/I18n.cpp
 )
 
+
+# i18n
+foreach(LANG IN ITEMS ZH_CN EN_US)
+    file(READ ${CMAKE_SOURCE_DIR}/src/resources/lang/${LANG}.yaml YAML_${LANG})
+    string(REPLACE "\"" "\\\"" YAML_${LANG} "${YAML_${LANG}}")
+    string(REPLACE "\n" "\\n\"\n\"" YAML_${LANG} "${YAML_${LANG}}")
+endforeach()
+
+configure_file(
+        ${CMAKE_SOURCE_DIR}/src/cpp/i18n/I18nTemplate.h
+        ${CMAKE_BINARY_DIR}/generated/GeneratedI18n.h
+        @ONLY
+)
+add_compile_definitions(GENERATED_SETUP)
+include_directories(${CMAKE_BINARY_DIR}/generated)
 
 # Compatibility
 if (EXISTS "C:/LLVM/lib/cmake/llvm/LLVMConfig.cmake")
@@ -82,3 +99,6 @@ target_link_libraries(clang-mc PRIVATE spdlog::spdlog_header_only)
 if (WIN32)
     target_link_libraries(clang-mc PRIVATE dbghelp)
 endif()
+
+find_package(yaml-cpp CONFIG REQUIRED)
+target_link_libraries(clang-mc PRIVATE yaml-cpp::yaml-cpp)

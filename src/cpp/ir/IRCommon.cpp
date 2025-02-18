@@ -9,7 +9,7 @@
 static OpPtr createMov(const std::string_view &args) {
     auto parts = string::split(args, ',');
     if (UNLIKELY(parts.size() != 2)) {
-        throw ParseException(fmt::format("Invalid arguments for mov: '{}'.", args));
+        throw ParseException(i18nFormat("ir.invalid_mov", args));
     }
 
     auto leftStr = std::string(string::trim(parts[0]));
@@ -22,8 +22,25 @@ static OpPtr createLabel(const std::string_view &string) {
     assert(!string.empty());
     assert(string[string.length() - 1] == ':');
 
+    auto parts = string::split(string, ' ', 2);
+    if (parts.size() > 1) {  // 带标签的label
+        if (string::contains(parts[1], ' ')) {
+            throw ParseException(i18n("ir.invalid_label"));
+        }
+
+        SWITCH_STR (parts[0]) {
+            CASE_STR("export"):
+                return std::make_unique<Label>(std::string(parts[1]), true, false);
+            CASE_STR("extern"):
+                return std::make_unique<Label>(std::string(parts[1]), false, true);
+            default:
+                throw ParseException(i18nFormat("ir.invalid_label_identifier",
+                                                 parts[0]));
+        }
+    }
+
     auto name = std::string(string.substr(0, string.length() - 1));
-    return std::make_unique<Label>(name);
+    return std::make_unique<Label>(name, false, false);
 }
 
 OpPtr createOp(const std::string_view &string) {
@@ -38,10 +55,10 @@ OpPtr createOp(const std::string_view &string) {
     auto op = parts[0];
     auto args = parts[1];
 
-    switch (hash(op)) {
-        case hash("mov"):
+    SWITCH_STR (op) {
+        CASE_STR("mov"):
             return createMov(args);
         default: [[unlikely]]
-            throw ParseException(fmt::format("Unknown op: '{}'.", op));
+            throw ParseException(i18nFormat("ir.unknown_op", op));
     }
 }

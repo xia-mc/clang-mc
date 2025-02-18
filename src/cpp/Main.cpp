@@ -10,6 +10,7 @@
 #include "ClangMc.h"
 #include "utils/OOMHandler.h"
 #include "utils/CLIUtils.h"
+#include "i18n/I18n.h"
 
 static inline Config parseArgs(const int argc, const char *argv[]) {
     auto config = Config();
@@ -28,36 +29,39 @@ static inline Config parseArgs(const int argc, const char *argv[]) {
 }
 
 extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
-    std::set_new_handler(onOOM);
+    try {
+        std::set_new_handler(onOOM);
+        initI18n();
+        initOOMHandler();
 
-    assert(argc >= 1);
-    if (argc == 2) {
-        switch (hash(argv[1])) {
-            case hash("--help"):
-                std::cout << getHelpMessage(argv[0]) << std::endl;
-                return 0;
-            case hash("--version"):
-                std::cout << getVersionMessage(argv[0]) << std::endl;
-                return 0;
+        assert(argc >= 1);
+        if (argc == 2) {
+            switch (hash(argv[1])) {
+                case hash("--help"):
+                    std::cout << getHelpMessage(argv[0]) << std::endl;
+                    return 0;
+                case hash("--version"):
+                    std::cout << getVersionMessage(argv[0]) << std::endl;
+                    return 0;
+            }
         }
-    }
 
-    Config config;
-    try {
-        config = parseArgs(argc, argv);
-    } catch (const ParseException &e) {
-        std::cerr << "error: " << e.what() << std::endl;
-        return 1;
-    }
+        Config config;
+        try {
+            config = parseArgs(argc, argv);
+        } catch (const ParseException &e) {
+            std::cerr << "error: " << e.what() << std::endl;
+            return 1;
+        }
 
-    try {
         auto instance = ClangMc(config);
         instance.start();
-    } catch (const std::exception& e) {
+        return 0;
+    } catch (const std::exception &e) {
         printStacktrace(e);
     } catch (...) {
         printStacktrace();
     }
 
-    return 0;
+    return 1;
 }

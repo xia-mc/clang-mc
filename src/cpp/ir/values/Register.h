@@ -6,6 +6,7 @@
 #define CLANG_MC_REGISTER_H
 
 #include "Value.h"
+#include "i18n/I18n.h"
 
 class Register;
 
@@ -75,7 +76,7 @@ public:
         if (name == "s0") return S0;
         if (name == "s1") return S1;
 
-        throw ParseException(fmt::format("Unknown register '{}'", name));
+        throw ParseException(i18nFormat("ir.value.register.unknown_register", name));
     }
 };
 

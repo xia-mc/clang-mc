@@ -7,6 +7,7 @@
 
 #include "utils/Common.h"
 #include "ClangMc.h"
+#include "i18n/I18n.h"
 
 PURE static inline std::string getExecutableName(const std::string& argv0) {
     if (argv0.empty()) {  // 基本不可能发生，我想
@@ -30,18 +31,8 @@ PURE static inline std::string getExecutableDir(const std::string& argv0) {
     return std::filesystem::path(argv0).parent_path().string();
 }
 
-static constexpr auto HELP_MESSAGE_TEMPLATE = "USAGE: {} [options] file...\n"
-                                              "\n"
-                                              "OPTIONS:\n"
-                                              "   --help                  \tShow this help message\n"
-                                              "   --version               \tShow version information\n"
-                                              "   --output (-o) <name>    \tSpecify output file name\n"
-                                              "   --build-dir (-B) <name> \tSpecify build directory\n"
-                                              "   --compile-only (-c)     \tCompile only, do not link as .zip\n"
-                                              "   --log-file (-l)         \tWrite logs to file";
-
 PURE static inline std::string getHelpMessage(const std::string& argv0) noexcept {
-    return fmt::format(HELP_MESSAGE_TEMPLATE, getExecutableName(argv0));
+    return i18nFormat("cli.help_message_template", getExecutableName(argv0));
 }
 
 PURE static inline std::string getTargetMachine() noexcept {
@@ -105,11 +96,11 @@ PURE static inline std::string getTargetMachine() noexcept {
 }
 
 PURE static inline std::string getVersionMessage(const std::string& argv0) noexcept {
-    auto result = fmt::format("{} version {}\nTarget: {}\nCompiler: {}\nInstalledDir: {}",
+    auto result = i18nFormat("cli.version_message_template",
                               ClangMc::NAME, ClangMc::VERSION,
                               getTargetMachine(), __VERSION__, getExecutableDir(argv0));
 #ifndef NDEBUG
-    result += "\nDEBUG MODE";
+    result += i18n("cli.debug_mode");
 #endif
     return result;
 }
