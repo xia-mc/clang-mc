@@ -59,6 +59,37 @@ namespace string {
             return str.substr(0, start);
         }
     }
+
+    template<typename T>
+    PURE static __forceinline constexpr bool contains(const std::string_view &str, const T &substr) noexcept {
+        return str.find(substr) != std::string_view::npos;
+    }
+
+    PURE static __forceinline constexpr std::string &replaceFast(std::string &str, const std::string& from, const std::string& to) {
+        if (UNLIKELY(from.empty() || to.empty() || from == to)) {
+            return str;
+        }
+
+        size_t start = 0;
+        while (LIKELY((start = str.find(from, start)) != std::string::npos)) {
+            str.replace(start, from.length(), to);
+            start += to.length();
+        }
+        return str;
+    }
+
+    PURE static __forceinline constexpr std::string &replaceFast(std::string &str, const char from, const char to) {
+        if (UNLIKELY(from == to)) {
+            return str;
+        }
+
+        for (char &c : str) {
+            if (UNLIKELY(c == from)) {
+                c = to;
+            }
+        }
+        return str;
+    }
 }
 
 static inline void printStacktrace(const std::exception &exception) noexcept {

@@ -58,16 +58,13 @@ void ClangMc::start() {
 
 void ClangMc::ensureValidConfig() {
     if (config.getInput().empty()) {
-        logger->error("no input files.");
+        logger->error(i18n("general.no_input_files"));
         exit();
-    }
-    for (const auto &item: config.getInput()) {
-        logger->debug(item.string());
     }
     if (std::any_of(config.getInput().begin(), config.getInput().end(), [&](const Path &item) {
         return !item.string().ends_with(".mcasm");
     })) {
-        logger->error("invalid input file, expected '.mcasm' files.");
+        logger->error(i18n("general.invalid_input"));
         exit();
     }
 }

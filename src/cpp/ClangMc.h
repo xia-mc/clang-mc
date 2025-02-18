@@ -23,8 +23,8 @@ public:
 
     void start();
 
+    [[noreturn]] static void exit();
 private:
-    [[noreturn]] static inline void exit();
 
     void ensureValidConfig();
 

@@ -3,6 +3,7 @@
 //
 
 #include "ArgParser.h"
+#include "i18n/I18n.h"
 
 ArgParser::ArgParser(Config &config) : config(config) {
     this->config.setInput(std::vector<Path>());
@@ -45,17 +46,19 @@ void ArgParser::next(const std::string &arg) {
             // 输出日志到文件
             config.setLogFile(true);
             return;
+        default:
+            break;
     }
 
     // 认为是输入文件
     if (arg.empty()) {
-        throw ParseException("Input file path can't be empty.");
+        throw ParseException(i18n("cli.arg.empty_input_file"));
     }
     config.getInput().emplace_back(arg);
 }
 
 void ArgParser::end() {
     if (required) {
-        throw ParseException("Missing argument for: " + lastString);
+        throw ParseException(i18n("cli.arg.missing_arg") + lastString);
     }
 }

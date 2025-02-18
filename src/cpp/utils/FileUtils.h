@@ -10,7 +10,7 @@
 
 [[nodiscard]] static inline std::string readFile(const Path& filePath) {
     if (!exists(filePath)) {
-        throw IOException(fmt::format("no such file or directory: '{}'", filePath.string()));
+        throw IOException(i18nFormat("file.no_such_file_or_directory", filePath.string()));
     }
 
     auto file = std::ifstream(filePath);

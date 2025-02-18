@@ -12,8 +12,11 @@
 class Label : public Op {
 private:
     const std::string name;
+    [[maybe_unused]] const bool export_;
+    [[maybe_unused]] const bool extern_;
 public:
-    explicit Label(std::string name) noexcept: Op("label"), name(std::move(name)) {
+    explicit Label(std::string name, const bool export_, const bool extern_) noexcept:
+            Op("label"), name(std::move(name)), export_(export_), extern_(extern_) {
     }
 
     std::string toString() override {
