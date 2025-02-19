@@ -13,7 +13,7 @@
 #include "I18nTemplate.h"
 #endif
 
-inline auto TRANSLATIONS = std::unordered_map<ui64, std::string>();
+inline auto TRANSLATIONS = HashMap<ui64, std::string>();
 
 void loadLanguage(const char *const data) {
     YAML::Node config = YAML::Load(data);

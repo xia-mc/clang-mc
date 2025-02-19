@@ -22,8 +22,10 @@ static OpPtr createLabel(const std::string_view &string) {
     assert(!string.empty());
     assert(string[string.length() - 1] == ':');
 
-    auto parts = string::split(string, ' ', 2);
-    if (parts.size() > 1) {  // 带标签的label
+    auto name = std::string(string.substr(0, string.length() - 1));
+    auto parts = string::split(name, ' ', 2);
+
+    if (UNLIKELY(parts.size() > 1)) {  // 带标签的label
         if (string::contains(parts[1], ' ')) {
             throw ParseException(i18n("ir.invalid_label"));
         }
@@ -39,7 +41,6 @@ static OpPtr createLabel(const std::string_view &string) {
         }
     }
 
-    auto name = std::string(string.substr(0, string.length() - 1));
     return std::make_unique<Label>(name, false, false);
 }
 

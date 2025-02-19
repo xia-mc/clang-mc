@@ -16,6 +16,8 @@ private:
     Path buildDir = Path("build");
     bool compileOnly = false;
     bool logFile = false;
+    std::string nameSpace;
+    bool debugInfo = false;
 public:
     explicit Config() = default;
 
@@ -28,6 +30,10 @@ public:
     DATA_POD(CompileOnly, compileOnly);
 
     DATA_POD(LogFile, logFile);
+
+    DATA(NameSpace, nameSpace);
+
+    DATA_POD(DebugInfo, debugInfo);
 };
 
 

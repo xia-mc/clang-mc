@@ -9,6 +9,32 @@ ArgParser::ArgParser(Config &config) : config(config) {
     this->config.setInput(std::vector<Path>());
 }
 
+void ArgParser::setNameSpace(const std::string &arg) {
+    switch (string::count(arg, ':')) {
+        case 0:
+            if (!string::isValidMCNamespace(arg)) {
+                throw ParseException(i18n("cli.arg.invalid_namespace"));
+            }
+            config.setNameSpace(arg + ':');
+            break;
+        case 1:
+            if (!string::isValidMCNamespace(string::removeFromFirst(arg, ":"))) {
+                throw ParseException(i18n("cli.arg.invalid_namespace"));
+            }
+            assert(arg.length() > 1);
+            if (arg[arg.length() - 1] == ':') {
+                config.setNameSpace(arg);
+            } else if (arg[arg.length() - 1] != '/') {
+                config.setNameSpace(arg + '/');
+            } else {
+                config.setNameSpace(arg);
+            }
+            break;
+        default:
+            throw ParseException(i18n("cli.arg.invalid_namespace"));
+    }
+}
+
 void ArgParser::next(const std::string &arg) {
     if (required) {
         switch (hash(lastString)) {
@@ -22,6 +48,11 @@ void ArgParser::next(const std::string &arg) {
                 // 设置构建文件夹
                 config.setBuildDir(Path(arg));
                 break;
+            case hash("--namespace"):
+            case hash("-N"):
+                // 设置编译非导出函数的命名空间路径
+                setNameSpace(arg);
+                break;
         }
         required = false;
         lastString = "";
@@ -34,7 +65,7 @@ void ArgParser::next(const std::string &arg) {
         lastString = arg;
         return;
     }
-    
+
     switch (argHash) {
         case hash("--compile-only"):
         case hash("-c"):
@@ -45,6 +76,10 @@ void ArgParser::next(const std::string &arg) {
         case hash("-l"):
             // 输出日志到文件
             config.setLogFile(true);
+            return;
+        case hash("-g"):
+            // 额外的调试信息
+            config.setDebugInfo(true);
             return;
         default:
             break;
@@ -60,5 +95,8 @@ void ArgParser::next(const std::string &arg) {
 void ArgParser::end() {
     if (required) {
         throw ParseException(i18n("cli.arg.missing_arg") + lastString);
+    }
+    if (config.getNameSpace().empty()) {
+        setNameSpace(config.getOutput().string());
     }
 }

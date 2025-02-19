@@ -4,29 +4,34 @@ cli.help_message_template: |
   OPTIONS:
      --help                  \tDisplay this help message
      --version               \tPrint version information
+     --log-file (-l)         \tWrite logs to a file
      --output (-o) <name>    \tSpecify the output file name
      --build-dir (-B) <name> \tSpecify the build directory
+     --namespace (-N) <name> \tSpecify the namespace path for compiling non-exported functions.
      --compile-only (-c)     \tOnly compile, do not link as .zip
-     --log-file (-l)         \tWrite logs to a file
+     -g                      \tGenerate additional debug information.
 cli.version_message_template: |
   {} version {}
   Target: {}
   Compiler: {}
   InstalledDir: {}
 cli.debug_mode: DEBUG MODE
-cli.arg.empty_input_file: input file path cannot be empty.
+cli.arg.empty_input_file: input file path cannot be empty
 cli.arg.missing_arg: "missing argument for option '{}'"
-ir.op.mov.immediate_left: the left operand of 'mov' cannot be an immediate value.
-ir.op.empty_value: operand cannot be empty.
-ir.op.out_of_range: immediate value out of range.
+cli.arg.invalid_namespace: invalid namespace
+ir.op.mov.immediate_left: the left operand of 'mov' cannot be an immediate value
+ir.op.empty_value: operand cannot be empty
+ir.op.out_of_range: immediate value out of range
 ir.value.register.unknown_register: unknown register '{}'
-ir.errors_generated: "{}: {} errors generated."
+ir.errors_generated: "{}: {} errors generated"
 ir.invalid_mov: "invalid 'mov' instruction: '{}'"
-ir.invalid_label: label name cannot contain spaces.
-ir.invalid_label_identifier: expected a valid label identifier, but found '{}'.
+ir.invalid_label: label name cannot contain spaces
+ir.invalid_label_identifier: expected a valid label identifier, but found '{}'
 ir.unknown_op: "unknown instruction: '{}'"
+ir.unreachable: this statement is unreachable
 file.no_such_file_or_directory: "no such file or directory: '{}'"
-file.failed_to_open: "failed to open file '{}'"
-oom.oom: "\033[31mfatal error:\033[97m out of memory."
+file.failed_to_open: "failed to open file: '{}'"
+file.failed_to_create: "failed to create file or directory: '{}'"
+oom.oom: "\033[31mfatal error:\033[97m out of memory"
 general.no_input_files: no input files
-general.invalid_input: invalid input file, expected '.mcasm' files.
+general.invalid_input: invalid input file, expected '.mcasm' files

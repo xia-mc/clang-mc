@@ -14,7 +14,8 @@
 // 需要额外参数的参数项
 static inline const std::unordered_set<ui64> DATA_ARGS = {
         hash("--output"), hash("-o"),
-        hash("--build-dir"), hash("-B")
+        hash("--build-dir"), hash("-B"),
+        hash("--namespace"), hash("-N")
 };
 
 class ArgParser {
@@ -22,6 +23,8 @@ private:
     Config &config;
     std::string lastString;
     bool required = false;
+
+    void setNameSpace(const std::string &arg);
 
 public:
     explicit ArgParser(Config &config);

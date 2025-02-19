@@ -32,12 +32,12 @@ public:
         }
         auto result = CAST_SHARED(left, RegisterImpl)->getName();
 
-        if (INSTANCEOF_SHARED(right, Immediate)) {
+        if (auto immediate = INSTANCEOF_SHARED(right, Immediate)) {
             return fmt::format("scoreboard players set {} vm_regs {}",
-                               result, CAST_SHARED(right, Immediate)->getValue());
-        } else if (INSTANCEOF_SHARED(right, RegisterImpl)) {
+                               result, immediate->getValue());
+        } else if (auto reg = INSTANCEOF_SHARED(right, RegisterImpl)) {
             return fmt::format("scoreboard players operation {} vm_regs = {} vm_regs",
-                               result, CAST_SHARED(right, RegisterImpl)->getName());
+                               result, reg->getName());
         } else [[unlikely]] {
             NOT_IMPLEMENTED();
         }

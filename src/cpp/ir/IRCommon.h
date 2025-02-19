@@ -8,7 +8,7 @@
 #include "utils/Common.h"
 #include "ops/OpCommon.h"
 
-using McFunctions = std::unordered_map<Path, std::string>;
+using McFunctions = HashMap<Path, std::string>;
 
 OpPtr createOp(const std::string_view &string);
 

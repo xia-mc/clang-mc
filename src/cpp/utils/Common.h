@@ -13,9 +13,12 @@
 #include "filesystem"
 #include "spdlog/spdlog.h"
 #include "cstdint"
+#include "utils/include/UnorderedDense.h"
 
 using Path = std::filesystem::path;
 using Logger = std::shared_ptr<spdlog::logger>;
+template <typename K, typename V>
+using HashMap = ankerl::unordered_dense::map<K, V>;
 using i32 = int32_t;
 using ui64 = uint64_t;
 
@@ -52,7 +55,9 @@ public:
 #define DATA_POD(name, field) GETTER_POD(name, field) SETTER_POD(name, field)
 
 #define CAST_SHARED(sharedPtr, type) (dynamic_pointer_cast<type>(sharedPtr))
-#define INSTANCEOF_SHARED(sharedPtr, type) (CAST_SHARED(sharedPtr, type) != nullptr)
+#define CAST_FAST(ptr, type) ((type *) ptr.get())
+#define INSTANCEOF(ptr, type) (dynamic_cast<type *>(ptr.get()))
+#define INSTANCEOF_SHARED(sharedPtr, type) CAST_SHARED(sharedPtr, type)
 
 #define NOT_IMPLEMENTED() throw NotImplementedException()
 #define LIKELY(x)   __builtin_expect(!!(x), 1)
@@ -71,5 +76,12 @@ PURE static inline constexpr ui64 hash(const std::string_view &str) noexcept {
 
 #define SWITCH_STR(string) switch (hash(string))
 #define CASE_STR(string) case hash(string)
+
+#define warn(condition, message) \
+    do { \
+        if (!(condition)) { \
+            std::cerr << "Warning: " << message << " (" << __FILE__ << ":" << __LINE__ << ")\n"; \
+        } \
+    } while (0)
 
 #endif //CLANG_MC_COMMON_H

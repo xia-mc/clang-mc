@@ -11,16 +11,18 @@
 
 class Label : public Op {
 private:
-    const std::string name;
+    const std::string label;
     [[maybe_unused]] const bool export_;
     [[maybe_unused]] const bool extern_;
 public:
-    explicit Label(std::string name, const bool export_, const bool extern_) noexcept:
-            Op("label"), name(std::move(name)), export_(export_), extern_(extern_) {
+    explicit Label(std::string label, const bool export_, const bool extern_) noexcept:
+            Op("label"), label(std::move(label)), export_(export_), extern_(extern_) {
     }
 
+    GETTER(Label, label);
+
     std::string toString() override {
-        return fmt::format("{}:", name);
+        return fmt::format("{}:", label);
     }
 
     std::string compile() override {
