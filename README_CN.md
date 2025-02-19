@@ -45,9 +45,13 @@ Minecraft 数据包的开发一直面临 **可读性差、维护困难、功能�
 
 ## 感谢
 
-没有这些项目，就没有`clang-mc`: 
+没有这些项目，就没有 `clang-mc`:
 
-- [Minecraft](https://www.minecraft.net): Mojang Studios 开发的 Minecraft 游戏。
+- [Minecraft](https://www.minecraft.net): Mojang Studios 开发的 Minecraft 游戏`clang-mc` 遵循 [Minecraft EULA](https://www.minecraft.net/en-us/eula) 及相关使用条款。
 - [LLVM](https://llvm.org): 先进的编译器基础设施，遵循 Apache License 2.0 开源协议。
+- [ankerl::unordered_dense](https://github.com/martinus/unordered_dense): 一个现代 C++ 的高性能、低内存占用的哈希表实现，遵循 [MIT License](https://github.com/martinus/unordered_dense/blob/main/LICENSE)。
+- [fmt](https://fmt.dev/): 一个快速、安全的 C++ 格式化库，遵循 [MIT License](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst)。
+- [spdlog](https://github.com/gabime/spdlog): 一个高性能的 C++ 日志库，遵循 [MIT License](https://github.com/gabime/spdlog/blob/v1.x/LICENSE)。
+- [yaml-cpp](https://github.com/jbeder/yaml-cpp): 一个 C++ 的 YAML 解析和生成库，遵循 [MIT License](https://github.com/jbeder/yaml-cpp/blob/master/LICENSE)。
 
 感谢所有开源社区的贡献者们！
