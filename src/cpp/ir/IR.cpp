@@ -115,7 +115,7 @@ __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
         }
 
         if (config.getDebugInfo()) {
-            builder << '#' << op->toString() << '\n';
+            builder << "# " << op->toString() << '\n';
         }
         builder << op->compile() << '\n';
     }
