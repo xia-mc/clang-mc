@@ -26,8 +26,9 @@ namespace string {
         size_t start = 0, end;
 
         while (LIKELY((end = str.find(delimiter, start)) != std::string_view::npos && maxCount-- > 1)) {
-            assert(end != start);
-            result.emplace_back(str.substr(start, end - start));
+            if (end != start) {
+                result.emplace_back(str.substr(start, end - start));
+            }
             start = end + 1;
         }
 

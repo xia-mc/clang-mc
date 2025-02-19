@@ -4,8 +4,9 @@
 
 #include "IR.h"
 #include "utils/StringUtils.h"
-#include "ops/Op.h"
 #include "ir/ops/Label.h"
+#include "ir/ops/Jmp.h"
+#include "ir/ops/Call.h"
 
 void IR::parse(const std::string &code) {
     auto lines = string::split(code, '\n');
@@ -20,9 +21,9 @@ void IR::parse(const std::string &code) {
 
         try {
             auto op = createOp(line);
-            if (first && !INSTANCEOF(op, Label)) {
-                // TODO 也许未来改成警告而不是错误
-                throw ParseException(i18n("ir.unreachable"));
+            if (!first && op->getName() == "label") {
+                // 因为实际上采用“代码块”模式编译，而不是label，所以每个代码块末尾都需要显式跳转到下个代码块
+                this->values.push_back(std::make_unique<Jmp>(CAST_FAST(op, Label)->getLabel()));
             }
             first = false;
             this->values.push_back(std::move(op));
@@ -39,11 +40,19 @@ void IR::parse(const std::string &code) {
     }
 }
 
-std::string IR::createFunction() {
+__forceinline std::string IR::createForCall(const Label *labelOp) {
+    if (labelOp->getExport() || labelOp->getExtern()) {
+        assert(string::count(labelOp->getLabel(), ':') == 1);
+        return labelOp->getLabel();
+    }
+
     return fmt::format("{}{}", config.getNameSpace(), nameGenerator.generate());
 }
 
-static inline constexpr std::string_view JMP_TEMPLATE = "function {}\nfunction {}";
+__forceinline std::string IR::createForJmp(const Label *labelOp) {
+    assert(!labelOp->getExtern());
+    return fmt::format("{}{}", config.getNameSpace(), nameGenerator.generate());
+}
 
 static inline Path toPath(const std::string &mcPath) {
     assert(string::count(mcPath, ':') == 1);
@@ -52,9 +61,10 @@ static inline Path toPath(const std::string &mcPath) {
 }
 
 __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
-    ui64 label = hash(CAST_FAST(this->values[0], Label)->getLabel());
-    callLabels.emplace(label, createFunction());
-    jmpLabels.emplace(label, createFunction());
+    auto labelOp = CAST_FAST(this->values[0], Label);
+    ui64 label = hash(labelOp->getLabel());
+    callLabels.emplace(label, createForCall(labelOp));
+    jmpLabels.emplace(label, createForJmp(labelOp));
 
     for (size_t i = 1; i < this->values.size(); ++i) {
         const auto &op = this->values[i];
@@ -62,17 +72,18 @@ __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
             continue;
         }
 
-        label = hash(CAST_FAST(op, Label)->getLabel());
+        labelOp = CAST_FAST(op, Label);
+        label = hash(labelOp->getLabel());
 
-        if (callLabels.contains(label)) {
-            // TODO label重复定义
-        }
-
+        assert(!callLabels.contains(label));
         assert(!jmpLabels.contains(label));
-        callLabels.emplace(label, createFunction());
-        jmpLabels.emplace(label, createFunction());
+        callLabels.emplace(label, createForCall(labelOp));
+        jmpLabels.emplace(label, createForJmp(labelOp));
     }
 }
+
+static inline constexpr std::string_view JMP_LAST_TEMPLATE = "execute if function {} run return 0";
+static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} run return 0\nfunction {}";
 
 [[nodiscard]] McFunctions IR::compile() {
     auto result = McFunctions();
@@ -81,7 +92,8 @@ __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
     }
     assert(INSTANCEOF(this->values[0], Label));
 
-    ui64 label = hash(CAST_FAST(this->values[0], Label)->getLabel());
+    auto labelOp = CAST_FAST(this->values[0], Label);
+    ui64 label = hash(labelOp->getLabel());
     auto callLabels = LabelMap();
     auto jmpLabels = LabelMap();
     initLabels(callLabels, jmpLabels);
@@ -90,7 +102,7 @@ __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
     std::string debugMessage;
 
     if (config.getDebugInfo()) {
-        debugMessage = fmt::format("# file: '{}'\n# label: '{}'\n\n",
+        debugMessage = fmt::format("# file: '{}'\n# label: '{}'\n",
                                    file.string(), CAST_FAST(this->values[0], Label)->getLabel());
     }
 
@@ -100,12 +112,16 @@ __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
             auto lastLabel = label;
             label = hash(CAST_FAST(op, Label)->getLabel());
 
-            result.emplace(toPath(callLabels[lastLabel]), debugMessage + builder.str());
-            result.emplace(toPath(jmpLabels[lastLabel]), fmt::format(
-                    JMP_TEMPLATE,callLabels[lastLabel], callLabels[label]));
+            auto callTarget = toPath(callLabels[lastLabel]);
+            auto jmpTarget = toPath(jmpLabels[lastLabel]);
+            result.emplace(callTarget, builder.str());
+            result.emplace(jmpTarget, fmt::format(JMP_TEMPLATE,
+                                                  callLabels[lastLabel], callLabels[label]));
 
             if (config.getDebugInfo()) {
-                debugMessage = fmt::format("# file: '{}'\n# label: '{}'\n\n",
+                result[callTarget] = debugMessage + "# type: call\n\n" + result[callTarget];
+                result[jmpTarget] = debugMessage + "# type: jmp\n\n" + result[jmpTarget];
+                debugMessage = fmt::format("# file: '{}'\n# label: '{}'\n",
                                            file.string(), CAST_FAST(op, Label)->getLabel());
             }
 
@@ -117,11 +133,29 @@ __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
         if (config.getDebugInfo()) {
             builder << "# " << op->toString() << '\n';
         }
-        builder << op->compile() << '\n';
+
+        SWITCH_STR (op->getName()) {
+            CASE_STR("jmp"):
+                builder << CAST_FAST(op, Jmp)->compile(jmpLabels) << '\n';
+                break;
+            CASE_STR("call"):
+                builder << CAST_FAST(op, Call)->compile(callLabels) << '\n';
+                break;
+            default:
+                builder << op->compile() << '\n';
+                break;
+        }
     }
 
-    result.emplace(toPath(callLabels[label]), debugMessage + builder.str());
-    result.emplace(toPath(jmpLabels[label]), fmt::format("function {}", callLabels[label]));
+    auto callTarget = toPath(callLabels[label]);
+    auto jmpTarget = toPath(jmpLabels[label]);
+    result.emplace(callTarget, builder.str());
+    result.emplace(jmpTarget, fmt::format(JMP_LAST_TEMPLATE, callLabels[label]));
+
+    if (config.getDebugInfo()) {
+        result[callTarget] = debugMessage + "# type: call\n\n" + result[callTarget];
+        result[jmpTarget] = debugMessage + "# type: jmp\n\n" + result[jmpTarget] + "\n# undefined from here";
+    }
 
     return result;
 }

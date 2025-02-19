@@ -16,7 +16,7 @@ public:
 
     GETTER_POD(Value, value);
 
-    std::string toString() override {
+    std::string toString() const noexcept override {
         return std::to_string(getValue());
     }
 };

@@ -11,8 +11,6 @@
 #include "utils/NameGenerator.h"
 #include "ir/ops/Label.h"
 
-using LabelMap = HashMap<ui64, std::string>;
-
 class IR {
 private:
     const Logger &logger;
@@ -21,7 +19,9 @@ private:
     std::vector<OpPtr> values = std::vector<OpPtr>();
     NameGenerator nameGenerator = NameGenerator();
 
-    std::string createFunction();
+    std::string createForCall(const Label *labelOp);
+
+    std::string createForJmp(const Label *labelOp);
 
     void initLabels(LabelMap &callLabels, LabelMap &jmpLabels);
 public:

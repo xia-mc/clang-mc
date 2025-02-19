@@ -5,8 +5,6 @@
 #ifndef CLANG_MC_I18NTEMPLATE_H
 #define CLANG_MC_I18NTEMPLATE_H
 
-#include "string"
-
 static inline constexpr auto ZH_CN = "@YAML_ZH_CN@";
 static inline constexpr auto EN_US = "@YAML_EN_US@";
 

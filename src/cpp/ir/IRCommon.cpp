@@ -5,6 +5,9 @@
 #include "IRCommon.h"
 #include "ops/Mov.h"
 #include "ir/ops/Label.h"
+#include "ir/ops/Ret.h"
+#include "ir/ops/Jmp.h"
+#include "ir/ops/Call.h"
 
 static OpPtr createMov(const std::string_view &args) {
     auto parts = string::split(args, ',');
@@ -51,14 +54,20 @@ OpPtr createOp(const std::string_view &string) {
     }
 
     auto parts = string::split(string, ' ', 2);
-    assert(parts.size() == 2);
+    assert(!parts.empty());
 
     auto op = parts[0];
-    auto args = parts[1];
+    auto args = parts.size() == 1 ? "" : parts[1];
 
     SWITCH_STR (op) {
         CASE_STR("mov"):
             return createMov(args);
+        CASE_STR("ret"):
+            return std::make_unique<Ret>();
+        CASE_STR("jmp"):
+            return std::make_unique<Jmp>(std::string(args));
+        CASE_STR("call"):
+            return std::make_unique<Call>(std::string(args));
         default: [[unlikely]]
             throw ParseException(i18nFormat("ir.unknown_op", op));
     }
