@@ -24,7 +24,7 @@ public:
 
     GETTER(Name, name);
 
-    std::string toString() override {
+    std::string toString() const noexcept override {
         return getName();
     }
 };

@@ -2,13 +2,14 @@
 // Created by xia__mc on 2025/2/13.
 //
 
-#define _CRT_SECURE_NO_WARNINGS(any) any
+#define _CRT_SECURE_NO_WARNINGS(any) any // NOLINT(*-reserved-identifier)
 
 #include "ClangMc.h"
 #include "utils/StringUtils.h"
 #include "utils/FileUtils.h"
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <execution>
 
 static inline bool isInClion() {
     static bool result = _CRT_SECURE_NO_WARNINGS(std::getenv("CLION_IDE")) != nullptr;
@@ -49,14 +50,19 @@ void ClangMc::start() {
     // compiling
     auto irs = loadIRCode();
     auto mcFunctions = std::vector<McFunctions>(irs.size());
-    std::transform(irs.begin(), irs.end(), mcFunctions.begin(), compileIR);
+    // TODO 加一个option允许开关并行编译
+    std::transform(std::execution::par, irs.begin(), irs.end(), mcFunctions.begin(), compileIR);
 
     // building
     for (const auto &mcFunction: mcFunctions) {
         for (const auto &entry: mcFunction) {
             auto path = config.getBuildDir() / entry.first;
             path += ".mcfunction";
-            const auto &data = entry.second;
+            std::string_view data = entry.second;
+            if (data.ends_with('\n')) {
+                data = data.substr(0, data.length() - 1);
+            }
+
             ensureParentDir(path);
             writeFile(path, data);
         }

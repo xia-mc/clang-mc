@@ -23,7 +23,7 @@
     return buffer.str();
 }
 
-static inline void writeFile(const Path& filePath, const std::string& content) {
+static inline void writeFile(const Path& filePath, const std::string_view& content) {
     auto file = std::ofstream(filePath);
     if (!file) {
         throw IOException(i18nFormat("file.failed_to_open", filePath.string()));
@@ -35,7 +35,7 @@ static inline void writeFile(const Path& filePath, const std::string& content) {
     }
 }
 
-static inline void ensureDirectory(const Path &dir) {
+static inline void ensureDirectory(const Path &dir) { // NOLINT(*-no-recursion)
     try {
         if (!exists(dir)) {
             if (dir.has_parent_path()) {

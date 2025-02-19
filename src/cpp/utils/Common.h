@@ -46,7 +46,7 @@ public:
     }
 };
 
-#define GETTER(name, field) __forceinline auto &get##name() noexcept { return field; } const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
+#define GETTER(name, field) __forceinline auto &get##name() noexcept { return field; } __forceinline const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
 #define GETTER_POD(name, field) __forceinline auto get##name() const noexcept { return field; }
 #define SETTER(name, field) __forceinline void set##name(const auto &value) noexcept { field = value; }
 #define SETTER_POD(name, field) __forceinline void set##name(auto value) noexcept { field = value; }

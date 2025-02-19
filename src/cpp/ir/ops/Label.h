@@ -12,8 +12,8 @@
 class Label : public Op {
 private:
     const std::string label;
-    [[maybe_unused]] const bool export_;
-    [[maybe_unused]] const bool extern_;
+    const bool export_;
+    const bool extern_;
 public:
     explicit Label(std::string label, const bool export_, const bool extern_) noexcept:
             Op("label"), label(std::move(label)), export_(export_), extern_(extern_) {
@@ -21,11 +21,15 @@ public:
 
     GETTER(Label, label);
 
-    std::string toString() override {
+    GETTER_POD(Export, export_);
+
+    GETTER_POD(Extern, extern_);
+
+    std::string toString() const noexcept override {
         return fmt::format("{}:", label);
     }
 
-    std::string compile() override {
+    [[nodiscard]] std::string compile() const override {
         throw UnsupportedOperationException("Label op can't be compile normally.");
     }
 };

@@ -56,6 +56,11 @@ add_executable(clang-mc
         src/cpp/i18n/I18n.cpp
         src/cpp/utils/NameGenerator.h
         src/cpp/utils/include/UnorderedDense.h
+        src/cpp/ir/ops/Ret.h
+        src/cpp/ir/verify/Verifier.cpp
+        src/cpp/ir/verify/Verifier.h
+        src/cpp/ir/ops/Jmp.h
+        src/cpp/ir/ops/Call.h
 )
 
 

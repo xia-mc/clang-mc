@@ -22,11 +22,11 @@ public:
         }
     }
 
-    std::string toString() override {
+    std::string toString() const noexcept override {
         return fmt::format("mov {}, {}", left->toString(), right->toString());
     }
 
-    std::string compile() override {
+    [[nodiscard]] std::string compile() const override {
         if (UNLIKELY(!INSTANCEOF_SHARED(left, RegisterImpl))) {
             NOT_IMPLEMENTED();
         }
