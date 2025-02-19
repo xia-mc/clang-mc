@@ -5,26 +5,37 @@
 #ifndef CLANG_MC_IR_H
 #define CLANG_MC_IR_H
 
+#include "config/Config.h"
 #include "vector"
 #include "IRCommon.h"
+#include "utils/NameGenerator.h"
+#include "ir/ops/Label.h"
+
+using LabelMap = HashMap<ui64, std::string>;
 
 class IR {
 private:
     const Logger &logger;
+    const Config &config;
     const Path &file;
     std::vector<OpPtr> values = std::vector<OpPtr>();
+    NameGenerator nameGenerator = NameGenerator();
+
+    std::string createFunction();
+
+    void initLabels(LabelMap &callLabels, LabelMap &jmpLabels);
 public:
-    explicit IR(const Path &file, const Logger &logger) : logger(logger), file(file) {
+    explicit IR(const Logger &logger, const Config &config, const Path &file) : logger(logger), config(config), file(file) {
     }
 
     GETTER(Values, values);
 
     void parse(const std::string &code);
 
-    [[nodiscard]] McFunctions compile() const;
+    [[nodiscard]] McFunctions compile();
 };
 
-[[nodiscard]] static __forceinline McFunctions compileIR(const IR &ir) {
+[[nodiscard]] static __forceinline McFunctions compileIR(IR &ir) {
     return ir.compile();
 }
 

@@ -57,6 +57,8 @@ extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
         auto instance = ClangMc(config);
         instance.start();
         return 0;
+    } catch (const std::bad_alloc &e) {
+        onOOM();
     } catch (const std::exception &e) {
         printStacktrace(e);
     } catch (...) {

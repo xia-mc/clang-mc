@@ -42,12 +42,27 @@ ClangMc::~ClangMc() {
 }
 
 void ClangMc::start() {
+    // initializing
     ensureValidConfig();
     ensureBuildDir();
 
+    // compiling
     auto irs = loadIRCode();
     auto mcFunctions = std::vector<McFunctions>(irs.size());
     std::transform(irs.begin(), irs.end(), mcFunctions.begin(), compileIR);
+
+    // building
+    for (const auto &mcFunction: mcFunctions) {
+        for (const auto &entry: mcFunction) {
+            auto path = config.getBuildDir() / entry.first;
+            path += ".mcfunction";
+            const auto &data = entry.second;
+            ensureParentDir(path);
+            writeFile(path, data);
+        }
+    }
+
+    // TODO linking
 }
 
 [[noreturn]] void ClangMc::exit() {
@@ -78,7 +93,7 @@ void ClangMc::ensureBuildDir() {
         create_directory(dir);
     } catch (const std::filesystem::filesystem_error &e) {
         logger->error("failed to init build directory.");
-        printStacktrace(e);
+        logger->error(e.what());
     }
 }
 
@@ -86,7 +101,7 @@ std::vector<IR> ClangMc::loadIRCode() {
     auto irs = std::vector<IR>();
     try {
         for (const auto &path: config.getInput()) {
-            irs.emplace_back(path, logger).parse(readFile(path));
+            irs.emplace_back(logger, config, path).parse(readFile(path));
         }
         return irs;
     } catch (const IOException &e) {
