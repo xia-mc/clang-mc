@@ -54,7 +54,11 @@ Please note that this project is still in its early stages, and we greatly appre
 
 Without these projects, `clang-mc` would not exist:
 
-- [Minecraft](https://www.minecraft.net) - The sandbox game developed by Mojang Studios.
+- [Minecraft](https://www.minecraft.net) - Minecraft, developed by Mojang Studios, `clang-mc` complies with the [Minecraft EULA](https://www.minecraft.net/en-us/eula) and related terms of use.
 - [LLVM](https://llvm.org) - A powerful compiler infrastructure, open-sourced under the Apache License 2.0.
+- [ankerl::unordered_dense](https://github.com/martinus/unordered_dense): A modern, high-performance, low-memory hash table implementation in C++, licensed under the [MIT License](https://github.com/martinus/unordered_dense/blob/main/LICENSE).
+- [fmt](https://fmt.dev/) - A fast and safe formatting library for C++, licensed under the [MIT License](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst).
+- [spdlog](https://github.com/gabime/spdlog) - A fast C++ logging library, licensed under the [MIT License](https://github.com/gabime/spdlog/blob/v1.x/LICENSE).
+- [yaml-cpp](https://github.com/jbeder/yaml-cpp) - A YAML parser and emitter for C++, licensed under the [MIT License](https://github.com/jbeder/yaml-cpp/blob/master/LICENSE).
 
 Special thanks to all contributors in the open-source community!

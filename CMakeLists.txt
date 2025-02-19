@@ -84,6 +84,9 @@ endif ()
 if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/packages/spdlog_x64-mingw-static/share/spdlog/spdlogConfig.cmake")
     set(spdlog_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg/packages/spdlog_x64-mingw-static/share/spdlog")
 endif ()
+if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static-md/share/yaml-cpp/yaml-cpp-config.cmake")
+    set(yaml-cpp_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static-md/share/yaml-cpp")
+endif ()
 
 
 # Libraries
