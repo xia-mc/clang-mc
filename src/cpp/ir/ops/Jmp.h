@@ -5,18 +5,16 @@
 #ifndef CLANG_MC_JMP_H
 #define CLANG_MC_JMP_H
 
-#include "Op.h"
+#include "CallLike.h"
 #include "utils/StringUtils.h"
 #include "OpCommon.h"
 
-class Jmp : public Op {
-private:
-    const std::string label;
+class Jmp : public CallLike {
 public:
-    explicit Jmp(std::string label) noexcept : Op("jmp"), label(std::move(label)) {
+    explicit Jmp(const ui64 lineNumber, std::string label) noexcept : CallLike("jmp", lineNumber, std::move(label)) {
     }
 
-    std::string toString() const noexcept override {
+    [[nodiscard]] std::string toString() const noexcept override {
         return fmt::format("jmp {}", label);
     }
 

@@ -6,11 +6,44 @@
 #define CLANG_MC_VERIFIER_H
 
 #include "ir/IRCommon.h"
+#include "ir/IR.h"
+#include "VerifyResult.h"
+#include "ir/ops/Ret.h"
+#include "ir/ops/Jmp.h"
 
 
 class Verifier {
 private:
-    
+    const Logger &logger;
+    const Config &config;
+    std::vector<IR> &irs;
+
+    const IR *currentIR = nullptr;
+    const Op *currentOp = nullptr;
+    ui32 errors = 0;
+
+    VerifyResult handleSingle(IR &ir);
+
+    bool error(const std::string &message, const IR *ir, const Op *op);
+
+    __forceinline bool error(const std::string &message) {
+        return error(message, currentIR, currentOp);
+    }
+
+    bool warn(const std::string &message, const IR *ir, const Op *op);
+
+    __forceinline bool warn(const std::string &message) {
+        return warn(message, currentIR, currentOp);
+    }
+
+    void note(const std::string &message, const IR *ir, const Op *op);
+
+public:
+    explicit Verifier(const Logger &logger, const Config &config, std::vector<IR> &irs) :
+            logger(logger), config(config), irs(irs) {
+    }
+
+    void verify();
 };
 
 

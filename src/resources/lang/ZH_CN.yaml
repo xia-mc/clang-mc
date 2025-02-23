@@ -23,15 +23,22 @@ ir.op.mov.immediate_left: "'mov' 指令的左操作数不能是立即数"
 ir.op.empty_value: 操作数不能为空
 ir.op.out_of_range: 立即数超出范围
 ir.value.register.unknown_register: 未知寄存器 '{}'
-ir.errors_generated: "{}: 生成了 {} 个错误"
+ir.errors_generated: "生成了 {} 个错误"
 ir.invalid_mov: "无效的 'mov' 指令: '{}'"
 ir.invalid_label: 标签名不能包含空格
 ir.invalid_label_identifier: 需要有效的标签标识符，但得到了 '{}'
 ir.unknown_op: "未知指令: '{}'"
-ir.unreachable: 此语句不可达
+ir.verify.unreachable: 此代码不会被执行
+ir.verify.unreachable_before: 此位置之前的代码不可达
+ir.verify.label_redefinition: 标签 '{}' 重定义
+ir.verify.previous_definition: 先前的定义在此
+ir.verify.undeclared_label: 使用了未声明的标签 '{}'
+ir.verify.unused_label: 标签 '{}' 已定义但未使用
 file.no_such_file_or_directory: "没有这样的文件或目录: '{}'"
 file.failed_to_open: "无法打开文件: '{}'"
 file.failed_to_create: "无法创建文件或目录: '{}'"
 oom.oom: "\033[31m致命错误:\033[97m 内存已耗尽"
 general.no_input_files: 没有输入文件
 general.invalid_input: 无效的输入文件，预期为 '.mcasm' 文件
+general.failed_init_build: 无法初始化构建文件夹
+general.unable_to_build: 无法构建输入文件

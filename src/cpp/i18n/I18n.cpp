@@ -13,7 +13,7 @@
 #include "I18nTemplate.h"
 #endif
 
-inline auto TRANSLATIONS = HashMap<ui64, std::string>();
+inline auto TRANSLATIONS = HashMap<Hash, std::string>();
 
 void loadLanguage(const char *const data) {
     YAML::Node config = YAML::Load(data);
@@ -57,7 +57,7 @@ void initI18n() {
     }
 }
 
-std::string &i18n(const ui64 keyHash) {
+std::string &i18n(const Hash keyHash) {
     assert(TRANSLATIONS.contains(keyHash));
     return TRANSLATIONS[keyHash];
 }

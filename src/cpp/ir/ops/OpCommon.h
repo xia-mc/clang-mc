@@ -14,7 +14,7 @@
 
 using ValuePtr = std::shared_ptr<Value>;
 using OpPtr = std::unique_ptr<Op>;
-using LabelMap = HashMap<ui64, std::string>;
+using LabelMap = HashMap<Hash, std::string>;
 
 static inline ValuePtr createValue(const std::string &string) {
     if (string.empty()) {

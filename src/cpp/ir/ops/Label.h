@@ -12,20 +12,24 @@
 class Label : public Op {
 private:
     const std::string label;
+    const Hash labelHash;
     const bool export_;
     const bool extern_;
 public:
-    explicit Label(std::string label, const bool export_, const bool extern_) noexcept:
-            Op("label"), label(std::move(label)), export_(export_), extern_(extern_) {
+    explicit Label(const ui64 lineNumber, std::string label, const bool export_, const bool extern_) noexcept:
+            Op("label", lineNumber), label(std::move(label)), labelHash(hash(this->label)),
+            export_(export_), extern_(extern_) {
     }
 
     GETTER(Label, label);
+
+    GETTER_POD(LabelHash, labelHash);
 
     GETTER_POD(Export, export_);
 
     GETTER_POD(Extern, extern_);
 
-    std::string toString() const noexcept override {
+    [[nodiscard]] std::string toString() const noexcept override {
         return fmt::format("{}:", label);
     }
 

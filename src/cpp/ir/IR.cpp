@@ -8,35 +8,31 @@
 #include "ir/ops/Jmp.h"
 #include "ir/ops/Call.h"
 
-void IR::parse(const std::string &code) {
+void IR::parse(std::string code) {
     auto lines = string::split(code, '\n');
+    this->sourceCode = std::move(code);
 
     size_t errors = 0;
-    bool first = true;
     for (size_t i = 0; i < lines.size(); ++i) {
-        const auto &line = string::trim(string::removeComment(lines[i]));
+        const auto line = string::trim(string::removeComment(lines[i]));
         if (UNLIKELY(line.empty())) {
             continue;
         }
 
+        const ui64 lineNumber = i + 1;  // ui64防止+1后溢出
+
         try {
-            auto op = createOp(line);
-            if (!first && op->getName() == "label") {
-                // 因为实际上采用“代码块”模式编译，而不是label，所以每个代码块末尾都需要显式跳转到下个代码块
-                this->values.push_back(std::make_unique<Jmp>(CAST_FAST(op, Label)->getLabel()));
-            }
-            first = false;
+            auto op = createOp(lineNumber, line);
+            this->sourceMap.emplace(op.get(), lines[i]);
             this->values.push_back(std::move(op));
         } catch (const ParseException &e) {
-            const ui64 lineNumber = i + 1;  // ui64防止+1后溢出
-            logger->error(fmt::format("{}:{}: {}\n    {} | {}",
-                                      file.string(), lineNumber, e.what(), lineNumber, line));
+            logger->error(createIRMessage(file, lineNumber, line, e.what()));
             errors++;
         }
     }
 
     if (UNLIKELY(errors != 0)) {
-        throw ParseException(i18nFormat("ir.errors_generated", file.string(), errors));
+        throw ParseException(i18nFormat("ir.errors_generated", errors));
     }
 }
 
@@ -55,14 +51,18 @@ __forceinline std::string IR::createForJmp(const Label *labelOp) {
 }
 
 static inline Path toPath(const std::string &mcPath) {
+    static const auto data = Path("data");
+    static const auto function = Path("function");
+    static const auto mcfunction = Path(".mcfunction");
+
     assert(string::count(mcPath, ':') == 1);
     auto splits = string::split(mcPath, ':', 2);
-    return Path("data") / splits[0] / splits[1];
+    return data / splits[0] / function / splits[1] / mcfunction;
 }
 
 __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
     auto labelOp = CAST_FAST(this->values[0], Label);
-    ui64 label = hash(labelOp->getLabel());
+    Hash label = hash(labelOp->getLabel());
     callLabels.emplace(label, createForCall(labelOp));
     jmpLabels.emplace(label, createForJmp(labelOp));
 
@@ -93,7 +93,7 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
     assert(INSTANCEOF(this->values[0], Label));
 
     auto labelOp = CAST_FAST(this->values[0], Label);
-    ui64 label = hash(labelOp->getLabel());
+    Hash label = labelOp->getLabelHash();
     auto callLabels = LabelMap();
     auto jmpLabels = LabelMap();
     initLabels(callLabels, jmpLabels);
@@ -106,11 +106,18 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
                                    file.string(), CAST_FAST(this->values[0], Label)->getLabel());
     }
 
+    bool unreachable = false;
     for (size_t i = 1; i < this->values.size(); ++i) {
         const auto &op = this->values[i];
         if (op->getName() == "label") {
             auto lastLabel = label;
-            label = hash(CAST_FAST(op, Label)->getLabel());
+            label = CAST_FAST(op, Label)->getLabelHash();
+
+            if (!unreachable) {
+                // 因为实际上采用“代码块”模式编译，而不是label，所以每个代码块末尾都需要显式跳转到下个代码块
+                builder << std::make_unique<Jmp>(0, CAST_FAST(op, Label)->getLabel())
+                        ->compile(jmpLabels) << '\n';
+            }
 
             auto callTarget = toPath(callLabels[lastLabel]);
             auto jmpTarget = toPath(jmpLabels[lastLabel]);
@@ -127,6 +134,7 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
 
             builder.str("");
             builder.clear();
+            unreachable = false;
             continue;
         }
 
@@ -144,6 +152,10 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
             default:
                 builder << op->compile() << '\n';
                 break;
+        }
+
+        if (isTerminate(op)) {
+            unreachable = true;
         }
     }
 

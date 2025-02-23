@@ -9,14 +9,12 @@
 #include "utils/StringUtils.h"
 #include "OpCommon.h"
 
-class Call : public Op {
-private:
-    const std::string label;
+class Call : public CallLike {
 public:
-    explicit Call(std::string label) noexcept : Op("call"), label(std::move(label)) {
+    explicit Call(const ui64 lineNumber, std::string label) noexcept : CallLike("call", lineNumber, std::move(label)) {
     }
 
-    std::string toString() const noexcept override {
+    [[nodiscard]] std::string toString() const noexcept override {
         return fmt::format("call {}", label);
     }
 

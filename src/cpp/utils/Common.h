@@ -19,8 +19,12 @@ using Path = std::filesystem::path;
 using Logger = std::shared_ptr<spdlog::logger>;
 template <typename K, typename V>
 using HashMap = ankerl::unordered_dense::map<K, V>;
+template <typename T>
+using HashSet = ankerl::unordered_dense::set<T>;
 using i32 = int32_t;
+using ui32 = uint32_t;
 using ui64 = uint64_t;
+using Hash = ui64;
 
 class ParseException : public std::runtime_error {
 public:
@@ -46,10 +50,10 @@ public:
     }
 };
 
-#define GETTER(name, field) __forceinline auto &get##name() noexcept { return field; } __forceinline const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
-#define GETTER_POD(name, field) __forceinline auto get##name() const noexcept { return field; }
-#define SETTER(name, field) __forceinline void set##name(const auto &value) noexcept { field = value; }
-#define SETTER_POD(name, field) __forceinline void set##name(auto value) noexcept { field = value; }
+#define GETTER(name, field) __forceinline constexpr auto &get##name() noexcept { return field; } __forceinline constexpr const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
+#define GETTER_POD(name, field) __forceinline constexpr auto get##name() const noexcept { return field; }
+#define SETTER(name, field) __forceinline constexpr void set##name(const auto &value) noexcept { field = value; }
+#define SETTER_POD(name, field) __forceinline constexpr void set##name(auto value) noexcept { field = value; }
 
 #define DATA(name, field) GETTER(name, field) SETTER(name, field)
 #define DATA_POD(name, field) GETTER_POD(name, field) SETTER_POD(name, field)
@@ -58,6 +62,8 @@ public:
 #define CAST_FAST(ptr, type) ((type *) ptr.get())
 #define INSTANCEOF(ptr, type) (dynamic_cast<type *>(ptr.get()))
 #define INSTANCEOF_SHARED(sharedPtr, type) CAST_SHARED(sharedPtr, type)
+#define FUNC_THIS(method) ([this](auto&&... args) { return this->method(std::forward<decltype(args)>(args)...); })
+#define FUNC_ARG0(method) ([](auto &object, auto&&... args) { return object.method(std::forward<decltype(args)>(args)...); })
 
 #define NOT_IMPLEMENTED() throw NotImplementedException()
 #define LIKELY(x)   __builtin_expect(!!(x), 1)
@@ -65,11 +71,11 @@ public:
 #define UNREACHABLE() __builtin_unreachable()
 #define PURE [[nodiscard]] [[gnu::const]]
 
-PURE static inline constexpr ui64 hash(const std::string_view &str) noexcept {
-    ui64 hash = 14695981039346656037ULL;
+PURE static __forceinline constexpr Hash hash(const std::string_view &str) noexcept {
+    Hash hash = 14695981039346656037U;
     for (const char c: str) {
-        hash ^= static_cast<uint64_t>(c);
-        hash *= 1099511628211ULL;
+        hash ^= static_cast<Hash>(c);
+        hash *= 1099511628211U;
     }
     return hash;
 }
@@ -77,7 +83,7 @@ PURE static inline constexpr ui64 hash(const std::string_view &str) noexcept {
 #define SWITCH_STR(string) switch (hash(string))
 #define CASE_STR(string) case hash(string)
 
-#define warn(condition, message) \
+#define WARN(condition, message) \
     do { \
         if (!(condition)) { \
             std::cerr << "Warning: " << message << " (" << __FILE__ << ":" << __LINE__ << ")\n"; \

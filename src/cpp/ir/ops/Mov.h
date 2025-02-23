@@ -15,14 +15,14 @@ private:
     const ValuePtr left;
     const ValuePtr right;
 public:
-    explicit Mov(ValuePtr left, ValuePtr right)
-            : Op("mov"), left(std::move(left)), right(std::move(right)) {
+    explicit Mov(const ui64 lineNumber, ValuePtr left, ValuePtr right)
+            : Op("mov", lineNumber), left(std::move(left)), right(std::move(right)) {
         if (UNLIKELY(INSTANCEOF_SHARED(this->left, Immediate))) {
             throw ParseException(i18n("ir.op.mov.immediate_left"));
         }
     }
 
-    std::string toString() const noexcept override {
+    [[nodiscard]] std::string toString() const noexcept override {
         return fmt::format("mov {}, {}", left->toString(), right->toString());
     }
 
