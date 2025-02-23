@@ -9,7 +9,7 @@
 
 void initI18n();
 
-std::string &i18n(ui64 keyHash);
+std::string &i18n(Hash keyHash);
 
 __forceinline std::string &i18n(const std::string_view &key) {
     return i18n(hash(key));

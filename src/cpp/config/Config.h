@@ -18,6 +18,9 @@ private:
     bool logFile = false;
     std::string nameSpace;
     bool debugInfo = false;
+
+    bool noteForError = true;
+    bool noteForWarn = true;
 public:
     explicit Config() = default;
 
@@ -34,6 +37,10 @@ public:
     DATA(NameSpace, nameSpace);
 
     DATA_POD(DebugInfo, debugInfo);
+
+    DATA_POD(NoteForError, noteForError);
+
+    DATA_POD(NoteForWarn, noteForWarn);
 };
 
 

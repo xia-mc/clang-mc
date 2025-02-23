@@ -5,16 +5,12 @@
 #define _CRT_SECURE_NO_WARNINGS(any) any // NOLINT(*-reserved-identifier)
 
 #include "ClangMc.h"
-#include "utils/StringUtils.h"
 #include "utils/FileUtils.h"
+#include "ir/verify/Verifier.h"
+#include "i18n/LogFormatter.h"
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <execution>
-
-static inline bool isInClion() {
-    static bool result = _CRT_SECURE_NO_WARNINGS(std::getenv("CLION_IDE")) != nullptr;
-    return result;
-}
 
 ClangMc::ClangMc(const Config &config) : config(config) {
     auto consoleSink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
@@ -31,11 +27,7 @@ ClangMc::ClangMc(const Config &config) : config(config) {
     }
     logger->set_level(spdlog::level::debug);
 #endif
-    if (isInClion()) { // Clion不知道为什么不能解析ANSI颜色代码
-        logger->set_pattern("%l: %v");
-    } else {
-        logger->set_pattern("%^%l:%$ %v");
-    }
+    logger->set_formatter(std::make_unique<LogFormatter>());
 }
 
 ClangMc::~ClangMc() {
@@ -56,15 +48,15 @@ void ClangMc::start() {
     // building
     for (const auto &mcFunction: mcFunctions) {
         for (const auto &entry: mcFunction) {
-            auto path = config.getBuildDir() / entry.first;
-            path += ".mcfunction";
-            std::string_view data = entry.second;
-            if (data.ends_with('\n')) {
-                data = data.substr(0, data.length() - 1);
-            }
+            const auto &path = config.getBuildDir() / entry.first;
+            const auto &data = entry.second;
 
             ensureParentDir(path);
-            writeFile(path, data);
+            if (data.ends_with('\n')) {
+                writeFile(path, data.substr(0, data.length() - 1));
+            } else {
+                writeFile(path, data);
+            }
         }
     }
 
@@ -77,7 +69,7 @@ void ClangMc::start() {
     UNREACHABLE();
 }
 
-void ClangMc::ensureValidConfig() {
+__forceinline void ClangMc::ensureValidConfig() {
     if (config.getInput().empty()) {
         logger->error(i18n("general.no_input_files"));
         exit();
@@ -90,7 +82,7 @@ void ClangMc::ensureValidConfig() {
     }
 }
 
-void ClangMc::ensureBuildDir() {
+__forceinline void ClangMc::ensureBuildDir() {
     const Path &dir = config.getBuildDir();
     try {
         if (exists(dir)) {
@@ -98,17 +90,21 @@ void ClangMc::ensureBuildDir() {
         }
         create_directory(dir);
     } catch (const std::filesystem::filesystem_error &e) {
-        logger->error("failed to init build directory.");
+        logger->error(i18n("general.failed_init_build"));
         logger->error(e.what());
     }
 }
 
-std::vector<IR> ClangMc::loadIRCode() {
+__forceinline std::vector<IR> ClangMc::loadIRCode() {
     auto irs = std::vector<IR>();
     try {
         for (const auto &path: config.getInput()) {
             irs.emplace_back(logger, config, path).parse(readFile(path));
         }
+
+        Verifier(logger, config, irs).verify();
+        std::for_each(irs.begin(), irs.end(), FUNC_ARG0(freeSource));
+
         return irs;
     } catch (const IOException &e) {
         logger->error(e.what());
@@ -116,6 +112,6 @@ std::vector<IR> ClangMc::loadIRCode() {
         logger->error(e.what());
     }
 
-    logger->error("unable to build input file");
+    logger->error(i18n("general.unable_to_build"));
     exit();
 }

@@ -18,7 +18,7 @@ namespace string {
             return {};
         }
         if (UNLIKELY(maxCount == 1)) {
-            warn(false, "Are you sure to split a str with 1 count?");
+            WARN(false, "Are you sure to split a str with 1 count?");
             return {str};
         }
 
@@ -44,7 +44,10 @@ namespace string {
         }
 
         const auto start = str.find_first_not_of(' ');
-        if (UNLIKELY(start == std::string_view::npos)) {
+        if (start == std::string_view::npos) {
+            if (str[0] == ' ') {
+                return "";
+            }
             return str;
         }
 

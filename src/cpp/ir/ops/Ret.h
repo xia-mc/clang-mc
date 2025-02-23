@@ -10,10 +10,10 @@
 
 class Ret : public Op {
 public:
-    explicit Ret() : Op("ret") {
+    explicit Ret(const ui64 lineNumber) : Op("ret", lineNumber) {
     }
 
-    std::string toString() const noexcept override {
+    [[nodiscard]] std::string toString() const noexcept override {
         return "ret";
     }
 

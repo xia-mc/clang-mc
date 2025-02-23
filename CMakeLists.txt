@@ -61,6 +61,10 @@ add_executable(clang-mc
         src/cpp/ir/verify/Verifier.h
         src/cpp/ir/ops/Jmp.h
         src/cpp/ir/ops/Call.h
+        src/cpp/ir/verify/Verifier.cpp
+        src/cpp/ir/ops/CallLike.h
+        src/cpp/ir/verify/VerifyResult.h
+        src/cpp/i18n/LogFormatter.h
 )
 
 

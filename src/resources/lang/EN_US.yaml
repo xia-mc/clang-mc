@@ -23,15 +23,22 @@ ir.op.mov.immediate_left: the left operand of 'mov' cannot be an immediate value
 ir.op.empty_value: operand cannot be empty
 ir.op.out_of_range: immediate value out of range
 ir.value.register.unknown_register: unknown register '{}'
-ir.errors_generated: "{}: {} errors generated"
+ir.errors_generated: "{} errors generated"
 ir.invalid_mov: "invalid 'mov' instruction: '{}'"
 ir.invalid_label: label name cannot contain spaces
 ir.invalid_label_identifier: expected a valid label identifier, but found '{}'
 ir.unknown_op: "unknown instruction: '{}'"
-ir.unreachable: this statement is unreachable
+ir.verify.unreachable: code will never be executed
+ir.verify.unreachable_before: unreachable code before this point
+ir.verify.label_redefinition: redefinition of label '{}'
+ir.verify.previous_definition: previous definition is here
+ir.verify.undeclared_label: use of undeclared label '{}'
+ir.verify.unused_label: label '{}' defined but not used
 file.no_such_file_or_directory: "no such file or directory: '{}'"
 file.failed_to_open: "failed to open file: '{}'"
 file.failed_to_create: "failed to create file or directory: '{}'"
 oom.oom: "\033[31mfatal error:\033[97m out of memory"
 general.no_input_files: no input files
 general.invalid_input: invalid input file, expected '.mcasm' files
+general.failed_init_build: failed to init build directory
+general.unable_to_build: unable to build input file

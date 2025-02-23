@@ -59,7 +59,7 @@ void ArgParser::next(const std::string &arg) {
         return;
     }
 
-    const ui64 argHash = hash(arg);
+    const Hash argHash = hash(arg);
     if (DATA_ARGS.contains(argHash)) {
         required = true;
         lastString = arg;
