@@ -74,7 +74,7 @@ VerifyResult Verifier::handleSingle(IR &ir) {
                 definedLabels.emplace(label, labelOp);
             }
 
-            if (!undefinedLabels.erase(label)) {
+            if (!undefinedLabels.erase(label) && !labelOp->getExport()) {
                 unusedLabels.emplace(label);
             }
         } else {
