@@ -9,15 +9,15 @@
 
 class HeapPtr : public Ptr {
 public:
-    explicit HeapPtr(const Register *base, const Register *index, const ui32 scale, const ui32 displacement) noexcept:
+    explicit HeapPtr(const Register *base, const Register *index, const i32 scale, const i32 displacement) noexcept:
             Ptr(base, index, scale, displacement) {
     }
 
-    std::string toString() const noexcept override {
+    [[nodiscard]] std::string toString() const noexcept override {
         return fmt::format("[{}]", formatAddress());
     }
 
-    std::string load(const Register &reg) const override {
+    [[nodiscard]] std::string load(const Register &reg) const override {
         if (base == nullptr && index == nullptr) {
             assert(scale == 1);
             // 内联以改善性能
@@ -34,7 +34,7 @@ public:
         return result.str();
     }
 
-    std::string store(const Register &reg) const override {
+    [[nodiscard]] std::string store(const Register &reg) const override {
         if (base == nullptr && index == nullptr) {
             assert(scale == 1);
             // 内联以改善性能
@@ -51,7 +51,7 @@ public:
         return result.str();
     }
 
-    std::string store(const Immediate &immediate) const override {
+    [[nodiscard]] std::string store(const Immediate &immediate) const override {
         if (base == nullptr && index == nullptr) {
             assert(scale == 1);
             // 内联以改善性能
@@ -68,7 +68,7 @@ public:
         return result.str();
     }
 
-    std::string store(const Ptr &ptr) const override {
+    [[nodiscard]] std::string store(const Ptr &ptr) const override {
         if (base == nullptr && index == nullptr && ptr.base == nullptr && ptr.index == nullptr) {
             assert(scale == 1);
             // 内联以改善性能

@@ -10,7 +10,7 @@
 
 class Ptr : public Value {
 protected:
-    std::string formatAddress() const noexcept {
+    [[nodiscard]] std::string formatAddress() const noexcept {
         auto result = std::ostringstream("[");
         if (base != nullptr) {
             result << base->toString();
@@ -26,10 +26,17 @@ protected:
             }
         }
         if (displacement != 0) {
-            if (!result.str().empty()) {
-                result << " + ";
+            if (displacement > 0) {
+                if (!result.str().empty()) {
+                    result << " + ";
+                }
+                result << displacement;
+            } else {
+                if (!result.str().empty()) {
+                    result << " - ";
+                }
+                result << -displacement;
             }
-            result << displacement;
         }
         return result.str();
     }
@@ -41,13 +48,21 @@ public:
     const i32 displacement;
 
     void setPtr(std::ostringstream &result, const std::string &fieldName) const {
+        static const auto addDisplacementToS0 = [&](){
+            if (displacement != 0) {
+                if (displacement > 0) {
+                    result << fmt::format("scoreboard players add s0 vm_regs {}\n", displacement);
+                } else {
+                    result << fmt::format("scoreboard players remove s0 vm_regs {}\n", -displacement);
+                }
+            }
+        };
+
         if (base == nullptr) {
             assert(scale != 1);
 
             result << fmt::format("scoreboard players operation s0 vm_regs = {} vm_regs\n", index->getName());
-            if (displacement != 0) {
-                result << fmt::format("scoreboard players add s0 vm_regs {}\n", displacement);
-            }
+            addDisplacementToS0();
             result << fmt::format(
                     "execute store result storage std:vm s2.{} int {} run scoreboard players get s0 vm_regs\n",
                     fieldName, scale);
@@ -60,7 +75,7 @@ public:
                         fieldName, base->getName());
             } else {
                 result << fmt::format("scoreboard players operation s0 vm_regs = {} vm_regs\n", base->getName());
-                result << fmt::format("scoreboard players add s0 vm_regs {}\n", displacement);
+                addDisplacementToS0();
                 result << fmt::format(
                         "execute store result storage std:vm s2.{} int 1 run scoreboard players get s0 vm_regs\n",
                         fieldName);
@@ -71,14 +86,14 @@ public:
             result << fmt::format(
                     "scoreboard players operation s0 vm_regs *= {} vm_regs\n", index->getName());
             result << fmt::format("scoreboard players operation s0 vm_regs += {} vm_regs\n", base->getName());
-            result << fmt::format("scoreboard players add s0 vm_regs {}\n", displacement);
+            addDisplacementToS0();
             result << fmt::format(
                     "execute store result storage std:vm s2.{} int 1 run scoreboard players get s0 vm_regs\n",
                     fieldName);
         }
     }
 
-    explicit Ptr(const Register *base, const Register *index, const ui32 scale, const ui32 displacement) noexcept:
+    explicit Ptr(const Register *base, const Register *index, const i32 scale, const i32 displacement) noexcept:
             base(base), index(index), scale(scale), displacement(displacement) {
         assert(!(index == nullptr && scale != 1));
         assert(!(base == nullptr && index != nullptr && scale == 1));
@@ -87,22 +102,22 @@ public:
     /**
      * 把指针位置的内存加载到寄存器reg
      */
-    virtual std::string load(const Register &reg) const = 0;
+    [[nodiscard]] virtual std::string load(const Register &reg) const = 0;
 
     /**
      * 把寄存器reg的值存储到指针位置的内存
      */
-    virtual std::string store(const Register &reg) const = 0;
+    [[nodiscard]] virtual std::string store(const Register &reg) const = 0;
 
     /**
      * 把立即数存储到指针位置的内存
      */
-    virtual std::string store(const Immediate &immediate) const = 0;
+    [[nodiscard]] virtual std::string store(const Immediate &immediate) const = 0;
 
     /**
      * 把入参指针位置的内存存储到指针位置的内存
      */
-    virtual std::string store(const Ptr &ptr) const = 0;
+    [[nodiscard]] virtual std::string store(const Ptr &ptr) const = 0;
 };
 
 #endif //CLANG_MC_PTR_H
