@@ -8,7 +8,7 @@
 #include "config/Config.h"
 #include "config/ArgParser.h"
 #include "ClangMc.h"
-#include "utils/OOMHandler.h"
+#include "utils/Native.h"
 #include "utils/CLIUtils.h"
 #include "i18n/I18n.h"
 
@@ -29,10 +29,11 @@ static inline Config parseArgs(const int argc, const char *argv[]) {
 }
 
 extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
+    std::set_new_handler(onOOM);
     try {
-        std::set_new_handler(onOOM);
+        std::set_terminate(onTerminate);
+        initNative();
         initI18n();
-        initOOMHandler();
 
         assert(argc >= 1);
         if (argc == 2) {

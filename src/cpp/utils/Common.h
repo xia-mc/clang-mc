@@ -58,10 +58,9 @@ public:
 #define DATA(name, field) GETTER(name, field) SETTER(name, field)
 #define DATA_POD(name, field) GETTER_POD(name, field) SETTER_POD(name, field)
 
-#define CAST_SHARED(sharedPtr, type) (dynamic_pointer_cast<type>(sharedPtr))
 #define CAST_FAST(ptr, type) ((type *) ptr.get())
 #define INSTANCEOF(ptr, type) (dynamic_cast<type *>(ptr.get()))
-#define INSTANCEOF_SHARED(sharedPtr, type) CAST_SHARED(sharedPtr, type)
+#define INSTANCEOF_SHARED(sharedPtr, type) (dynamic_pointer_cast<type>(sharedPtr))
 #define FUNC_THIS(method) ([this](auto&&... args) { return this->method(std::forward<decltype(args)>(args)...); })
 #define FUNC_ARG0(method) ([](auto &object, auto&&... args) { return object.method(std::forward<decltype(args)>(args)...); })
 
@@ -69,7 +68,7 @@ public:
 #define LIKELY(x)   __builtin_expect(!!(x), 1)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 #define UNREACHABLE() __builtin_unreachable()
-#define PURE [[nodiscard]] [[gnu::const]]
+#define PURE [[nodiscard]]
 
 PURE static __forceinline constexpr Hash hash(const std::string_view &str) noexcept {
     Hash hash = 14695981039346656037U;
@@ -83,11 +82,21 @@ PURE static __forceinline constexpr Hash hash(const std::string_view &str) noexc
 #define SWITCH_STR(string) switch (hash(string))
 #define CASE_STR(string) case hash(string)
 
+
+#ifndef NDEBUG
 #define WARN(condition, message) \
     do { \
         if (!(condition)) { \
             std::cerr << "Warning: " << message << " (" << __FILE__ << ":" << __LINE__ << ")\n"; \
         } \
     } while (0)
+#else
+#undef assert
+#define assert(expression) \
+    do { \
+        break; \
+    } while (expression)
+#define WARN(condition, message)
+#endif
 
 #endif //CLANG_MC_COMMON_H

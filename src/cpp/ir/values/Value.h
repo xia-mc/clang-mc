@@ -9,6 +9,7 @@
 
 class Value {
 public:
+    explicit Value() = default;
     virtual ~Value() = default;
 
     /**

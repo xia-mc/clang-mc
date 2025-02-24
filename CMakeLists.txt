@@ -48,7 +48,6 @@ add_executable(clang-mc
         src/cpp/utils/Stacktrace.h
         src/cpp/ir/ops/Label.h
         src/cpp/utils/FileUtils.h
-        src/cpp/utils/OOMHandler.h
         src/cpp/utils/CLIUtils.h
         src/cpp/Start.c
         src/cpp/Main.h
@@ -65,6 +64,12 @@ add_executable(clang-mc
         src/cpp/ir/ops/CallLike.h
         src/cpp/ir/verify/VerifyResult.h
         src/cpp/i18n/LogFormatter.h
+        src/cpp/ir/ops/Add.h
+        src/cpp/ir/values/HeapPtr.h
+        src/cpp/ir/values/Ptr.h
+        src/cpp/ir/ops/OpCommon.cpp
+        src/cpp/utils/Native.c
+        src/cpp/utils/Native.h
 )
 
 

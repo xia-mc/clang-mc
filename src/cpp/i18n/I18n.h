@@ -15,10 +15,6 @@ __forceinline std::string &i18n(const std::string_view &key) {
     return i18n(hash(key));
 }
 
-__forceinline const char *i18nC(const std::string_view &key) {
-    return i18n(hash(key)).c_str();
-}
-
 template<typename... T>
 __forceinline std::string i18nFormat(const std::string_view key, T &&... args) {
     return fmt::format(fmt::runtime(i18n(key)), std::forward<T>(args)...);

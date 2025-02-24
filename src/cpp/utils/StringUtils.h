@@ -17,18 +17,13 @@ namespace string {
         if (UNLIKELY(str.empty())) {
             return {};
         }
-        if (UNLIKELY(maxCount == 1)) {
-            WARN(false, "Are you sure to split a str with 1 count?");
-            return {str};
-        }
+        WARN(maxCount > 1, "Are you sure to split a str with 1 count?");
 
         auto result = std::vector<std::string_view>();
         size_t start = 0, end;
 
         while (LIKELY((end = str.find(delimiter, start)) != std::string_view::npos && maxCount-- > 1)) {
-            if (end != start) {
-                result.emplace_back(str.substr(start, end - start));
-            }
+            result.emplace_back(str.substr(start, end - start));
             start = end + 1;
         }
 
@@ -95,6 +90,25 @@ namespace string {
         return replaceFast(str, from, to);
     }
 
+    PURE static __forceinline std::string replace(const std::string_view &str,
+                                                  const std::string_view &from, const std::string_view &to) {
+        if (UNLIKELY(str.empty() || from.empty())) {
+            return std::string(str);
+        }
+
+        auto result = std::ostringstream();
+        size_t start = 0, end;
+
+        while (LIKELY((end = str.find(from, start)) != std::string_view::npos)) {
+            result << str.substr(start, end - start) << to;
+            start = end + from.size();
+        }
+
+        result << str.substr(start);  // 追加剩余部分
+        return result.str();
+    }
+
+
     PURE static __forceinline constexpr size_t count(const std::string_view &str, const char ch) {
         size_t result = 0;
 
@@ -115,6 +129,27 @@ namespace string {
         return std::ranges::all_of(str.begin(), str.end(), [](const char c) -> bool {
             return LIKELY(LIKELY(c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-');
         });
+    }
+
+    PURE static __forceinline constexpr std::string toLowerCase(std::string str) noexcept {
+        for (auto &c: str) {
+            c = (char) tolower(c);
+        }
+        return str;
+    }
+
+    PURE static __forceinline constexpr std::string toLowerCase(const std::string_view &str) noexcept {
+        return toLowerCase(std::string(str));
+    }
+
+    PURE static __forceinline std::string join(const std::vector<std::string_view> &parts,
+                                               const std::string &delimiter) {
+        auto result = std::ostringstream();
+        for (size_t i = 0; i < parts.size(); ++i) {
+            if (i > 0) result << delimiter;
+            result << parts[i];
+        }
+        return result.str();
     }
 }
 
@@ -146,7 +181,7 @@ static inline void printStacktrace() noexcept {
     const auto threadName = getThreadName();
     const auto stacktrace = getStacktrace();
 
-    std::cerr << fmt::format("Exception in thread \"{}\" with an unknown exception.", threadName);
+    std::cerr << fmt::format("Exception in thread \"{}\" with an unknown exception.\n", threadName);
 
     size_t unknownCount = 0;
     for (const auto &element: stacktrace) {

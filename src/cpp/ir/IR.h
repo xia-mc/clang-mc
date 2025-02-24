@@ -34,7 +34,7 @@ public:
 
     GETTER(Values, values);
 
-    void parse(std::string code);
+    void parse(std::string &&code);
 
     [[nodiscard]] McFunctions compile();
 

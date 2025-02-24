@@ -22,6 +22,8 @@ cli.arg.invalid_namespace: invalid namespace
 ir.op.mov.immediate_left: the left operand of 'mov' cannot be an immediate value
 ir.op.empty_value: operand cannot be empty
 ir.op.out_of_range: immediate value out of range
+ir.op.scale_out_of_range: scale value out of range
+ir.op.invalid_ptr: invalid memory operand
 ir.value.register.unknown_register: unknown register '{}'
 ir.errors_generated: "{} errors generated"
 ir.invalid_mov: "invalid 'mov' instruction: '{}'"

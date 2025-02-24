@@ -95,7 +95,7 @@ __forceinline void ClangMc::ensureBuildDir() {
     }
 }
 
-__forceinline std::vector<IR> ClangMc::loadIRCode() {
+[[nodiscard]] std::vector<IR> ClangMc::loadIRCode() {
     auto irs = std::vector<IR>();
     try {
         for (const auto &path: config.getInput()) {
@@ -103,7 +103,9 @@ __forceinline std::vector<IR> ClangMc::loadIRCode() {
         }
 
         Verifier(logger, config, irs).verify();
-        std::for_each(irs.begin(), irs.end(), FUNC_ARG0(freeSource));
+        if (!config.getDebugInfo()) {
+            std::for_each(irs.begin(), irs.end(), FUNC_ARG0(freeSource));
+        }
 
         return irs;
     } catch (const IOException &e) {

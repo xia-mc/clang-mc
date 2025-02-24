@@ -15,9 +15,9 @@ private:
     const ValuePtr left;
     const ValuePtr right;
 public:
-    explicit Mov(const ui64 lineNumber, ValuePtr left, ValuePtr right)
+    explicit Mov(const ui64 lineNumber, ValuePtr &&left, ValuePtr &&right)
             : Op("mov", lineNumber), left(std::move(left)), right(std::move(right)) {
-        if (UNLIKELY(INSTANCEOF_SHARED(this->left, Immediate))) {
+        if (INSTANCEOF_SHARED(this->left, Immediate)) {
             throw ParseException(i18n("ir.op.mov.immediate_left"));
         }
     }
@@ -27,19 +27,34 @@ public:
     }
 
     [[nodiscard]] std::string compile() const override {
-        if (UNLIKELY(!INSTANCEOF_SHARED(left, RegisterImpl))) {
-            NOT_IMPLEMENTED();
-        }
-        auto result = CAST_SHARED(left, RegisterImpl)->getName();
+        if (const auto &immediate = INSTANCEOF_SHARED(right, Immediate)) {
+            if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
+                return fmt::format("scoreboard players set {} vm_regs {}",
+                                   result->getName(), immediate->getValue());
+            } else {
+                assert(INSTANCEOF_SHARED(left, Ptr));
 
-        if (auto immediate = INSTANCEOF_SHARED(right, Immediate)) {
-            return fmt::format("scoreboard players set {} vm_regs {}",
-                               result, immediate->getValue());
-        } else if (auto reg = INSTANCEOF_SHARED(right, RegisterImpl)) {
-            return fmt::format("scoreboard players operation {} vm_regs = {} vm_regs",
-                               result, reg->getName());
-        } else [[unlikely]] {
-            NOT_IMPLEMENTED();
+                return CAST_FAST(left, Ptr)->store(*immediate);
+            }
+        } else if (const auto &reg = INSTANCEOF_SHARED(right, Register)) {
+            if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
+                return fmt::format("scoreboard players operation {} vm_regs = {} vm_regs",
+                                   result->getName(), reg->getName());
+            } else {
+                assert(INSTANCEOF_SHARED(left, Ptr));
+
+                return CAST_FAST(left, Ptr)->store(*reg);
+            }
+        } else {
+            assert(INSTANCEOF_SHARED(right, Ptr));
+
+            if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
+                return CAST_FAST(right, Ptr)->load(*result);
+            } else {
+                assert(INSTANCEOF_SHARED(left, Ptr));
+
+                return CAST_FAST(left, Ptr)->store(*CAST_FAST(right, Ptr));
+            }
         }
     }
 };

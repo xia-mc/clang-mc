@@ -8,9 +8,9 @@
 #include "ir/ops/Jmp.h"
 #include "ir/ops/Call.h"
 
-void IR::parse(std::string code) {
-    auto lines = string::split(code, '\n');
+void IR::parse(std::string &&code) {
     this->sourceCode = std::move(code);
+    auto lines = string::split(sourceCode, '\n');
 
     size_t errors = 0;
     for (size_t i = 0; i < lines.size(); ++i) {
@@ -26,7 +26,7 @@ void IR::parse(std::string code) {
             this->sourceMap.emplace(op.get(), lines[i]);
             this->values.push_back(std::move(op));
         } catch (const ParseException &e) {
-            logger->error(createIRMessage(file, lineNumber, line, e.what()));
+            logger->error(createIRMessage(file, lineNumber, lines[i], e.what()));
             errors++;
         }
     }
@@ -57,14 +57,18 @@ static inline Path toPath(const std::string &mcPath) {
 
     assert(string::count(mcPath, ':') == 1);
     auto splits = string::split(mcPath, ':', 2);
-    return data / splits[0] / function / splits[1] / mcfunction;
+    auto result = data / splits[0] / function / splits[1];
+    result += mcfunction;
+    return result;
 }
 
 __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
     auto labelOp = CAST_FAST(this->values[0], Label);
     Hash label = hash(labelOp->getLabel());
     callLabels.emplace(label, createForCall(labelOp));
-    jmpLabels.emplace(label, createForJmp(labelOp));
+    if (!labelOp->getExtern()) {
+        jmpLabels.emplace(label, createForJmp(labelOp));
+    }
 
     for (size_t i = 1; i < this->values.size(); ++i) {
         const auto &op = this->values[i];
@@ -78,12 +82,14 @@ __forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
         assert(!callLabels.contains(label));
         assert(!jmpLabels.contains(label));
         callLabels.emplace(label, createForCall(labelOp));
-        jmpLabels.emplace(label, createForJmp(labelOp));
+        if (!labelOp->getExtern()) {
+            jmpLabels.emplace(label, createForJmp(labelOp));
+        }
     }
 }
 
-static inline constexpr std::string_view JMP_LAST_TEMPLATE = "execute if function {} run return 0";
-static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} run return 0\nfunction {}";
+static inline constexpr std::string_view JMP_LAST_TEMPLATE = "return run function {}";
+static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} run return 1\nfunction {}";
 
 [[nodiscard]] McFunctions IR::compile() {
     auto result = McFunctions();
@@ -119,15 +125,20 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
                         ->compile(jmpLabels) << '\n';
             }
 
-            auto callTarget = toPath(callLabels[lastLabel]);
-            auto jmpTarget = toPath(jmpLabels[lastLabel]);
-            result.emplace(callTarget, builder.str());
-            result.emplace(jmpTarget, fmt::format(JMP_TEMPLATE,
-                                                  callLabels[lastLabel], callLabels[label]));
+            if (jmpLabels.contains(lastLabel)) {  // 不是extern
+                auto callTarget = toPath(callLabels[lastLabel]);
+                result.emplace(callTarget, builder.str());
+
+                auto jmpTarget = toPath(jmpLabels[lastLabel]);
+                result.emplace(jmpTarget, fmt::format(JMP_TEMPLATE,
+                                                      callLabels[lastLabel], callLabels[label]));
+                if (config.getDebugInfo()) {
+                    result[jmpTarget] = debugMessage + "# type: jmp\n\n" + result[jmpTarget];
+                    result[callTarget] = debugMessage + "# type: call\n\n" + result[callTarget];
+                }
+            }
 
             if (config.getDebugInfo()) {
-                result[callTarget] = debugMessage + "# type: call\n\n" + result[callTarget];
-                result[jmpTarget] = debugMessage + "# type: jmp\n\n" + result[jmpTarget];
                 debugMessage = fmt::format("# file: '{}'\n# label: '{}'\n",
                                            file.string(), CAST_FAST(op, Label)->getLabel());
             }
@@ -139,7 +150,12 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
         }
 
         if (config.getDebugInfo()) {
-            builder << "# " << op->toString() << '\n';
+            const auto source = string::trim(getSource(op.get()));
+            const auto strEval = op->toString();
+            builder << "# " << source << '\n';
+            if (source != strEval) {
+                builder << "# aka '" << strEval << "'\n";
+            }
         }
 
         SWITCH_STR (op->getName()) {
@@ -159,14 +175,16 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
         }
     }
 
-    auto callTarget = toPath(callLabels[label]);
-    auto jmpTarget = toPath(jmpLabels[label]);
-    result.emplace(callTarget, builder.str());
-    result.emplace(jmpTarget, fmt::format(JMP_LAST_TEMPLATE, callLabels[label]));
+    if (jmpLabels.contains(label)) {
+        auto callTarget = toPath(callLabels[label]);
+        result.emplace(callTarget, builder.str());
+        auto jmpTarget = toPath(jmpLabels[label]);
+        result.emplace(jmpTarget, fmt::format(JMP_LAST_TEMPLATE, callLabels[label]));
 
-    if (config.getDebugInfo()) {
-        result[callTarget] = debugMessage + "# type: call\n\n" + result[callTarget];
-        result[jmpTarget] = debugMessage + "# type: jmp\n\n" + result[jmpTarget] + "\n# undefined from here";
+        if (config.getDebugInfo()) {
+            result[jmpTarget] = debugMessage + "# type: jmp\n\n" + result[jmpTarget] + "\n# undefined from here";
+            result[callTarget] = debugMessage + "# type: call\n\n" + result[callTarget];
+        }
     }
 
     return result;
