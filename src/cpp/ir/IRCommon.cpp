@@ -9,7 +9,7 @@
 #include "ir/ops/Jmp.h"
 #include "ir/ops/Call.h"
 
-static OpPtr createMov(const ui64 lineNumber, const std::string_view &args) {
+static __forceinline OpPtr createMov(const ui64 lineNumber, const std::string_view &args) {
     auto parts = string::split(args, ',');
     if (UNLIKELY(parts.size() != 2)) {
         throw ParseException(i18nFormat("ir.invalid_mov", args));
@@ -21,7 +21,7 @@ static OpPtr createMov(const ui64 lineNumber, const std::string_view &args) {
     return std::make_unique<Mov>(lineNumber, createValue(leftStr), createValue(rightStr));
 }
 
-static OpPtr createLabel(const ui64 lineNumber, const std::string_view &string) {
+static __forceinline OpPtr createLabel(const ui64 lineNumber, const std::string_view &string) {
     assert(!string.empty());
     assert(string[string.length() - 1] == ':');
 
@@ -56,7 +56,7 @@ PURE OpPtr createOp(const ui64 lineNumber, const std::string_view &string) {
     auto parts = string::split(string, ' ', 2);
     assert(!parts.empty());
 
-    auto op = parts[0];
+    auto op = string::toLowerCase(parts[0]);
     auto args = parts.size() == 1 ? "" : parts[1];
 
     SWITCH_STR (op) {

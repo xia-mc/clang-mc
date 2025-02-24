@@ -41,18 +41,25 @@ VerifyResult Verifier::handleSingle(IR &ir) {
         return VerifyResult(std::move(definedLabels), std::move(undefinedLabels), std::move(unusedLabels));
     }
 
+    static const auto reportUnreachable = [&](const int start) {
+        const auto firstLabel = findNextLabel(ops, start, ops.size() - 1);
+
+        if (warn(i18n("ir.verify.unreachable"))) {
+            note(i18n("ir.verify.unreachable_before"), &ir, ops[firstLabel].get());
+        }
+
+        // 避免后续编译时预期的代码流非法
+        ops.erase(ops.begin(), ops.begin() + static_cast<i32>(firstLabel));  // 不可能有那么多元素
+    };
+
     currentIR = &ir;
     if (const auto &op = ops[0]) {
         currentOp = op.get();
         if (!INSTANCEOF(op, Label)) {
-            const auto firstLabel = findNextLabel(ops, 1, ops.size() - 1);
-
-            if (warn(i18n("ir.verify.unreachable"))) {
-                note(i18n("ir.verify.unreachable_before"), &ir, ops[firstLabel].get());
-            }
-
-            // 避免后续编译时预期的代码流非法
-            ops.erase(ops.begin(), ops.begin() + static_cast<i32>(firstLabel));  // 不可能有那么多元素
+            reportUnreachable(1);
+        } else if (CAST_FAST(op, Label)->getExtern() && ops.size() >= 2 && !INSTANCEOF(ops[1], Label)) {
+            currentOp = ops[1].get();
+            reportUnreachable(2);
         }
     }
 
@@ -91,6 +98,11 @@ VerifyResult Verifier::handleSingle(IR &ir) {
 
                 if (definedLabels.contains(label)) {
                     unusedLabels.erase(label);
+                    if (INSTANCEOF(op, Jmp) && definedLabels[label]->getExtern()) {
+                        if (error("jmp to an extern label is not allowed.")) {
+                            note(i18n("ir.verify.previous_definition"), &ir, definedLabels[label]);
+                        }
+                    }
                 } else {
                     undefinedLabels[label].push_back(callLike);
                 }

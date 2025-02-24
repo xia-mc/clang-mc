@@ -10,27 +10,13 @@
 #include "ir/values/Value.h"
 #include "ir/values/Immediate.h"
 #include "ir/values/Register.h"
+#include "ir/values/Ptr.h"
 #include "i18n/I18n.h"
 
 using ValuePtr = std::shared_ptr<Value>;
 using OpPtr = std::unique_ptr<Op>;
 using LabelMap = HashMap<Hash, std::string>;
 
-static inline ValuePtr createValue(const std::string &string) {
-    if (string.empty()) {
-        throw ParseException(i18n("ir.op.empty_value"));
-    }
-
-    auto firstChar = string[0];
-    if (isdigit(firstChar)) {
-        try {
-            return std::make_shared<Immediate>(std::stoi(string));
-        } catch (const std::out_of_range &e) {
-            throw ParseException(i18n("ir.op.out_of_range"));
-        }
-    } else {
-        return Register::fromName(string);
-    }
-}
+PURE ValuePtr createValue(const std::string &string);
 
 #endif //CLANG_MC_OPCOMMON_H

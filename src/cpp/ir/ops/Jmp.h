@@ -24,7 +24,7 @@ public:
 
     [[nodiscard]] virtual std::string compile(const LabelMap &jmpLabels) const {
         assert(jmpLabels.contains(hash(label)));
-        return fmt::format("function {}", jmpLabels.at(hash(label)));
+        return fmt::format("return run function {}", jmpLabels.at(hash(label)));
     }
 };
 
