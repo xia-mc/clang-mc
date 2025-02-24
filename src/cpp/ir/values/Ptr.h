@@ -48,7 +48,7 @@ public:
     const i32 displacement;
 
     void setPtr(std::ostringstream &result, const std::string &fieldName) const {
-        static const auto addDisplacementToS0 = [&](){
+        const auto addDisplacementToS0 = [&](){
             if (displacement != 0) {
                 if (displacement > 0) {
                     result << fmt::format("scoreboard players add s0 vm_regs {}\n", displacement);
