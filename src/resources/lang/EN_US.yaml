@@ -19,14 +19,15 @@ cli.debug_mode: DEBUG MODE
 cli.arg.empty_input_file: input file path cannot be empty
 cli.arg.missing_arg: "missing argument for option '{}'"
 cli.arg.invalid_namespace: invalid namespace
-ir.op.mov.immediate_left: the left operand of 'mov' cannot be an immediate value
+ir.op.immediate_left: the left operand cannot be an immediate value
+ir.op.memory_operands: "the operation cannot have both operands as memory locations"
 ir.op.empty_value: operand cannot be empty
 ir.op.out_of_range: immediate value out of range
 ir.op.scale_out_of_range: scale value out of range
 ir.op.invalid_ptr: invalid memory operand
 ir.value.register.unknown_register: unknown register '{}'
 ir.errors_generated: "{} errors generated"
-ir.invalid_mov: "invalid 'mov' instruction: '{}'"
+ir.invalid_op: "invalid instruction: '{}'"
 ir.invalid_label: label name cannot contain spaces
 ir.invalid_label_identifier: expected a valid label identifier, but found '{}'
 ir.unknown_op: "unknown instruction: '{}'"
