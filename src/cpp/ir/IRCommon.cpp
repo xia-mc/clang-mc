@@ -8,17 +8,19 @@
 #include "ir/ops/Ret.h"
 #include "ir/ops/Jmp.h"
 #include "ir/ops/Call.h"
+#include "ir/ops/Add.h"
 
-static __forceinline OpPtr createMov(const ui64 lineNumber, const std::string_view &args) {
+template<typename T>
+static OpPtr createWith2Arg(const ui64 lineNumber, const std::string_view &args) {
     auto parts = string::split(args, ',');
     if (UNLIKELY(parts.size() != 2)) {
-        throw ParseException(i18nFormat("ir.invalid_mov", args));
+        throw ParseException(i18nFormat("ir.invalid_op", args));
     }
 
     auto leftStr = std::string(string::trim(parts[0]));
     auto rightStr = std::string(string::trim(parts[1]));
 
-    return std::make_unique<Mov>(lineNumber, createValue(leftStr), createValue(rightStr));
+    return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr));
 }
 
 static __forceinline OpPtr createLabel(const ui64 lineNumber, const std::string_view &string) {
@@ -61,7 +63,9 @@ PURE OpPtr createOp(const ui64 lineNumber, const std::string_view &string) {
 
     SWITCH_STR (op) {
         CASE_STR("mov"):
-            return createMov(lineNumber, args);
+            return createWith2Arg<Mov>(lineNumber, args);
+        CASE_STR("add"):
+            return createWith2Arg<Add>(lineNumber, args);
         CASE_STR("ret"):
             return std::make_unique<Ret>(lineNumber);
         CASE_STR("jmp"):

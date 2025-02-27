@@ -18,7 +18,7 @@ public:
     explicit Mov(const ui64 lineNumber, ValuePtr &&left, ValuePtr &&right)
             : Op("mov", lineNumber), left(std::move(left)), right(std::move(right)) {
         if (INSTANCEOF_SHARED(this->left, Immediate)) {
-            throw ParseException(i18n("ir.op.mov.immediate_left"));
+            throw ParseException(i18n("ir.op.immediate_left"));
         }
     }
 
