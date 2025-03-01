@@ -8,9 +8,25 @@
 #include "utils/FileUtils.h"
 #include "ir/verify/Verifier.h"
 #include "i18n/LogFormatter.h"
+#include "utils/Native.h"
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <execution>
+
+static inline constexpr auto PACK_MCMETA = \
+"{\n"
+"    \"pack\": {\n"
+"        \"description\": \"\",\n"
+"        \"pack_format\": 61\n"
+"    }\n"
+"}";
+
+#ifndef NDEBUG
+static inline const auto RESOURCES_PATH = exists(Path("resources")) ? Path("resources") : Path("../src/resources");
+#else
+static inline const auto RESOURCES_PATH = Path("resources");
+#endif
+static inline const auto STDLIB_PATH = RESOURCES_PATH / "stdlib";
 
 ClangMc::ClangMc(const Config &config) : config(config) {
     auto consoleSink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
@@ -36,6 +52,7 @@ ClangMc::~ClangMc() {
 
 void ClangMc::start() {
     // initializing
+    ensureEnvironment();
     ensureValidConfig();
     ensureBuildDir();
 
@@ -60,16 +77,40 @@ void ClangMc::start() {
         }
     }
 
-    // TODO linking
+    // linking
+    writeFileIfNotExist(config.getBuildDir() / "pack.mcmeta", PACK_MCMETA);
+    // static link stdlib
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(STDLIB_PATH)) {
+        Path path = entry.path();
+        if (is_regular_file(path) && path.extension() != ".mcmeta") {
+            auto target = config.getBuildDir() / relative(path, STDLIB_PATH);
+            ensureParentDir(target);
+            writeFileIfNotExist(target, readFile(path));
+        }
+    }
+    auto output = config.getOutput();
+    output += ".zip";
+    compressFolder(config.getBuildDir(), output);
 }
 
 [[noreturn]] void ClangMc::exit() {
     spdlog::drop_all();
+#ifndef NDEBUG
+    fprintf(stderr, "Called ClangMc::exit.\n");
+    onTerminate();
+#endif
     std::exit(0);
     UNREACHABLE();
 }
 
-__forceinline void ClangMc::ensureValidConfig() {
+void ClangMc::ensureEnvironment() const {
+    if (!(exists(RESOURCES_PATH) && is_directory(RESOURCES_PATH))) {
+        logger->error(i18n("general.environment_error"));
+        exit();
+    }
+}
+
+void ClangMc::ensureValidConfig() {
     if (config.getInput().empty()) {
         logger->error(i18n("general.no_input_files"));
         exit();
@@ -82,7 +123,7 @@ __forceinline void ClangMc::ensureValidConfig() {
     }
 }
 
-__forceinline void ClangMc::ensureBuildDir() {
+void ClangMc::ensureBuildDir() {
     const Path &dir = config.getBuildDir();
     try {
         if (exists(dir)) {
