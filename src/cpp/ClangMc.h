@@ -25,6 +25,7 @@ public:
 
     [[noreturn]] static void exit();
 private:
+    void ensureEnvironment() const;
 
     void ensureValidConfig();
 

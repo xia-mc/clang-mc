@@ -19,7 +19,6 @@ private:
     std::string sourceCode;  // 维持sourceMap中的view
     HashMap<const Op *, std::string_view> sourceMap = HashMap<const Op *, std::string_view>();
     std::vector<OpPtr> values = std::vector<OpPtr>();
-    NameGenerator nameGenerator = NameGenerator();
 
     std::string createForCall(const Label *labelOp);
 
@@ -49,6 +48,11 @@ public:
     __forceinline void freeSource() {
         sourceCode.clear();
         sourceMap.clear();
+    }
+
+    static inline std::string generateName() {
+        static auto generator = NameGenerator();
+        return generator.generate();
     }
 };
 

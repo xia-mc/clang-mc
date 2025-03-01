@@ -9,6 +9,16 @@
 #include "ir/ops/Jmp.h"
 #include "ir/ops/Call.h"
 #include "ir/ops/Add.h"
+#include "ir/ops/Inline.h"
+#include "ir/ops/Push.h"
+#include "ir/ops/Pop.h"
+#include "ir/ops/Peek.h"
+#include "ir/ops/Je.h"
+
+template<typename T>
+static OpPtr createWith1Arg(const ui64 lineNumber, const std::string_view &args) {
+    return std::make_unique<T>(lineNumber, std::string(args));
+}
 
 template<typename T>
 static OpPtr createWith2Arg(const ui64 lineNumber, const std::string_view &args) {
@@ -49,6 +59,20 @@ static __forceinline OpPtr createLabel(const ui64 lineNumber, const std::string_
     return std::make_unique<Label>(lineNumber, name, false, false);
 }
 
+template<typename T>
+static OpPtr createConJmp(const ui64 lineNumber, const std::string_view &args) {
+    auto parts = string::split(args, ',');
+    if (UNLIKELY(parts.size() != 3)) {
+        throw ParseException(i18nFormat("ir.invalid_op", args));
+    }
+
+    auto leftStr = std::string(string::trim(parts[0]));
+    auto rightStr = std::string(string::trim(parts[1]));
+    auto label = std::string(string::trim(parts[2]));
+
+    return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr), label);
+}
+
 PURE OpPtr createOp(const ui64 lineNumber, const std::string_view &string) {
     assert(!string.empty());
     if (UNLIKELY(string[string.length() - 1] == ':')) {
@@ -69,9 +93,19 @@ PURE OpPtr createOp(const ui64 lineNumber, const std::string_view &string) {
         CASE_STR("ret"):
             return std::make_unique<Ret>(lineNumber);
         CASE_STR("jmp"):
-            return std::make_unique<Jmp>(lineNumber, std::string(args));
+            return createWith1Arg<Jmp>(lineNumber, args);
         CASE_STR("call"):
-            return std::make_unique<Call>(lineNumber, std::string(args));
+            return createWith1Arg<Call>(lineNumber, args);
+        CASE_STR("je"):
+            return createConJmp<Je>(lineNumber, args);
+        CASE_STR("inline"):
+            return std::make_unique<Inline>(lineNumber, std::string(args));
+        CASE_STR("push"):
+            return std::make_unique<Push>(lineNumber, Registers::fromName(args).get());
+        CASE_STR("pop"):
+            return std::make_unique<Pop>(lineNumber, Registers::fromName(args).get());
+        CASE_STR("peek"):
+            return std::make_unique<Peek>(lineNumber, Registers::fromName(args).get());
         default: [[unlikely]]
             throw ParseException(i18nFormat("ir.unknown_op", op));
     }

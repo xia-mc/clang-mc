@@ -6,7 +6,6 @@
 #include "utils/StringUtils.h"
 #include "ir/ops/Label.h"
 #include "ir/ops/Jmp.h"
-#include "ir/ops/Call.h"
 
 void IR::parse(std::string &&code) {
     this->sourceCode = std::move(code);
@@ -42,12 +41,12 @@ __forceinline std::string IR::createForCall(const Label *labelOp) {
         return labelOp->getLabel();
     }
 
-    return fmt::format("{}{}", config.getNameSpace(), nameGenerator.generate());
+    return fmt::format("{}{}", config.getNameSpace(), generateName());
 }
 
 __forceinline std::string IR::createForJmp(const Label *labelOp) {
     assert(!labelOp->getExtern());
-    return fmt::format("{}{}", config.getNameSpace(), nameGenerator.generate());
+    return fmt::format("{}{}", config.getNameSpace(), generateName());
 }
 
 static inline Path toPath(const std::string &mcPath) {
@@ -98,8 +97,7 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
     }
     assert(INSTANCEOF(this->values[0], Label));
 
-    auto labelOp = CAST_FAST(this->values[0], Label);
-    Hash label = labelOp->getLabelHash();
+    Hash label = CAST_FAST(this->values[0], Label)->getLabelHash();
     auto callLabels = LabelMap();
     auto jmpLabels = LabelMap();
     initLabels(callLabels, jmpLabels);
@@ -115,14 +113,14 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
     bool unreachable = false;
     for (size_t i = 1; i < this->values.size(); ++i) {
         const auto &op = this->values[i];
-        if (op->getName() == "label") {
+        if (const auto &labelOp = INSTANCEOF(op, Label)) {
             auto lastLabel = label;
-            label = CAST_FAST(op, Label)->getLabelHash();
+            label = labelOp->getLabelHash();
 
             if (!unreachable) {
                 // 因为实际上采用“代码块”模式编译，而不是label，所以每个代码块末尾都需要显式跳转到下个代码块
-                builder << std::make_unique<Jmp>(0, CAST_FAST(op, Label)->getLabel())
-                        ->compile(jmpLabels) << '\n';
+                auto jmp = std::make_unique<Jmp>(0, labelOp->getLabel());
+                builder << jmp->compile(callLabels, jmpLabels) << '\n';
             }
 
             if (jmpLabels.contains(lastLabel)) {  // 不是extern
@@ -140,7 +138,7 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
 
             if (config.getDebugInfo()) {
                 debugMessage = fmt::format("# file: '{}'\n# label: '{}'\n",
-                                           file.string(), CAST_FAST(op, Label)->getLabel());
+                                           file.string(), labelOp->getLabel());
             }
 
             builder.str("");
@@ -158,16 +156,14 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
             }
         }
 
-        SWITCH_STR (op->getName()) {
-            CASE_STR("jmp"):
-                builder << CAST_FAST(op, Jmp)->compile(jmpLabels) << '\n';
-                break;
-            CASE_STR("call"):
-                builder << CAST_FAST(op, Call)->compile(callLabels) << '\n';
-                break;
-            default:
-                builder << op->compile() << '\n';
-                break;
+        std::string compiled;
+        if (const auto &callLike = INSTANCEOF(op, CallLike)) {
+            compiled = callLike->compile(callLabels, jmpLabels);
+        } else {
+            compiled = op->compile();
+        }
+        if (!compiled.empty()) {
+            builder << compiled << '\n';
         }
 
         if (isTerminate(op)) {

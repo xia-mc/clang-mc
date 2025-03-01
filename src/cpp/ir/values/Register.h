@@ -14,8 +14,9 @@ class Registers;
 class Register : public Value {
 private:
     const std::string name;
+    const bool pushable;
 
-    explicit Register(std::string name) noexcept: name(std::move(name)) {
+    explicit Register(std::string name, bool pushable) noexcept: name(std::move(name)), pushable(pushable) {
     }
 
     friend class Registers;
@@ -25,6 +26,8 @@ public:
 
     GETTER(Name, name);
 
+    GETTER_POD(Pushable, pushable)
+
     std::string toString() const noexcept override {
         return getName();
     }
@@ -32,8 +35,12 @@ public:
 
 class Registers {
 private:
+    static std::shared_ptr<Register> create(const std::string &name, const bool pushable) {
+        return std::shared_ptr<Register>(new Register(name, pushable));
+    }
+
     static std::shared_ptr<Register> create(const std::string &name) {
-        return std::shared_ptr<Register>(new Register(name));
+        return create(name, true);
     }
 
 public:
@@ -51,13 +58,13 @@ public:
     static inline const auto T3 = create("t3");  // 临时寄存器4 caller-saved
 
     // VM内部保留寄存器
-    static inline const auto RIP = create("rip");  // 程序计数器
-    static inline const auto RSP = create("rsp");  // 栈指针
-    static inline const auto SHP = create("shp");  // 堆大小
-    static inline const auto SPP = create("spp");  // 字符串堆大小
-    static inline const auto SAP = create("sap");  // 字符串堆空闲空间指针
-    static inline const auto S0 = create("s0");  // 标准库保留
-    static inline const auto S1 = create("s1");  // 标准库保留
+    static inline const auto RIP = create("rip", false);  // 程序计数器
+    static inline const auto RSP = create("rsp", false);  // 栈指针
+    static inline const auto SHP = create("shp", false);  // 堆大小
+    static inline const auto SPP = create("spp", false);  // 字符串堆大小
+    static inline const auto SAP = create("sap", false);  // 字符串堆空闲空间指针
+    static inline const auto S0 = create("s0", false);  // 标准库保留
+    static inline const auto S1 = create("s1", false);  // 标准库保留
 
     static std::shared_ptr<Register> fromName(const std::string_view &name) {
         SWITCH_STR (string::toLowerCase(name)) {

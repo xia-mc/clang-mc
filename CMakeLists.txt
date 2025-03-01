@@ -70,6 +70,12 @@ add_executable(clang-mc
         src/cpp/ir/ops/OpCommon.cpp
         src/cpp/utils/Native.c
         src/cpp/utils/Native.h
+        src/cpp/ir/ops/Inline.h
+        src/cpp/ir/ops/Push.h
+        src/cpp/ir/ops/Pop.h
+        src/cpp/ir/ops/Peek.h
+        src/cpp/ir/ops/Je.h
+        src/cpp/ir/ops/CmpLike.h
 )
 
 
@@ -101,6 +107,9 @@ endif ()
 if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static-md/share/yaml-cpp/yaml-cpp-config.cmake")
     set(yaml-cpp_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static-md/share/yaml-cpp")
 endif ()
+if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static/share/libzip/libzip-config.cmake")
+    set(libzip_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static/share/libzip")
+endif ()
 
 
 # Libraries
@@ -121,3 +130,6 @@ endif()
 
 find_package(yaml-cpp CONFIG REQUIRED)
 target_link_libraries(clang-mc PRIVATE yaml-cpp::yaml-cpp)
+
+find_package(libzip CONFIG REQUIRED)
+target_link_libraries(clang-mc PRIVATE libzip::zip)

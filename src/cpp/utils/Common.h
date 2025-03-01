@@ -50,10 +50,10 @@ public:
     }
 };
 
-#define GETTER(name, field) __forceinline constexpr auto &get##name() noexcept { return field; } __forceinline constexpr const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
-#define GETTER_POD(name, field) __forceinline constexpr auto get##name() const noexcept { return field; }
-#define SETTER(name, field) __forceinline constexpr void set##name(const auto &value) noexcept { field = value; }
-#define SETTER_POD(name, field) __forceinline constexpr void set##name(auto value) noexcept { field = value; }
+#define GETTER(name, field) __forceinline auto &get##name() noexcept { return field; } __forceinline const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
+#define GETTER_POD(name, field) __forceinline auto get##name() const noexcept { return field; }
+#define SETTER(name, field) __forceinline void set##name(const auto &value) noexcept { field = value; }
+#define SETTER_POD(name, field) __forceinline void set##name(auto value) noexcept { field = value; }
 
 #define DATA(name, field) GETTER(name, field) SETTER(name, field)
 #define DATA_POD(name, field) GETTER_POD(name, field) SETTER_POD(name, field)

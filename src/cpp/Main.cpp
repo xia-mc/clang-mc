@@ -65,6 +65,5 @@ extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
     } catch (...) {
         printStacktrace();
     }
-
     return 1;
 }

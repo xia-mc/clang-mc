@@ -56,3 +56,5 @@ data modify storage std:vm s6 set value {}
 scoreboard players set r0 vm_regs 64
 function std:heap/expand
 scoreboard players set r0 vm_regs 0
+
+function std:_internal/__init__

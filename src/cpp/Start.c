@@ -30,7 +30,7 @@ static __forceinline bool isVCRuntimeAvailable() {
 
 int main(const int argc, const char *argv[]) {
 #ifdef _WIN32
-    volatile bool envReady = isVCRuntimeAvailable();
+    const volatile bool envReady = isVCRuntimeAvailable();
 
     if (envReady) {
         return init(argc, argv);

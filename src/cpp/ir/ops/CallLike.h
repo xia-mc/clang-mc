@@ -11,18 +11,24 @@
 #include "utils/StringUtils.h"
 #include "OpCommon.h"
 
-class CallLike : public Op {
+class CallLike : public virtual Op {
 protected:
     const std::string label;
     const Hash labelHash;
 public:
-    explicit CallLike(const std::string &name, ui64 lineNumber, std::string label) noexcept:
-            Op(name, lineNumber), label(std::move(label)), labelHash(hash(this->label)) {
+    explicit CallLike(std::string label) noexcept: label(std::move(label)), labelHash(hash(this->label)) {
     }
 
     GETTER(Label, label);
 
     GETTER_POD(LabelHash, labelHash);
+
+    [[nodiscard]] std::string compile() const override {
+        throw UnsupportedOperationException("Op can't be compile normally.");
+    }
+
+    [[nodiscard]] virtual std::string compile([[maybe_unused]] const LabelMap &callLabels,
+                                              [[maybe_unused]] const LabelMap &jmpLabels) const = 0;
 };
 
 #endif //CLANG_MC_CALLLIKE_H

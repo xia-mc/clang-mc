@@ -5,14 +5,7 @@
 #ifndef CLANG_MC_NAMEGENERATOR_H
 #define CLANG_MC_NAMEGENERATOR_H
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <unordered_map>
-#include <algorithm>
-#include <random>
-#include <sstream>
-#include "Common.h"
+#include <cstdlib>
 
 class NameGenerator {
 private:
