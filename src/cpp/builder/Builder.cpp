@@ -4,11 +4,12 @@
 
 #include "Builder.h"
 #include "utils/FileUtils.h"
+#include "utils/CLIUtils.h"
 #include "PostOptimizer.h"
 
-static inline const auto ASSETS_PATH = Path("assets");
+static inline Path ASSETS_PATH;
 
-static inline const auto STDLIB_PATH = ASSETS_PATH / "stdlib";
+static inline Path STDLIB_PATH;
 
 static inline constexpr auto PACK_MCMETA = \
 "{\n"
@@ -19,6 +20,8 @@ static inline constexpr auto PACK_MCMETA = \
 "}";
 
 bool Builder::checkResources() {
+    ASSETS_PATH = Path(getExecutableDir(getArgv0())) / "assets";
+    STDLIB_PATH = ASSETS_PATH / "stdlib";
 #pragma unroll
     for (const auto &path : {ASSETS_PATH, STDLIB_PATH}) {
         if (!exists(path) || !is_directory(path)) return false;

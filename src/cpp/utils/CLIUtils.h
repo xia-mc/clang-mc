@@ -9,7 +9,15 @@
 #include "ClangMc.h"
 #include "i18n/I18n.h"
 
-PURE static inline std::string getExecutableName(const std::string& argv0) {
+extern int ARGC;
+extern const char **ARGV;
+
+static inline const char *getArgv0() {
+    if (ARGC == 0) return "";
+    return *ARGV;
+}
+
+PURE static inline std::string getExecutableName(const std::string_view& argv0) {
     if (argv0.empty()) {  // 基本不可能发生，我想
 #ifdef _WIN32
         return "clang-mc.exe";
@@ -20,7 +28,7 @@ PURE static inline std::string getExecutableName(const std::string& argv0) {
     return std::filesystem::path(argv0).filename().string();
 }
 
-PURE static inline std::string getExecutableDir(const std::string& argv0) {
+PURE static inline std::string getExecutableDir(const std::string_view& argv0) {
     if (argv0.empty()) {
 #ifdef _WIN32
         return "Unknown";

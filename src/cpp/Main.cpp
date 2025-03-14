@@ -29,6 +29,9 @@ static inline Config parseArgs(const int argc, const char *argv[]) {
 }
 
 extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
+    ARGC = argc;
+    ARGV = argv;
+
     std::set_new_handler(onOOM);
     try {
         std::set_terminate(onTerminate);
@@ -39,8 +42,10 @@ extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
         if (argc == 2) {
             switch (hash(argv[1])) {
                 case hash("--help"):
+                    std::cout << getHelpMessage(getArgv0()) << std::flush;
                     return 0;
                 case hash("--version"):
+                    std::cout << getVersionMessage(getArgv0()) << std::flush;
                     return 0;
             }
         }

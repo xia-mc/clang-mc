@@ -89,6 +89,11 @@ void ArgParser::next(const std::string &arg) {
     if (arg.empty()) {
         throw ParseException(i18n("cli.arg.empty_input_file"));
     }
+    if (arg.length() >= 2 && (arg.front() == '"' || arg.front() == '\'')
+            && (arg.back() == '"' || arg.back() == '\'')) {
+        config.getInput().emplace_back(arg.substr(1, arg.length() - 2));
+        return;
+    }
     config.getInput().emplace_back(arg);
 }
 

@@ -88,6 +88,8 @@ add_executable(clang-mc
         src/cpp/ir/ops/Jl.h
         src/cpp/builder/PostOptimizer.cpp
         src/cpp/builder/PostOptimizer.h
+        src/cpp/ir/ops/Sub.h
+        src/cpp/utils/CLIUtils.cpp
 )
 
 
@@ -132,10 +134,9 @@ set_target_properties(clang-mc PROPERTIES
 add_custom_command(
         TARGET clang-mc
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/src/resources/assets
-        ${CMAKE_BINARY_DIR}/bin/assets
-        COMMENT "Copying assets directory to bin"
+        COMMAND python
+        ${CMAKE_SOURCE_DIR}/src/python/build_assets.py
+        COMMENT "Post building"
 )
 
 
