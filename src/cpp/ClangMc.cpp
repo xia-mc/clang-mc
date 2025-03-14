@@ -61,7 +61,9 @@ void ClangMc::start() {
     builder.build();
 
     // linking
-    builder.link();
+    if (!config.getCompileOnly()) {
+        builder.link();
+    }
 }
 
 [[noreturn]] void ClangMc::exit() {
@@ -89,7 +91,7 @@ void ClangMc::ensureValidConfig() {
         exit();
     }
     if (std::any_of(config.getInput().begin(), config.getInput().end(), [&](const Path &item) {
-        return !item.string().ends_with(".mcasm");
+        return item.extension() != ".mcasm";
     })) {
         logger->error(i18n("general.invalid_input"));
         exit();
