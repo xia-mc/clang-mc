@@ -34,8 +34,8 @@ Check out [Wiki](https://github.com/xia-mc/clang-mc/wiki) to learn more.
 
 - [x] **Basic implementation of the `stdlib` standard library**, establishing a low-overhead virtual machine model on `mcfunction`.
 - [x] **Write a wiki** to define calling conventions, register conventions, stack conventions, etc.
-- [ ] **Implement an assembler (IR)** to translate IR into `mcfunction` code based on `stdlib`.
-- [ ] **Develop a parser** to convert assembly code into IR objects.
+- [x] **Implement an assembler (IR)** to translate IR into `mcfunction` code based on `stdlib`.
+- [x] **Develop a parser** to convert assembly code into IR objects.
 - [ ] **Create a showcase** to demonstrate the advantages of this project and how it improves datapack readability while reducing redundant implementations.
 - [ ] **Enhance `stdlib`** with more advanced abstractions.
 - [ ] **(Long-term goal) Implement an LLVM backend** to generate assembly code (IR).
