@@ -3,11 +3,11 @@
 //
 
 #include "OpCommon.h"
-#include "ir/values/HeapPtr.h"
 #include "i18n/I18n.h"
 
-static i32 parseToNumber(const std::string_view &string) {
+PURE i32 parseToNumber(std::string_view string) {
     assert(!string.empty());
+    string = string::trim(string);
 
     // 字符串（"AB"）或字符（'A'）
     if (string.front() == '"' && string.back() == '"' && string.size() > 2) {
@@ -25,8 +25,18 @@ static i32 parseToNumber(const std::string_view &string) {
     }
 
     // 解析进制
-    int base = 10;
+    i32 base = 10;
     size_t offset = 0;
+    bool isNegtive;
+    if (string.front() == '-') {
+        isNegtive = true;
+        string = string::trim(string.substr(1));
+    } else {
+        isNegtive = false;
+        if (string.front() == '+') {
+            string = string::trim(string.substr(1));
+        }
+    }
 
     if (string.size() > 2) {
         if (string.substr(0, 2) == "0x" || string.substr(0, 2) == "0X") {
@@ -42,24 +52,32 @@ static i32 parseToNumber(const std::string_view &string) {
     }
 
     // 处理后缀（如"101b" "173o"）
-    std::string_view numStr = string;
     if (string.back() == 'b' && string.size() > 1) {
         base = 2;
-        numStr = numStr.substr(0, numStr.size() - 1);
+        string = string.substr(0, string.size() - 1);
     } else if (string.back() == 'o' && string.size() > 1) {
         base = 8;
-        numStr = numStr.substr(0, numStr.size() - 1);
+        string = string.substr(0, string.size() - 1);
     }
 
     // 解析数字
-    i32 result;
+    i64 result;
     auto [ptr, ec] = std::from_chars(
-            numStr.data() + offset, numStr.data() + numStr.size(), result, base);
+            string.data() + offset, string.data() + string.size(), result, base);
 
-    if (ec == std::errc::invalid_argument || ptr != numStr.data() + numStr.size()) {
-        throw std::invalid_argument("Invalid number format");
+    if (ec == std::errc::invalid_argument || ptr != string.data() + string.size()) {
+        throw std::invalid_argument(i18n("ir.op.invalid_number_format"));
     }
     if (ec == std::errc::result_out_of_range) {
+        throw ParseException(i18n("ir.op.out_of_range"));
+    }
+
+    if (isNegtive) {
+        if (result > INT_MAX) {
+            throw ParseException(i18n("ir.op.out_of_range"));
+        }
+        result = -result;
+    } else if (result >= INT_MAX) {
         throw ParseException(i18n("ir.op.out_of_range"));
     }
     return result;
@@ -188,6 +206,11 @@ static __forceinline ValuePtr createHeapPtr(const std::string_view &string) {
     return std::make_shared<HeapPtr>(data.base, data.index, data.scale, data.displacement);
 }
 
+static __forceinline ValuePtr createStackPtr(const std::string_view &string) {
+    const auto data = parsePtrData(string);
+    return std::make_shared<StackPtr>(data.base, data.index, data.scale, data.displacement);
+}
+
 PURE ValuePtr createValue(const std::string &string) {
     if (string.empty()) {
         throw ParseException(i18n("ir.op.empty_value"));
@@ -195,6 +218,10 @@ PURE ValuePtr createValue(const std::string &string) {
 
     if (string.front() == '[' && string.back() == ']') {
         return createHeapPtr(string.substr(1, string.size() - 2));
+    }
+
+    if (string.front() == '{' && string.back() == '}') {
+        return createStackPtr(string.substr(1, string.size() - 2));
     }
 
     try {

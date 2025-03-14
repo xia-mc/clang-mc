@@ -5,7 +5,7 @@
 #include "I18n.h"
 #include <unordered_map>
 #include <yaml-cpp/yaml.h>
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 
 #ifdef GENERATED_SETUP
 #include "GeneratedI18n.h"

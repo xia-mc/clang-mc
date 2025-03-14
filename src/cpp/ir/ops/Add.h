@@ -6,7 +6,7 @@
 #define CLANG_MC_ADD_H
 
 #include "Op.h"
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 #include "OpCommon.h"
 #include "Mov.h"
 
@@ -15,7 +15,7 @@ private:
     const ValuePtr left;
     const ValuePtr right;
 public:
-    explicit Add(const ui64 lineNumber, ValuePtr &&left, ValuePtr &&right) :
+    explicit Add(const ui32 lineNumber, ValuePtr &&left, ValuePtr &&right) :
             Op("add", lineNumber), left(std::move(left)), right(std::move(right)) {
         if (INSTANCEOF_SHARED(left, Immediate)) {
             throw ParseException(i18n("ir.op.immediate_left"));
@@ -51,7 +51,7 @@ public:
                 assert(INSTANCEOF_SHARED(left, Ptr));
 
                 // 与x86不同，mc不支持直接对storage（内存）中的值做计算
-                return fmt::format("{}\nscoreboard players operation s1 vm_regs = {} vm_regs\n{}",
+                return fmt::format("{}\nscoreboard players operation s1 vm_regs += {} vm_regs\n{}",
                                    CAST_FAST(left, Ptr)->load(*Registers::S1),
                                    reg->getName(),
                                    CAST_FAST(left, Ptr)->store(*Registers::S1));

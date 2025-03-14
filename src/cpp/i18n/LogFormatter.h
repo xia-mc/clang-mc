@@ -5,12 +5,10 @@
 #ifndef CLANG_MC_LOGFORMATTER_H
 #define CLANG_MC_LOGFORMATTER_H
 
-#define _CRT_SECURE_NO_WARNINGS(any) any // NOLINT(*-reserved-identifier)
-
 #include "spdlog/spdlog.h"
 
 static inline bool isInClion() {
-    static const bool result = _CRT_SECURE_NO_WARNINGS(std::getenv("CLION_IDE")) != nullptr;
+    static const bool result = std::getenv("CLION_IDE") != nullptr;
     return result;
 }
 

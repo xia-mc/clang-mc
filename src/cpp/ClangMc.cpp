@@ -2,31 +2,16 @@
 // Created by xia__mc on 2025/2/13.
 //
 
-#define _CRT_SECURE_NO_WARNINGS(any) any // NOLINT(*-reserved-identifier)
-
 #include "ClangMc.h"
 #include "utils/FileUtils.h"
 #include "ir/verify/Verifier.h"
 #include "i18n/LogFormatter.h"
-#include "utils/Native.h"
+#include "builder/Builder.h"
+#include "builder/PostOptimizer.h"
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <execution>
-
-static inline constexpr auto PACK_MCMETA = \
-"{\n"
-"    \"pack\": {\n"
-"        \"description\": \"\",\n"
-"        \"pack_format\": 61\n"
-"    }\n"
-"}";
-
-#ifndef NDEBUG
-static inline const auto RESOURCES_PATH = exists(Path("resources")) ? Path("resources") : Path("../src/resources");
-#else
-static inline const auto RESOURCES_PATH = Path("resources");
-#endif
-static inline const auto STDLIB_PATH = RESOURCES_PATH / "stdlib";
+#include <llvm/TargetParser/Host.h>
 
 ClangMc::ClangMc(const Config &config) : config(config) {
     auto consoleSink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
@@ -59,38 +44,24 @@ void ClangMc::start() {
     // compiling
     auto irs = loadIRCode();
     auto mcFunctions = std::vector<McFunctions>(irs.size());
-    // TODO 加一个option允许开关并行编译
-    std::transform(std::execution::par, irs.begin(), irs.end(), mcFunctions.begin(), compileIR);
-
-    // building
-    for (const auto &mcFunction: mcFunctions) {
-        for (const auto &entry: mcFunction) {
-            const auto &path = config.getBuildDir() / entry.first;
-            const auto &data = entry.second;
-
-            ensureParentDir(path);
-            if (data.ends_with('\n')) {
-                writeFile(path, data.substr(0, data.length() - 1));
-            } else {
-                writeFile(path, data);
-            }
-        }
+#pragma omp parallel for
+    for (size_t i = 0; i < irs.size(); ++i) {
+        mcFunctions[i] = irs[i].compile();
     }
+    std::vector<IR>().swap(irs);  // 释放内存
+
+    // post optimize
+    if (!config.getDebugInfo()) {
+        auto postOptimizer = PostOptimizer(mcFunctions);
+        postOptimizer.optimize();
+    }
+
+    auto builder = Builder(config, std::move(mcFunctions));
+    // building
+    builder.build();
 
     // linking
-    writeFileIfNotExist(config.getBuildDir() / "pack.mcmeta", PACK_MCMETA);
-    // static link stdlib
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(STDLIB_PATH)) {
-        Path path = entry.path();
-        if (is_regular_file(path) && path.extension() != ".mcmeta") {
-            auto target = config.getBuildDir() / relative(path, STDLIB_PATH);
-            ensureParentDir(target);
-            writeFileIfNotExist(target, readFile(path));
-        }
-    }
-    auto output = config.getOutput();
-    output += ".zip";
-    compressFolder(config.getBuildDir(), output);
+    builder.link();
 }
 
 [[noreturn]] void ClangMc::exit() {
@@ -98,13 +69,15 @@ void ClangMc::start() {
 #ifndef NDEBUG
     fprintf(stderr, "Called ClangMc::exit.\n");
     onTerminate();
-#endif
+#else
     std::exit(0);
     UNREACHABLE();
+#endif
 }
 
 void ClangMc::ensureEnvironment() const {
-    if (!(exists(RESOURCES_PATH) && is_directory(RESOURCES_PATH))) {
+    bool correct = Builder::checkResources();
+    if (!correct) {
         logger->error(i18n("general.environment_error"));
         exit();
     }
@@ -143,7 +116,7 @@ void ClangMc::ensureBuildDir() {
             irs.emplace_back(logger, config, path).parse(readFile(path));
         }
 
-        Verifier(logger, config, irs).verify();
+        Verifier(logger, irs).verify();
         if (!config.getDebugInfo()) {
             std::for_each(irs.begin(), irs.end(), FUNC_ARG0(freeSource));
         }

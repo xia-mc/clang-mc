@@ -23,6 +23,7 @@ ir.op.immediate_left: "指令的左操作数不能是立即数"
 ir.op.memory_operands: "指令不能同时使用两个内存操作数"
 ir.op.empty_value: 操作数不能为空
 ir.op.out_of_range: 立即数超出范围
+ir.op.invalid_number_format: 无效的数字格式
 ir.op.scale_out_of_range: 缩放值超出范围
 ir.op.invalid_ptr: 无效的内存操作数
 ir.value.register.unknown_register: 未知寄存器 '{}'
@@ -37,6 +38,8 @@ ir.verify.label_redefinition: 标签 '{}' 重定义
 ir.verify.previous_definition: 先前的定义在此
 ir.verify.undeclared_label: 使用了未声明的标签 '{}'
 ir.verify.unused_label: 标签 '{}' 已定义但未使用
+ir.verify.jmp_to_extern: 跳转到一个外部定义标签是未定义的
+ir.verify.rsp_to_heap: 使用栈指针 (rsp) 访问堆内存
 file.no_such_file_or_directory: "没有这样的文件或目录: '{}'"
 file.failed_to_open: "无法打开文件: '{}'"
 file.failed_to_create: "无法创建文件或目录: '{}'"

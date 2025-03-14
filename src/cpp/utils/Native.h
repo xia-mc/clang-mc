@@ -11,8 +11,14 @@ extern "C" {
 
 void initNative();
 
+#ifdef __cplusplus
+[[noreturn]]
+#endif
 void onOOM();
 
+#ifdef __cplusplus
+[[noreturn]]
+#endif
 void onTerminate();
 
 #ifdef __cplusplus

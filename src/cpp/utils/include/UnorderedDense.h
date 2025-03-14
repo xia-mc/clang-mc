@@ -1887,6 +1887,11 @@ namespace ankerl::unordered_dense {
                     return m_values;
                 }
 
+                // nonstandard API: nonoffical API: expose the underlying values container
+                [[nodiscard]] constexpr auto values() noexcept -> value_container_type& {
+                    return m_values;
+                }
+
                 // non-member functions ///////////////////////////////////////////////////
 
                 friend auto operator==(table const& a, table const& b) -> bool {

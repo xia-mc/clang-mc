@@ -23,8 +23,11 @@ template <typename T>
 using HashSet = ankerl::unordered_dense::set<T>;
 using i32 = int32_t;
 using ui32 = uint32_t;
+using i64 = int64_t;
 using ui64 = uint64_t;
 using Hash = ui64;
+template <typename T>
+using Supplier = std::function<T()>;
 
 class ParseException : public std::runtime_error {
 public:
@@ -59,7 +62,7 @@ public:
 #define DATA_POD(name, field) GETTER_POD(name, field) SETTER_POD(name, field)
 
 #define CAST_FAST(ptr, type) ((type *) ptr.get())
-#define INSTANCEOF(ptr, type) (dynamic_cast<type *>(ptr.get()))
+#define INSTANCEOF(ptr, type) (dynamic_cast<type *>((ptr).get()))
 #define INSTANCEOF_SHARED(sharedPtr, type) (dynamic_pointer_cast<type>(sharedPtr))
 #define FUNC_THIS(method) ([this](auto&&... args) { return this->method(std::forward<decltype(args)>(args)...); })
 #define FUNC_ARG0(method) ([](auto &object, auto&&... args) { return object.method(std::forward<decltype(args)>(args)...); })
@@ -98,5 +101,7 @@ PURE static __forceinline constexpr Hash hash(const std::string_view &str) noexc
     } while (expression)
 #define WARN(condition, message)
 #endif
+
+#define UNUSED(expr) ((void) (expr))
 
 #endif //CLANG_MC_COMMON_H

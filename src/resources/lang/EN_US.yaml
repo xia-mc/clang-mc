@@ -23,6 +23,7 @@ ir.op.immediate_left: the left operand cannot be an immediate value
 ir.op.memory_operands: "the operation cannot have both operands as memory locations"
 ir.op.empty_value: operand cannot be empty
 ir.op.out_of_range: immediate value out of range
+ir.op.invalid_number_format: invalid number format
 ir.op.scale_out_of_range: scale value out of range
 ir.op.invalid_ptr: invalid memory operand
 ir.value.register.unknown_register: unknown register '{}'
@@ -37,6 +38,8 @@ ir.verify.label_redefinition: redefinition of label '{}'
 ir.verify.previous_definition: previous definition is here
 ir.verify.undeclared_label: use of undeclared label '{}'
 ir.verify.unused_label: label '{}' defined but not used
+ir.verify.jmp_to_extern: jmp to an extern label is undefined
+ir.verify.rsp_to_heap: heap access using stack pointer (rsp)
 file.no_such_file_or_directory: "no such file or directory: '{}'"
 file.failed_to_open: "failed to open file: '{}'"
 file.failed_to_create: "failed to create file or directory: '{}'"

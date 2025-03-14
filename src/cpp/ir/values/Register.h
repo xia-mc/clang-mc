@@ -7,7 +7,7 @@
 
 #include "Value.h"
 #include "i18n/I18n.h"
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 
 class Registers;
 
@@ -28,7 +28,7 @@ public:
 
     GETTER_POD(Pushable, pushable)
 
-    std::string toString() const noexcept override {
+    [[nodiscard]] std::string toString() const noexcept override {
         return getName();
     }
 };

@@ -3,9 +3,13 @@
 //
 
 #include "IR.h"
-#include "utils/StringUtils.h"
+#include "ops/Nop.h"
+#include "utils/string/StringUtils.h"
 #include "ir/ops/Label.h"
 #include "ir/ops/Jmp.h"
+#include "utils/string/StringBuilder.h"
+#include "ir/ops/Call.h"
+#include "ir/controlFlow/JmpTable.h"
 
 void IR::parse(std::string &&code) {
     this->sourceCode = std::move(code);
@@ -18,7 +22,7 @@ void IR::parse(std::string &&code) {
             continue;
         }
 
-        const ui64 lineNumber = i + 1;  // ui64防止+1后溢出
+        const ui32 lineNumber = i + 1;  // ui64防止+1后溢出
 
         try {
             auto op = createOp(lineNumber, line);
@@ -41,12 +45,8 @@ __forceinline std::string IR::createForCall(const Label *labelOp) {
         return labelOp->getLabel();
     }
 
-    return fmt::format("{}{}", config.getNameSpace(), generateName());
-}
-
-__forceinline std::string IR::createForJmp(const Label *labelOp) {
-    assert(!labelOp->getExtern());
-    return fmt::format("{}{}", config.getNameSpace(), generateName());
+    const auto name = generateName();
+    return fmt::format("{}{}", config.getNameSpace(), name);
 }
 
 static inline Path toPath(const std::string &mcPath) {
@@ -61,34 +61,27 @@ static inline Path toPath(const std::string &mcPath) {
     return result;
 }
 
-__forceinline void IR::initLabels(LabelMap &callLabels, LabelMap &jmpLabels) {
+__forceinline void IR::initLabels(LabelMap &labelMap) {
     auto labelOp = CAST_FAST(this->values[0], Label);
-    Hash label = hash(labelOp->getLabel());
-    callLabels.emplace(label, createForCall(labelOp));
-    if (!labelOp->getExtern()) {
-        jmpLabels.emplace(label, createForJmp(labelOp));
-    }
+    Hash label = labelOp->getLabelHash();
+    labelMap.emplace(label, createForCall(labelOp));
 
     for (size_t i = 1; i < this->values.size(); ++i) {
         const auto &op = this->values[i];
-        if (op->getName() != "label") {
+        if (!INSTANCEOF(op, Label)) {
             continue;
         }
 
         labelOp = CAST_FAST(op, Label);
-        label = hash(labelOp->getLabel());
+        label = labelOp->getLabelHash();
 
-        assert(!callLabels.contains(label));
-        assert(!jmpLabels.contains(label));
-        callLabels.emplace(label, createForCall(labelOp));
-        if (!labelOp->getExtern()) {
-            jmpLabels.emplace(label, createForJmp(labelOp));
-        }
+        assert(!labelMap.contains(label));
+        auto a = createForCall(labelOp);
+        labelMap.emplace(label, a);
     }
 }
 
-static inline constexpr std::string_view JMP_LAST_TEMPLATE = "return run function {}";
-static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} run return 1\nfunction {}";
+static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: '{}'\n# label: '{}'\n#\n\n";
 
 [[nodiscard]] McFunctions IR::compile() {
     auto result = McFunctions();
@@ -97,52 +90,54 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
     }
     assert(INSTANCEOF(this->values[0], Label));
 
-    Hash label = CAST_FAST(this->values[0], Label)->getLabelHash();
-    auto callLabels = LabelMap();
-    auto jmpLabels = LabelMap();
-    initLabels(callLabels, jmpLabels);
+    Label *labelOp = CAST_FAST(this->values[0], Label);
+    Hash label = labelOp->getLabelHash();
+    auto labelMap = LabelMap();
+    initLabels(labelMap);
+    auto jmpTable = JmpTable(values, labelMap);
+    jmpTable.make();
+    const auto &jmpMap = jmpTable.getJmpMap();
 
-    auto builder = std::ostringstream();
+    auto builder = StringBuilder();
     std::string debugMessage;
 
     if (config.getDebugInfo()) {
-        debugMessage = fmt::format("# file: '{}'\n# label: '{}'\n",
-                                   file.string(), CAST_FAST(this->values[0], Label)->getLabel());
+        debugMessage = fmt::format(DEBUG_MSG_TEMPLATE, file.string(), CAST_FAST(this->values[0], Label)->getLabel());
     }
 
     bool unreachable = false;
     for (size_t i = 1; i < this->values.size(); ++i) {
         const auto &op = this->values[i];
-        if (const auto &labelOp = INSTANCEOF(op, Label)) {
+        if (INSTANCEOF(op, Nop)) {
+            continue;
+        }
+
+        if (INSTANCEOF(op, Label)) {
+            auto lastLabelOp = labelOp;
             auto lastLabel = label;
+            labelOp = CAST_FAST(op, Label);
             label = labelOp->getLabelHash();
 
             if (!unreachable) {
                 // 因为实际上采用“代码块”模式编译，而不是label，所以每个代码块末尾都需要显式跳转到下个代码块
                 auto jmp = std::make_unique<Jmp>(0, labelOp->getLabel());
-                builder << jmp->compile(callLabels, jmpLabels) << '\n';
+                builder.appendLine(jmp->compile(jmpMap));
             }
 
-            if (jmpLabels.contains(lastLabel)) {  // 不是extern
-                auto callTarget = toPath(callLabels[lastLabel]);
-                result.emplace(callTarget, builder.str());
+            if (!lastLabelOp->getExtern()) {
+                auto target = toPath(labelMap[lastLabel]);
+                result.emplace(target, builder.toString());
+                builder.clear();
 
-                auto jmpTarget = toPath(jmpLabels[lastLabel]);
-                result.emplace(jmpTarget, fmt::format(JMP_TEMPLATE,
-                                                      callLabels[lastLabel], callLabels[label]));
                 if (config.getDebugInfo()) {
-                    result[jmpTarget] = debugMessage + "# type: jmp\n\n" + result[jmpTarget];
-                    result[callTarget] = debugMessage + "# type: call\n\n" + result[callTarget];
+                    result[target] = debugMessage + result[target];
                 }
             }
 
             if (config.getDebugInfo()) {
-                debugMessage = fmt::format("# file: '{}'\n# label: '{}'\n",
-                                           file.string(), labelOp->getLabel());
+                debugMessage = fmt::format(DEBUG_MSG_TEMPLATE, file.string(), labelOp->getLabel());
             }
 
-            builder.str("");
-            builder.clear();
             unreachable = false;
             continue;
         }
@@ -150,20 +145,25 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
         if (config.getDebugInfo()) {
             const auto source = string::trim(getSource(op.get()));
             const auto strEval = op->toString();
-            builder << "# " << source << '\n';
+            builder.append("# ");
+            builder.appendLine(source);
             if (source != strEval) {
-                builder << "# aka '" << strEval << "'\n";
+                builder.append("# aka '");
+                builder.append(strEval);
+                builder.appendLine('\'');
             }
         }
 
         std::string compiled;
-        if (const auto &callLike = INSTANCEOF(op, CallLike)) {
-            compiled = callLike->compile(callLabels, jmpLabels);
+        if (const auto &call = INSTANCEOF(op, Call)) {
+            compiled = call->compile(labelMap);
+        } else if (const auto &jmpLike = INSTANCEOF(op, JmpLike)) {
+            compiled = jmpLike->compile(jmpMap);
         } else {
             compiled = op->compile();
         }
         if (!compiled.empty()) {
-            builder << compiled << '\n';
+            builder.appendLine(compiled);
         }
 
         if (isTerminate(op)) {
@@ -171,16 +171,11 @@ static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} 
         }
     }
 
-    if (jmpLabels.contains(label)) {
-        auto callTarget = toPath(callLabels[label]);
-        result.emplace(callTarget, builder.str());
-        auto jmpTarget = toPath(jmpLabels[label]);
-        result.emplace(jmpTarget, fmt::format(JMP_LAST_TEMPLATE, callLabels[label]));
+    auto target = toPath(labelMap[label]);
+    result.emplace(target, builder.toString());
 
-        if (config.getDebugInfo()) {
-            result[jmpTarget] = debugMessage + "# type: jmp\n\n" + result[jmpTarget] + "\n# undefined from here";
-            result[callTarget] = debugMessage + "# type: call\n\n" + result[callTarget];
-        }
+    if (config.getDebugInfo()) {
+        result[target] = debugMessage + result[target];
     }
 
     return result;
