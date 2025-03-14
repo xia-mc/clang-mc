@@ -7,14 +7,14 @@
 
 #include "Op.h"
 #include "ir/values/Register.h"
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 #include "utils/Common.h"
 
 class Peek : public Op {
 private:
     const Register *reg;
 public:
-    explicit Peek(const ui64 lineNumber, Register *reg) : Op("peek", lineNumber), reg(reg) {
+    explicit Peek(const ui32 lineNumber, Register *reg) : Op("peek", lineNumber), reg(reg) {
         assert(reg != nullptr);
         if (!reg->getPushable()) {
             throw ParseException(i18n("ir.invalid_op"));

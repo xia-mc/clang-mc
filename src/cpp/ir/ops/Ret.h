@@ -6,12 +6,12 @@
 #define CLANG_MC_RET_H
 
 #include "Op.h"
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 #include "utils/Common.h"
 
 class Ret : public Op {
 public:
-    explicit Ret(const ui64 lineNumber) : Op("ret", lineNumber) {
+    explicit Ret(const ui32 lineNumber) : Op("ret", lineNumber) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {

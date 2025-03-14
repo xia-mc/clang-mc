@@ -7,16 +7,14 @@
 
 #include "Op.h"
 #include "ir/values/Value.h"
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 #include "i18n/I18n.h"
+#include "CmpLike.h"
 
-class Mov : public Op {
-private:
-    const ValuePtr left;
-    const ValuePtr right;
+class Mov : public CmpLike {
 public:
-    explicit Mov(const ui64 lineNumber, ValuePtr &&left, ValuePtr &&right)
-            : Op("mov", lineNumber), left(std::move(left)), right(std::move(right)) {
+    explicit Mov(const ui32 lineNumber, ValuePtr &&left, ValuePtr &&right)
+            : Op("mov", lineNumber), CmpLike(std::move(left), std::move(right)) {
         if (INSTANCEOF_SHARED(this->left, Immediate)) {
             throw ParseException(i18n("ir.op.immediate_left"));
         }

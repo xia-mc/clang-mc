@@ -7,26 +7,39 @@
 
 #include "Op.h"
 #include "ir/values/Register.h"
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 #include "utils/Common.h"
 
 class Pop : public Op {
 private:
     const Register *reg;
+    const i32 repeat;
 public:
-    explicit Pop(const ui64 lineNumber, Register *reg) : Op("pop", lineNumber), reg(reg) {
+    explicit Pop(const ui32 lineNumber, Register *reg) : Op("pop", lineNumber), reg(reg), repeat(1) {
         assert(reg != nullptr);
         if (!reg->getPushable()) {
             throw ParseException(i18n("ir.invalid_op"));
         }
     }
 
+    explicit Pop(const ui32 lineNumber, const i32 repeat) : Op("pop", lineNumber), reg(nullptr), repeat(repeat) {
+    }
+
+    explicit Pop(const ui32 lineNumber) : Pop(lineNumber, 1) {
+    }
+
     [[nodiscard]] std::string toString() const noexcept override {
-        return fmt::format("pop {}", reg->toString());
+        if (reg != nullptr) {
+            return fmt::format("pop {}", reg->toString());
+        }
+        return fmt::format("pop {}", repeat);
     }
 
     [[nodiscard]] std::string compile() const override {
-        return fmt::format("function std:stack/pop_{}", reg->getName());
+        if (reg != nullptr) {
+            return fmt::format("function std:stack/pop_{}", reg->getName());
+        }
+        return string::repeat("function std:stack/pop_ignore", repeat, '\n');
     }
 };
 

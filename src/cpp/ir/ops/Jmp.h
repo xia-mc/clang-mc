@@ -6,24 +6,24 @@
 #define CLANG_MC_JMP_H
 
 #include "Op.h"
-#include "CallLike.h"
-#include "utils/StringUtils.h"
+#include "JmpLike.h"
+#include "utils/string/StringUtils.h"
 #include "OpCommon.h"
+#include "utils/string/StringBuilder.h"
 
-class Jmp : public CallLike {
+class Jmp : public JmpLike {
 public:
-    explicit Jmp(const ui64 lineNumber, std::string label) noexcept:
-            Op("jmp", lineNumber), CallLike(std::move(label)) {
+    explicit Jmp(const ui32 lineNumber, std::string label) noexcept:
+            Op("jmp", lineNumber), JmpLike(std::move(label)) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {
         return fmt::format("jmp {}", label);
     }
 
-    [[nodiscard]] std::string compile([[maybe_unused]] const LabelMap &callLabels,
-                                      [[maybe_unused]] const LabelMap &jmpLabels) const override {
-        assert(jmpLabels.contains(hash(label)));
-        return fmt::format("return run function {}", jmpLabels.at(hash(label)));
+    [[nodiscard]] std::string compile(const JmpMap &jmpMap) const override {
+        assert(jmpMap.contains(labelHash));
+        return string::join(jmpMap.at(labelHash), '\n');
     }
 };
 

@@ -22,9 +22,7 @@ private:
 
     std::string createForCall(const Label *labelOp);
 
-    std::string createForJmp(const Label *labelOp);
-
-    void initLabels(LabelMap &callLabels, LabelMap &jmpLabels);
+    void initLabels(LabelMap &labelMap);
 public:
     explicit IR(const Logger &logger, const Config &config, const Path &file) : logger(logger), config(config), file(file) {
     }
@@ -41,8 +39,11 @@ public:
         assert(!sourceCode.empty());
         assert(!sourceMap.empty());
 
-        assert(sourceMap.contains(op));
-        return sourceMap.at(op);
+        const auto result = sourceMap.find(op);
+        if (result != sourceMap.end()) {
+            return result->second;
+        }
+        return "Unknown Source";
     }
 
     __forceinline void freeSource() {
@@ -51,13 +52,8 @@ public:
     }
 
     static inline std::string generateName() {
-        static auto generator = NameGenerator();
-        return generator.generate();
+        return NameGenerator::getInstance().generate();
     }
 };
-
-[[nodiscard]] static __forceinline McFunctions compileIR(IR &ir) {
-    return ir.compile();
-}
 
 #endif //CLANG_MC_IR_H

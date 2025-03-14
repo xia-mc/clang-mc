@@ -6,38 +6,44 @@
 #define CLANG_MC_JE_H
 
 #include "Op.h"
-#include "CallLike.h"
+#include "JmpLike.h"
 #include "CmpLike.h"
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 #include "OpCommon.h"
+#include "utils/string/StringBuilder.h"
 
-class Je : public CallLike, public CmpLike {
+class Je : public JmpLike, public CmpLike {
 private:
-    inline std::string cmp(const LabelMap &jmpLabels, Register *left, Register *right) const {
-        return fmt::format("execute if score {} vm_regs = {} vm_regs run return run function {}",
-                           left->getName(), right->getName(), jmpLabels.at(hash(label)));
+    static inline std::string cmp(const std::string_view &command, Register *left, Register *right) {
+        return fmt::format("execute if score {} vm_regs = {} vm_regs run return run {}",
+                           left->getName(), right->getName(), command);
     }
 
-    inline std::string cmp(const LabelMap &jmpLabels, Register *left, Immediate *right) const {
-        return fmt::format("execute if score {} vm_regs matches {} run return run function {}",
-                           left->getName(), right->getValue(), jmpLabels.at(hash(label)));
+    static inline std::string cmp(const std::string_view &command, Register *left, Immediate *right) {
+        return fmt::format("execute if score {} vm_regs matches {} run return run {}",
+                           left->getName(), right->getValue(), command);
     }
 
-    inline std::string cmp(const LabelMap &jmpLabels, Register *left, Ptr *right) const {
+    static inline std::string cmp(const std::string_view &command, Register *left, Ptr *right) {
         return fmt::format("{}\n{}",
                            right->load(*Registers::S1),
-                           cmp(jmpLabels, left, Registers::S1.get()));
+                           cmp(command, left, Registers::S1.get()));
     }
 
-    inline std::string cmp(const LabelMap &jmpLabels, Immediate *left, Ptr *right) const {
-        return fmt::format("{}\nexecute if score s1 vm_regs matches {} run return run function {}",
-                           right->load(*Registers::S1), left->getValue(),
-                           jmpLabels.at(hash(label)));
+    static inline std::string cmp(const std::string_view &command, Immediate *left, Ptr *right) {
+        return fmt::format("{}\nexecute if score s1 vm_regs matches {} run return run {}",
+                           right->load(*Registers::S1), left->getValue(), command);
     }
 
+    template<class T, class U>
+    inline std::string cmp(const JmpMap &jmpMap, T *left, U *right) const {
+        return CmpLike::cmp(this, jmpMap.at(labelHash), left, right);
+    }
+
+    friend class CmpLike;
 public:
-    explicit Je(const ui64 lineNumber, ValuePtr &&left, ValuePtr &&right, std::string label) :
-            Op("je", lineNumber), CallLike(std::move(label)), CmpLike(std::move(left), std::move(right)) {
+    explicit Je(const ui32 lineNumber, ValuePtr &&left, ValuePtr &&right, std::string label) :
+            Op("je", lineNumber), JmpLike(std::move(label)), CmpLike(std::move(left), std::move(right)) {
         if (INSTANCEOF_SHARED(left, Ptr) && INSTANCEOF_SHARED(right, Ptr)) {
             throw ParseException(i18n("ir.op.memory_operands"));
         }
@@ -48,42 +54,41 @@ public:
     }
 
     [[nodiscard]] std::string compile() const override {
-        return CallLike::compile();
+        return JmpLike::compile();
     }
 
-    [[nodiscard]] std::string compile([[maybe_unused]] const LabelMap &callLabels,
-                                      [[maybe_unused]] const LabelMap &jmpLabels) const override {
-        assert(jmpLabels.contains(hash(label)));
+    [[nodiscard]] std::string compile(const JmpMap &jmpMap) const override {
+        assert(jmpMap.contains(labelHash));
 
         if (const auto &left = INSTANCEOF_SHARED(this->left, Register)) {
             if (const auto &right = INSTANCEOF_SHARED(this->right, Register)) {
-                return cmp(jmpLabels, left.get(), right.get());
+                return cmp(jmpMap, left.get(), right.get());
             }
             if (const auto &right = INSTANCEOF_SHARED(this->right, Immediate)) {
-                return cmp(jmpLabels, left.get(), right.get());
+                return cmp(jmpMap, left.get(), right.get());
             }
             assert(INSTANCEOF_SHARED(this->right, Ptr));
-            return cmp(jmpLabels, left.get(), CAST_FAST(this->right, Ptr));
+            return cmp(jmpMap, left.get(), CAST_FAST(this->right, Ptr));
         }
         if (const auto &left = INSTANCEOF_SHARED(this->left, Immediate)) {
             if (const auto &right = INSTANCEOF_SHARED(this->right, Register)) {
-                return cmp(jmpLabels, right.get(), left.get());
+                return cmp(jmpMap, right.get(), left.get());
             }
             if (const auto &right = INSTANCEOF_SHARED(this->right, Immediate)) {
                 // 两个立即数比较直接编译时计算掉。因为mcfunction原生不支持比较两个立即数。多一条存储到寄存器就因噎废食了。
                 if (left->getValue() != right->getValue()) return "";
-                return fmt::format("return run function {}", jmpLabels.at(hash(label)));
+                return string::join(jmpMap.at(labelHash), '\n');
             }
             assert(INSTANCEOF_SHARED(this->right, Ptr));
-            return cmp(jmpLabels, left.get(), CAST_FAST(this->right, Ptr));
+            return cmp(jmpMap, left.get(), CAST_FAST(this->right, Ptr));
         }
         assert(INSTANCEOF_SHARED(this->left, Ptr));
         const auto &left = CAST_FAST(this->left, Ptr);
         if (const auto &right = INSTANCEOF_SHARED(this->right, Register)) {
-            return cmp(jmpLabels, right.get(), left);
+            return cmp(jmpMap, right.get(), left);
         }
         assert(INSTANCEOF_SHARED(this->right, Immediate));
-        return cmp(jmpLabels, CAST_FAST(this->right, Immediate), left);
+        return cmp(jmpMap, CAST_FAST(this->right, Immediate), left);
     }
 };
 

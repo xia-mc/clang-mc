@@ -6,6 +6,7 @@
 #define CLANG_MC_NAMEGENERATOR_H
 
 #include <cstdlib>
+#include "Native.h"
 
 class NameGenerator {
 private:
@@ -17,15 +18,20 @@ private:
     size_t length = START_LENGTH;
 
 public:
-    explicit NameGenerator() {
+    explicit NameGenerator() noexcept {
         counters = static_cast<size_t *>(calloc(START_LENGTH, sizeof(size_t)));
         if (counters == nullptr) {
-            throw std::bad_alloc();
+            onOOM();
         }
     }
 
     ~NameGenerator() {
         free(counters);
+    }
+
+    static __forceinline NameGenerator &getInstance() noexcept {
+        static auto generator = NameGenerator();
+        return generator;
     }
 
     __forceinline std::string generate() {
@@ -38,7 +44,7 @@ public:
     }
 
 private:
-    __forceinline void incrementCounters() {
+    __forceinline void incrementCounters() noexcept {
         size_t i = length - 1;
         do {
             counters[i]++;
@@ -55,7 +61,7 @@ private:
         counters = static_cast<size_t *>(calloc(length, sizeof(size_t)));
         if (counters == nullptr) {
             // 不需要显式析构
-            throw std::bad_alloc();
+            onOOM();
         }
     }
 };

@@ -8,9 +8,9 @@
 class Op {
 private:
     const std::string name;
-    const ui64 lineNumber;
+    const ui32 lineNumber;
 public:
-    explicit Op(std::string name, ui64 lineNumber) noexcept : name(std::move(name)), lineNumber(lineNumber) {
+    explicit Op(std::string name, ui32 lineNumber) noexcept : name(std::move(name)), lineNumber(lineNumber) {
     }
 
     virtual ~Op() = default;

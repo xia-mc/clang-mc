@@ -39,10 +39,8 @@ extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
         if (argc == 2) {
             switch (hash(argv[1])) {
                 case hash("--help"):
-                    std::cout << getHelpMessage(argv[0]) << std::endl;
                     return 0;
                 case hash("--version"):
-                    std::cout << getVersionMessage(argv[0]) << std::endl;
                     return 0;
             }
         }

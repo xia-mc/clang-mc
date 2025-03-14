@@ -6,14 +6,14 @@
 #define CLANG_MC_INLINE_H
 
 #include "Op.h"
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 #include "utils/Common.h"
 
 class Inline : public Op {
 private:
     const std::string code;
 public:
-    explicit Inline(const ui64 lineNumber, std::string code) : Op("inline", lineNumber), code(std::move(code)) {
+    explicit Inline(const ui32 lineNumber, std::string code) : Op("inline", lineNumber), code(std::move(code)) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {

@@ -7,7 +7,7 @@
 
 #include "Op.h"
 #include "ir/values/Value.h"
-#include "utils/StringUtils.h"
+#include "utils/string/StringUtils.h"
 
 class Label : public Op {
 private:
@@ -16,7 +16,7 @@ private:
     const bool export_;
     const bool extern_;
 public:
-    explicit Label(const ui64 lineNumber, std::string label, const bool export_, const bool extern_) noexcept:
+    explicit Label(const ui32 lineNumber, std::string label, const bool export_, const bool extern_) noexcept:
             Op("label", lineNumber), label(std::move(label)), labelHash(hash(this->label)),
             export_(export_), extern_(extern_) {
     }

@@ -88,7 +88,7 @@ static inline void compressFolder(const Path &folder, const Path &zip) {
         }
     }
 
-    if (zip_close(archive) < 0) { // ✅ 确保 ZIP 正确关闭
+    if (zip_close(archive) < 0) {
         throw IOException(i18nFormat("file.failed_to_close", zipFilename));
     }
 }

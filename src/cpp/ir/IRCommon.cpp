@@ -9,19 +9,21 @@
 #include "ir/ops/Jmp.h"
 #include "ir/ops/Call.h"
 #include "ir/ops/Add.h"
+#include "ir/ops/Sub.h"
 #include "ir/ops/Inline.h"
 #include "ir/ops/Push.h"
 #include "ir/ops/Pop.h"
 #include "ir/ops/Peek.h"
 #include "ir/ops/Je.h"
+#include "ir/ops/Jl.h"
 
 template<typename T>
-static OpPtr createWith1Arg(const ui64 lineNumber, const std::string_view &args) {
+static OpPtr createWith1Arg(const ui32 lineNumber, const std::string_view &args) {
     return std::make_unique<T>(lineNumber, std::string(args));
 }
 
 template<typename T>
-static OpPtr createWith2Arg(const ui64 lineNumber, const std::string_view &args) {
+static OpPtr createWith2Arg(const ui32 lineNumber, const std::string_view &args) {
     auto parts = string::split(args, ',');
     if (UNLIKELY(parts.size() != 2)) {
         throw ParseException(i18nFormat("ir.invalid_op", args));
@@ -33,7 +35,7 @@ static OpPtr createWith2Arg(const ui64 lineNumber, const std::string_view &args)
     return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr));
 }
 
-static __forceinline OpPtr createLabel(const ui64 lineNumber, const std::string_view &string) {
+static __forceinline OpPtr createLabel(const ui32 lineNumber, const std::string_view &string) {
     assert(!string.empty());
     assert(string[string.length() - 1] == ':');
 
@@ -60,7 +62,7 @@ static __forceinline OpPtr createLabel(const ui64 lineNumber, const std::string_
 }
 
 template<typename T>
-static OpPtr createConJmp(const ui64 lineNumber, const std::string_view &args) {
+static OpPtr createConJmp(const ui32 lineNumber, const std::string_view &args) {
     auto parts = string::split(args, ',');
     if (UNLIKELY(parts.size() != 3)) {
         throw ParseException(i18nFormat("ir.invalid_op", args));
@@ -73,7 +75,7 @@ static OpPtr createConJmp(const ui64 lineNumber, const std::string_view &args) {
     return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr), label);
 }
 
-PURE OpPtr createOp(const ui64 lineNumber, const std::string_view &string) {
+PURE OpPtr createOp(const ui32 lineNumber, const std::string_view &string) {
     assert(!string.empty());
     if (UNLIKELY(string[string.length() - 1] == ':')) {
         return createLabel(lineNumber, string);
@@ -90,6 +92,8 @@ PURE OpPtr createOp(const ui64 lineNumber, const std::string_view &string) {
             return createWith2Arg<Mov>(lineNumber, args);
         CASE_STR("add"):
             return createWith2Arg<Add>(lineNumber, args);
+        CASE_STR("sub"):
+            return createWith2Arg<Sub>(lineNumber, args);
         CASE_STR("ret"):
             return std::make_unique<Ret>(lineNumber);
         CASE_STR("jmp"):
@@ -98,12 +102,28 @@ PURE OpPtr createOp(const ui64 lineNumber, const std::string_view &string) {
             return createWith1Arg<Call>(lineNumber, args);
         CASE_STR("je"):
             return createConJmp<Je>(lineNumber, args);
+        CASE_STR("jl"):
+            return createConJmp<Jl>(lineNumber, args);
         CASE_STR("inline"):
             return std::make_unique<Inline>(lineNumber, std::string(args));
         CASE_STR("push"):
-            return std::make_unique<Push>(lineNumber, Registers::fromName(args).get());
+            if (args.empty()) {
+                return std::make_unique<Push>(lineNumber);
+            }
+            try {
+                return std::make_unique<Push>(lineNumber, Registers::fromName(args).get());
+            } catch (const ParseException &) {
+            }
+            return std::make_unique<Push>(lineNumber, parseToNumber(args));
         CASE_STR("pop"):
-            return std::make_unique<Pop>(lineNumber, Registers::fromName(args).get());
+            if (args.empty()) {
+                return std::make_unique<Pop>(lineNumber);
+            }
+            try {
+                return std::make_unique<Pop>(lineNumber, Registers::fromName(args).get());
+            } catch (const ParseException &) {
+            }
+            return std::make_unique<Pop>(lineNumber, parseToNumber(args));
         CASE_STR("peek"):
             return std::make_unique<Peek>(lineNumber, Registers::fromName(args).get());
         default: [[unlikely]]

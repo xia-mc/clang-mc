@@ -11,19 +11,20 @@ add_compile_options(-Wall -Wextra -Werror -Wunknown-pragmas)
 set(CMAKE_C_FLAGS_RELEASE "-O3 -flto -ffunction-sections -fdata-sections -DNDEBUG")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_C_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 
 if (NOT WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "-Wl,-static-libgcc -Wl,-static-libstdc++")
 endif ()
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
     if (WIN32)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,/OPT:REF -Wl,/OPT:ICF")
     else ()
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections -Wl,-s")
     endif ()
-endif()
+endif ()
 
 include_directories(src/cpp)
 add_executable(clang-mc
@@ -33,7 +34,7 @@ add_executable(clang-mc
         src/cpp/config/Config.h
         src/cpp/config/ArgParser.cpp
         src/cpp/config/ArgParser.h
-        src/cpp/utils/StringUtils.h
+        src/cpp/utils/string/StringUtils.h
         src/cpp/utils/Common.h
         src/cpp/ir/ops/Op.h
         src/cpp/ir/IR.cpp
@@ -61,7 +62,7 @@ add_executable(clang-mc
         src/cpp/ir/ops/Jmp.h
         src/cpp/ir/ops/Call.h
         src/cpp/ir/verify/Verifier.cpp
-        src/cpp/ir/ops/CallLike.h
+        src/cpp/ir/ops/JmpLike.h
         src/cpp/ir/verify/VerifyResult.h
         src/cpp/i18n/LogFormatter.h
         src/cpp/ir/ops/Add.h
@@ -76,15 +77,26 @@ add_executable(clang-mc
         src/cpp/ir/ops/Peek.h
         src/cpp/ir/ops/Je.h
         src/cpp/ir/ops/CmpLike.h
+        src/cpp/utils/string/StringBuilder.h
+        src/cpp/ir/ops/Nop.h
+        src/cpp/builder/Builder.cpp
+        src/cpp/builder/Builder.h
+        src/cpp/llvm/LlvmMachine.cpp
+        src/cpp/llvm/LlvmMachine.h
+        src/cpp/ir/controlFlow/JmpTable.cpp
+        src/cpp/ir/controlFlow/JmpTable.h
+        src/cpp/ir/ops/Jl.h
+        src/cpp/builder/PostOptimizer.cpp
+        src/cpp/builder/PostOptimizer.h
 )
 
 
 # i18n
-foreach(LANG IN ITEMS ZH_CN EN_US)
+foreach (LANG IN ITEMS ZH_CN EN_US)
     file(READ ${CMAKE_SOURCE_DIR}/src/resources/lang/${LANG}.yaml YAML_${LANG})
     string(REPLACE "\"" "\\\"" YAML_${LANG} "${YAML_${LANG}}")
     string(REPLACE "\n" "\\n\"\n\"" YAML_${LANG} "${YAML_${LANG}}")
-endforeach()
+endforeach ()
 
 configure_file(
         ${CMAKE_SOURCE_DIR}/src/cpp/i18n/I18nTemplate.h
@@ -112,10 +124,40 @@ if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-stat
 endif ()
 
 
+# Building
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+set_target_properties(clang-mc PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+add_custom_command(
+        TARGET clang-mc
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/src/resources/assets
+        ${CMAKE_BINARY_DIR}/bin/assets
+        COMMENT "Copying assets directory to bin"
+)
+
+
 # Libraries
-#find_package(LLVM CONFIG REQUIRED)
-#llvm_map_components_to_libnames(LLVM_LIBS option support core)
-#target_link_libraries(clang-mc PRIVATE ${LLVM_LIBS})
+set(CMC_CLANG_LIBS libclang clangDriver clangFrontend clangFrontendTool clangCodeGen clangParse
+        clangSema clangAST clangLex clangBasic)
+set(CMC_IR_COMPONENTS core support bitreader bitwriter irreader analysis transformutils)
+set(CMC_OPTIMIZE_COMPONENTS passes scalaropts vectorize ipo lto)
+set(CMC_TARGET_COMPONENTS target mc mcparser codegen selectiondag globalisel asmprinter
+        asmparser mirparser runtimedyld)
+set(CMC_LLVM_COMPONENTS "")
+list(APPEND CMC_LLVM_COMPONENTS ${CMC_IR_COMPONENTS})
+list(APPEND CMC_LLVM_COMPONENTS ${CMC_OPTIMIZE_COMPONENTS})
+list(APPEND CMC_LLVM_COMPONENTS ${CMC_TARGET_COMPONENTS})
+
+find_package(LLVM CONFIG REQUIRED)
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
+llvm_map_components_to_libnames(LLVM_LIBS ${CMC_LLVM_COMPONENTS})
+list(APPEND LLVM_LIBS ${CLANG_LIBS})
+target_link_libraries(clang-mc PRIVATE ${LLVM_LIBS})
 
 find_package(fmt CONFIG REQUIRED)
 add_compile_definitions(FMT_HEADER_ONLY)
@@ -126,7 +168,7 @@ target_link_libraries(clang-mc PRIVATE spdlog::spdlog_header_only)
 
 if (WIN32)
     target_link_libraries(clang-mc PRIVATE dbghelp)
-endif()
+endif ()
 
 find_package(yaml-cpp CONFIG REQUIRED)
 target_link_libraries(clang-mc PRIVATE yaml-cpp::yaml-cpp)
