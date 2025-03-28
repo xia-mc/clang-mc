@@ -17,8 +17,8 @@
 
 using Path = std::filesystem::path;
 using Logger = std::shared_ptr<spdlog::logger>;
-template <typename K, typename V>
-using HashMap = ankerl::unordered_dense::map<K, V>;
+template <typename K, typename V, class Hash = ankerl::unordered_dense::hash<K>>
+using HashMap = ankerl::unordered_dense::map<K, V, Hash>;
 template <typename T>
 using HashSet = ankerl::unordered_dense::set<T>;
 using i32 = int32_t;
@@ -62,10 +62,12 @@ public:
 #define DATA_POD(name, field) GETTER_POD(name, field) SETTER_POD(name, field)
 
 #define CAST_FAST(ptr, type) ((type *) ptr.get())
+#define CAST_SHARED(sharedPtr, type) (dynamic_pointer_cast<type>(sharedPtr))
 #define INSTANCEOF(ptr, type) (dynamic_cast<type *>((ptr).get()))
-#define INSTANCEOF_SHARED(sharedPtr, type) (dynamic_pointer_cast<type>(sharedPtr))
+#define INSTANCEOF_SHARED(sharedPtr, type) CAST_SHARED(sharedPtr, type)
 #define FUNC_THIS(method) ([this](auto&&... args) { return this->method(std::forward<decltype(args)>(args)...); })
 #define FUNC_ARG0(method) ([](auto &object, auto&&... args) { return object.method(std::forward<decltype(args)>(args)...); })
+#define UNUSED(expr) ((void) (expr))
 
 #define NOT_IMPLEMENTED() throw NotImplementedException()
 #define LIKELY(x)   __builtin_expect(!!(x), 1)
@@ -99,9 +101,7 @@ PURE static __forceinline constexpr Hash hash(const std::string_view &str) noexc
     do { \
         break; \
     } while (expression)
-#define WARN(condition, message)
+#define WARN(condition, message) UNUSED(condition); UNUSED(message)
 #endif
-
-#define UNUSED(expr) ((void) (expr))
 
 #endif //CLANG_MC_COMMON_H

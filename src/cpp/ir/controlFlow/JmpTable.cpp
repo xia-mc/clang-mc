@@ -16,6 +16,7 @@ void JmpTable::make() {
 
     const auto labelCount = labelMap.size();
 
+    data = std::vector<std::string>(labelCount);
     Hash * __restrict labels = static_cast<Hash *>(malloc(labelCount * sizeof(Hash)));
     if (labels == nullptr) onOOM();
     dataView = static_cast<std::string_view *>(malloc(labelCount * sizeof(std::string_view)));
@@ -32,7 +33,6 @@ void JmpTable::make() {
                 iter--;
                 if (isTerminate(*iter)) {
                     terminateData[i] = true;  // 这个label不可能跳转到下一个label
-                    continue;
                 }
 
                 op = INSTANCEOF(*iter, Label);
@@ -41,7 +41,7 @@ void JmpTable::make() {
                 const auto &cmdTemplate = i == labelCount - 1 || terminateData[i] ? JMP_LAST_TEMPLATE : JMP_TEMPLATE;
                 const auto command = fmt::format(fmt::runtime(cmdTemplate), labelMap.at(op->getLabelHash()));
                 labels[i] = op->getLabelHash();
-                dataView[i] = data.emplace_back(command);
+                dataView[i] = data[i] = command;
                 i--;
             } while (iter != values.begin());
         }  // 释放builder
@@ -57,8 +57,8 @@ void JmpTable::make() {
             }
 
             const auto label = labels[i];
-            auto &str = dataView[i];
-            jmpMap[label] = std::span<std::string_view>(&str, size);
+            auto *str = &dataView[i];
+            jmpMap[label] = std::span<std::string_view>(str, size);
 
             size++;
         } while (i > 0);

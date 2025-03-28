@@ -15,17 +15,17 @@ private:
     const Register *reg;
     const i32 repeat;
 public:
-    explicit Push(const ui32 lineNumber, Register *reg) : Op("push", lineNumber), reg(reg), repeat(1) {
+    explicit Push(const i32 lineNumber, Register *reg) : Op("push", lineNumber), reg(reg), repeat(1) {
         assert(reg != nullptr);
         if (!reg->getPushable()) {
             throw ParseException(i18n("ir.invalid_op"));
         }
     }
 
-    explicit Push(const ui32 lineNumber, const i32 repeat) : Op("push", lineNumber), reg(nullptr), repeat(repeat) {
+    explicit Push(const i32 lineNumber, const i32 repeat) : Op("push", lineNumber), reg(nullptr), repeat(repeat) {
     }
 
-    explicit Push(const ui32 lineNumber) : Push(lineNumber, 1) {
+    explicit Push(const i32 lineNumber) : Push(lineNumber, 1) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {

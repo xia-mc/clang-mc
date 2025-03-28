@@ -102,22 +102,22 @@ public:
     /**
      * 把指针位置的内存加载到寄存器reg
      */
-    [[nodiscard]] virtual std::string load(const Register &reg) const = 0;
+    [[nodiscard]] virtual std::string loadTo(const Register &reg) const = 0;
 
     /**
      * 把寄存器reg的值存储到指针位置的内存
      */
-    [[nodiscard]] virtual std::string store(const Register &reg) const = 0;
+    [[nodiscard]] virtual std::string storeFrom(const Register &reg) const = 0;
 
     /**
      * 把立即数存储到指针位置的内存
      */
-    [[nodiscard]] virtual std::string store(const Immediate &immediate) const = 0;
+    [[nodiscard]] virtual std::string storeFrom(const Immediate &immediate) const = 0;
 
     /**
      * 把入参指针位置的内存存储到指针位置的内存
      */
-    [[nodiscard]] virtual std::string store(const Ptr &ptr) const = 0;
+    [[nodiscard]] virtual std::string storeFrom(const Ptr &ptr) const = 0;
 };
 
 #endif //CLANG_MC_PTR_H

@@ -15,17 +15,17 @@ private:
     const Register *reg;
     const i32 repeat;
 public:
-    explicit Pop(const ui32 lineNumber, Register *reg) : Op("pop", lineNumber), reg(reg), repeat(1) {
+    explicit Pop(const i32 lineNumber, Register *reg) : Op("pop", lineNumber), reg(reg), repeat(1) {
         assert(reg != nullptr);
         if (!reg->getPushable()) {
             throw ParseException(i18n("ir.invalid_op"));
         }
     }
 
-    explicit Pop(const ui32 lineNumber, const i32 repeat) : Op("pop", lineNumber), reg(nullptr), repeat(repeat) {
+    explicit Pop(const i32 lineNumber, const i32 repeat) : Op("pop", lineNumber), reg(nullptr), repeat(repeat) {
     }
 
-    explicit Pop(const ui32 lineNumber) : Pop(lineNumber, 1) {
+    explicit Pop(const i32 lineNumber) : Pop(lineNumber, 1) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {

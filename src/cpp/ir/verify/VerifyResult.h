@@ -6,15 +6,15 @@
 #define CLANG_MC_VERIFYRESULT_H
 
 #include "utils/Common.h"
-#include "ir/ops/JmpLike.h"
+#include "ir/ops/CallLike.h"
 
 class VerifyResult {
 private:
     const HashMap<Hash, Label *> definedLabels;
-    const HashMap<Hash, std::vector<JmpLike *>> undefinedLabels;
+    const HashMap<Hash, std::vector<CallLike *>> undefinedLabels;
     const HashSet<Hash> unusedLabels;
 public:
-    explicit VerifyResult(HashMap<Hash, Label *> &&definedLabels, HashMap<Hash, std::vector<JmpLike *>> &&undefinedLabels,
+    explicit VerifyResult(HashMap<Hash, Label *> &&definedLabels, HashMap<Hash, std::vector<CallLike *>> &&undefinedLabels,
                           HashSet<Hash> &&unusedLabels) noexcept
             : definedLabels(std::move(definedLabels)), undefinedLabels(std::move(undefinedLabels)),
               unusedLabels(std::move(unusedLabels)) {

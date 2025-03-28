@@ -13,8 +13,8 @@
 
 class Jmp : public JmpLike {
 public:
-    explicit Jmp(const ui32 lineNumber, std::string label) noexcept:
-            Op("jmp", lineNumber), JmpLike(std::move(label)) {
+    explicit Jmp(const i32 lineNumber, std::string label) noexcept:
+            Op("jmp", lineNumber), CallLike(std::move(label)) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {

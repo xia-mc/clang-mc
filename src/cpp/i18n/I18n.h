@@ -9,10 +9,10 @@
 
 void initI18n();
 
-std::string &i18n(Hash keyHash);
+std::string &i18n(const std::string_view &key, Hash keyHash);
 
-__forceinline std::string &i18n(const std::string_view &key) {
-    return i18n(hash(key));
+__forceinline constexpr std::string &i18n(const std::string_view &key) {
+    return i18n(key, hash(key));
 }
 
 template<typename... T>

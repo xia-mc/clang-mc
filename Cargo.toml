@@ -1,0 +1,16 @@
+[package]
+name = "clang-mc"
+version = "0.0.0-dev"
+edition = "2024"
+
+[lib]
+crate-type = ["staticlib"]
+name = "clang_mc_rust"
+path = "src/rust/lib.rs"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+
+[dependencies]

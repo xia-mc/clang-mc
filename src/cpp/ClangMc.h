@@ -30,8 +30,6 @@ private:
     void ensureValidConfig();
 
     void ensureBuildDir();
-
-    [[nodiscard]] std::vector<IR> loadIRCode();
 };
 
 #endif //CLANG_MC_CLANGMC_H

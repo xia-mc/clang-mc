@@ -16,7 +16,7 @@ private:
     const bool export_;
     const bool extern_;
 public:
-    explicit Label(const ui32 lineNumber, std::string label, const bool export_, const bool extern_) noexcept:
+    explicit Label(const i32 lineNumber, std::string label, const bool export_, const bool extern_) noexcept:
             Op("label", lineNumber), label(std::move(label)), labelHash(hash(this->label)),
             export_(export_), extern_(extern_) {
     }

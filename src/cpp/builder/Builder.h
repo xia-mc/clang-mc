@@ -17,8 +17,6 @@ public:
     explicit Builder(const Config &config, std::vector<McFunctions> &&mcFunctions) : config(config), mcFunctions(std::move(mcFunctions)) {
     }
 
-    static bool checkResources();
-
     void build();
 
     void link() const;

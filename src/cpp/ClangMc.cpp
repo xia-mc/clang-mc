@@ -8,6 +8,9 @@
 #include "i18n/LogFormatter.h"
 #include "builder/Builder.h"
 #include "builder/PostOptimizer.h"
+#include "extern/ResourceManager.h"
+#include "parse/ParseManager.h"
+#include "extern/ClRustAPI.h"
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <execution>
@@ -36,34 +39,59 @@ ClangMc::~ClangMc() {
 }
 
 void ClangMc::start() {
-    // initializing
-    ensureEnvironment();
-    ensureValidConfig();
-    ensureBuildDir();
+    try {
+        // initializing
+        ClRust_Init();
+        ensureEnvironment();
+        ensureValidConfig();
+        ensureBuildDir();
 
-    // compiling
-    auto irs = loadIRCode();
-    auto mcFunctions = std::vector<McFunctions>(irs.size());
+        // parse
+        auto parseManager = ParseManager(config, logger);
+        parseManager.loadSource();
+        parseManager.loadIR();
+        auto &irs = parseManager.getIRs();
+
+        // verify
+        Verifier(logger, irs).verify();
+        if (!config.getDebugInfo()) {
+            parseManager.freeSource();
+        }
+
+        // compiling
+        auto mcFunctions = std::vector<McFunctions>(irs.size());
 #pragma omp parallel for
-    for (size_t i = 0; i < irs.size(); ++i) {
-        mcFunctions[i] = irs[i].compile();
-    }
-    std::vector<IR>().swap(irs);  // 释放内存
+        for (size_t i = 0; i < irs.size(); ++i) {
+            mcFunctions[i] = irs[i].compile();
+        }
+        if (config.getDebugInfo()) {
+            parseManager.freeSource();
+        }
+        parseManager.freeIR();
 
-    // post optimize
-    if (!config.getDebugInfo()) {
-        auto postOptimizer = PostOptimizer(mcFunctions);
-        postOptimizer.optimize();
+        // post optimize
+        if (!config.getDebugInfo()) {
+            auto postOptimizer = PostOptimizer(mcFunctions);
+            postOptimizer.optimize();
+        }
+
+        auto builder = Builder(config, std::move(mcFunctions));
+        // building
+        builder.build();
+
+        // linking
+        if (!config.getCompileOnly()) {
+            builder.link();
+        }
+        return;
+    } catch (const IOException &e) {
+        logger->error(e.what());
+    } catch (const ParseException &e) {
+        logger->error(e.what());
     }
 
-    auto builder = Builder(config, std::move(mcFunctions));
-    // building
-    builder.build();
-
-    // linking
-    if (!config.getCompileOnly()) {
-        builder.link();
-    }
+    logger->error(i18n("general.unable_to_build"));
+    exit();
 }
 
 [[noreturn]] void ClangMc::exit() {
@@ -78,11 +106,9 @@ void ClangMc::start() {
 }
 
 void ClangMc::ensureEnvironment() const {
-    bool correct = Builder::checkResources();
-    if (!correct) {
-        logger->error(i18n("general.environment_error"));
-        exit();
-    }
+    if (initResources()) return;
+    logger->error(i18n("general.environment_error"));
+    exit();
 }
 
 void ClangMc::ensureValidConfig() {
@@ -109,27 +135,4 @@ void ClangMc::ensureBuildDir() {
         logger->error(i18n("general.failed_init_build"));
         logger->error(e.what());
     }
-}
-
-[[nodiscard]] std::vector<IR> ClangMc::loadIRCode() {
-    auto irs = std::vector<IR>();
-    try {
-        for (const auto &path: config.getInput()) {
-            irs.emplace_back(logger, config, path).parse(readFile(path));
-        }
-
-        Verifier(logger, irs).verify();
-        if (!config.getDebugInfo()) {
-            std::for_each(irs.begin(), irs.end(), FUNC_ARG0(freeSource));
-        }
-
-        return irs;
-    } catch (const IOException &e) {
-        logger->error(e.what());
-    } catch (const ParseException &e) {
-        logger->error(e.what());
-    }
-
-    logger->error(i18n("general.unable_to_build"));
-    exit();
 }

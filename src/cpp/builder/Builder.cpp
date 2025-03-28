@@ -3,13 +3,8 @@
 //
 
 #include "Builder.h"
-#include "utils/FileUtils.h"
-#include "utils/CLIUtils.h"
+#include "extern/ResourceManager.h"
 #include "PostOptimizer.h"
-
-static inline Path ASSETS_PATH;
-
-static inline Path STDLIB_PATH;
 
 static inline constexpr auto PACK_MCMETA = \
 "{\n"
@@ -18,16 +13,6 @@ static inline constexpr auto PACK_MCMETA = \
 "        \"pack_format\": 61\n"
 "    }\n"
 "}";
-
-bool Builder::checkResources() {
-    ASSETS_PATH = Path(getExecutableDir(getArgv0())) / "assets";
-    STDLIB_PATH = ASSETS_PATH / "stdlib";
-#pragma unroll
-    for (const auto &path : {ASSETS_PATH, STDLIB_PATH}) {
-        if (!exists(path) || !is_directory(path)) return false;
-    }
-    return true;
-}
 
 void Builder::build() {
     for (auto &mcFunction: mcFunctions) {

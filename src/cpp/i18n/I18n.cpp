@@ -3,7 +3,6 @@
 //
 
 #include "I18n.h"
-#include <unordered_map>
 #include <yaml-cpp/yaml.h>
 #include "utils/string/StringUtils.h"
 
@@ -13,7 +12,7 @@
 #include "I18nTemplate.h"
 #endif
 
-inline auto TRANSLATIONS = HashMap<Hash, std::string>();
+inline auto TRANSLATIONS = HashMap<Hash, std::string, decltype([](const Hash item) { return item; })>();
 
 void loadLanguage(const char *const data) {
     YAML::Node config = YAML::Load(data);
@@ -57,7 +56,11 @@ void initI18n() {
     }
 }
 
-std::string &i18n(const Hash keyHash) {
+std::string &i18n(const std::string_view &key, const Hash keyHash) {
     assert(TRANSLATIONS.contains(keyHash));
-    return TRANSLATIONS[keyHash];
+    try {
+        return TRANSLATIONS.at(keyHash);
+    } catch (const std::out_of_range &) {
+        return TRANSLATIONS[keyHash] = key;
+    }
 }

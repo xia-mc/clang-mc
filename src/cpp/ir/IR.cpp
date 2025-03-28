@@ -22,7 +22,7 @@ void IR::parse(std::string &&code) {
             continue;
         }
 
-        const ui32 lineNumber = i + 1;  // ui64防止+1后溢出
+        const i32 lineNumber = static_cast<i32>(i) + 1;
 
         try {
             auto op = createOp(lineNumber, line);
@@ -127,12 +127,12 @@ static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: '{}'\n
             if (!lastLabelOp->getExtern()) {
                 auto target = toPath(labelMap[lastLabel]);
                 result.emplace(target, builder.toString());
-                builder.clear();
 
                 if (config.getDebugInfo()) {
                     result[target] = debugMessage + result[target];
                 }
             }
+            builder.clear();
 
             if (config.getDebugInfo()) {
                 debugMessage = fmt::format(DEBUG_MSG_TEMPLATE, file.string(), labelOp->getLabel());

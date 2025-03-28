@@ -11,7 +11,7 @@
 
 class Ret : public Op {
 public:
-    explicit Ret(const ui32 lineNumber) : Op("ret", lineNumber) {
+    explicit Ret(const i32 lineNumber) : Op("ret", lineNumber) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {

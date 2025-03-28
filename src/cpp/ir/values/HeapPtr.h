@@ -17,7 +17,7 @@ public:
         return fmt::format("[{}]", formatAddress());
     }
 
-    [[nodiscard]] std::string load(const Register &reg) const override {
+    [[nodiscard]] std::string loadTo(const Register &reg) const override {
         if (base == nullptr && index == nullptr) {
             assert(scale == 1);
             // 内联以改善性能
@@ -34,7 +34,7 @@ public:
         return result.str();
     }
 
-    [[nodiscard]] std::string store(const Register &reg) const override {
+    [[nodiscard]] std::string storeFrom(const Register &reg) const override {
         if (base == nullptr && index == nullptr) {
             assert(scale == 1);
             // 内联以改善性能
@@ -51,7 +51,7 @@ public:
         return result.str();
     }
 
-    [[nodiscard]] std::string store(const Immediate &immediate) const override {
+    [[nodiscard]] std::string storeFrom(const Immediate &immediate) const override {
         if (base == nullptr && index == nullptr) {
             assert(scale == 1);
             // 内联以改善性能
@@ -68,7 +68,7 @@ public:
         return result.str();
     }
 
-    [[nodiscard]] std::string store(const Ptr &ptr) const override {
+    [[nodiscard]] std::string storeFrom(const Ptr &ptr) const override {
         if (base == nullptr && index == nullptr && ptr.base == nullptr && ptr.index == nullptr) {
             assert(scale == 1);
             // 内联以改善性能

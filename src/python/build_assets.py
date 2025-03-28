@@ -30,9 +30,17 @@ def main():
         sources.append(f'"{item.absolute()}"')
     process = subprocess.Popen(
         [str(Const.EXECUTABLE), "--compile-only", "--namespace", "std:__internal", "--build-dir", str(Const.BUILD_TMP_DIR)] + sources,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        encoding="UTF-8",
+        bufsize=1,
+        universal_newlines=True
     )
-    print(f"Compile command: \"{' '.join(process.args)}\"")
-    process.communicate()
+    print(f"Compile command: {' '.join(process.args)}")
+    for out in process.communicate():
+        if out is None or len(out) == 0:
+            continue
+        print(out.strip())
 
     # 拷贝stdlib
     print("Copying stdlib to bin...")

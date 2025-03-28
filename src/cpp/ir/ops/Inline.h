@@ -13,7 +13,7 @@ class Inline : public Op {
 private:
     const std::string code;
 public:
-    explicit Inline(const ui32 lineNumber, std::string code) : Op("inline", lineNumber), code(std::move(code)) {
+    explicit Inline(const i32 lineNumber, std::string code) : Op("inline", lineNumber), code(std::move(code)) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {

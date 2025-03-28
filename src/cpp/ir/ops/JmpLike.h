@@ -10,18 +10,11 @@
 #include "Op.h"
 #include "utils/string/StringUtils.h"
 #include "OpCommon.h"
+#include "CallLike.h"
 
-class JmpLike : public virtual Op {
-protected:
-    const std::string label;
-    const Hash labelHash;
+class JmpLike : public virtual CallLike {
 public:
-    explicit JmpLike(std::string label) noexcept: label(std::move(label)), labelHash(hash(this->label)) {
-    }
-
-    GETTER(Label, label);
-
-    GETTER_POD(LabelHash, labelHash);
+    explicit JmpLike() noexcept = default;
 
     [[nodiscard]] std::string compile() const override {
         throw UnsupportedOperationException("Op can't be compile normally.");
