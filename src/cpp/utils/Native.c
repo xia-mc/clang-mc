@@ -18,7 +18,7 @@ void onOOM() {
     free(EMERGENCY_MEMORY);
     EMERGENCY_MEMORY = NULL;
 
-    fprintf(stderr, "%s\n", OOM_MSG);
+    fputs(OOM_MSG, stderr);
     fflush(stderr);
     _exit(1);
 }
