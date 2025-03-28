@@ -8,6 +8,7 @@
 #include <fstream>
 #include "Common.h"
 #include <zip.h>
+#include "i18n/I18n.h"
 
 [[nodiscard]] static inline std::string readFile(const Path &filePath) {
     if (!exists(filePath)) {

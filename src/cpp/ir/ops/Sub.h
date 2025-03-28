@@ -15,7 +15,7 @@ private:
     const ValuePtr left;
     const ValuePtr right;
 public:
-    explicit Sub(const ui32 lineNumber, ValuePtr &&left, ValuePtr &&right) :
+    explicit Sub(const i32 lineNumber, ValuePtr &&left, ValuePtr &&right) :
             Op("sub", lineNumber), left(std::move(left)), right(std::move(right)) {
         if (INSTANCEOF_SHARED(left, Immediate)) {
             throw ParseException(i18n("ir.op.immediate_left"));
@@ -39,9 +39,9 @@ public:
 
                 // 与x86不同，mc不支持直接对storage（内存）中的值做计算
                 return fmt::format("{}\nscoreboard players remove s1 vm_regs {}\n{}",
-                                   CAST_FAST(left, Ptr)->load(*Registers::S1),
+                                   CAST_FAST(left, Ptr)->loadTo(*Registers::S1),
                                    immediate->getValue(),
-                                   CAST_FAST(left, Ptr)->store(*Registers::S1));
+                                   CAST_FAST(left, Ptr)->storeFrom(*Registers::S1));
             }
         } else if (const auto &reg = INSTANCEOF_SHARED(right, Register)) {
             if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
@@ -52,9 +52,9 @@ public:
 
                 // 与x86不同，mc不支持直接对storage（内存）中的值做计算
                 return fmt::format("{}\nscoreboard players operation s1 vm_regs -= {} vm_regs\n{}",
-                                   CAST_FAST(left, Ptr)->load(*Registers::S1),
+                                   CAST_FAST(left, Ptr)->loadTo(*Registers::S1),
                                    reg->getName(),
-                                   CAST_FAST(left, Ptr)->store(*Registers::S1));
+                                   CAST_FAST(left, Ptr)->storeFrom(*Registers::S1));
             }
         } else {
             assert(INSTANCEOF_SHARED(right, Ptr));
@@ -62,7 +62,7 @@ public:
 
             // 与x86不同，mc不支持直接对storage（内存）中的值做计算
             return fmt::format("{}\nscoreboard players operation {} vm_regs -= s1 vm_regs",
-                               CAST_FAST(right, Ptr)->load(*Registers::S1),
+                               CAST_FAST(right, Ptr)->loadTo(*Registers::S1),
                                CAST_FAST(left, Register)->getName());
         }
     }

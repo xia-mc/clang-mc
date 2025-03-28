@@ -22,9 +22,7 @@ void ArgParser::setNameSpace(const std::string &arg) {
                 throw ParseException(i18n("cli.arg.invalid_namespace"));
             }
             assert(arg.length() > 1);
-            if (arg[arg.length() - 1] == ':') {
-                config.setNameSpace(arg);
-            } else if (arg[arg.length() - 1] != '/') {
+            if (arg[arg.length() - 1] != '/' && arg[arg.length() - 1] != ':') {
                 config.setNameSpace(arg + '/');
             } else {
                 config.setNameSpace(arg);
@@ -37,21 +35,25 @@ void ArgParser::setNameSpace(const std::string &arg) {
 
 void ArgParser::next(const std::string &arg) {
     if (required) {
-        switch (hash(lastString)) {
-            case hash("--output"):
-            case hash("-o"):
+        SWITCH_STR (lastString) {
+            CASE_STR("--output"):
+            CASE_STR("-o"):
                 // 设置输出数据包zip的文件名
                 config.setOutput(Path(arg));
                 break;
-            case hash("--build-dir"):
-            case hash("-B"):
+            CASE_STR("--build-dir"):
+            CASE_STR("-B"):
                 // 设置构建文件夹
                 config.setBuildDir(Path(arg));
                 break;
-            case hash("--namespace"):
-            case hash("-N"):
+            CASE_STR("--namespace"):
+            CASE_STR("-N"):
                 // 设置编译非导出函数的命名空间路径
                 setNameSpace(arg);
+                break;
+            CASE_STR("-I"):
+                // 设置include path
+                config.getIncludes().emplace_back(arg);
                 break;
         }
         required = false;
@@ -67,17 +69,17 @@ void ArgParser::next(const std::string &arg) {
     }
 
     switch (argHash) {
-        case hash("--compile-only"):
-        case hash("-c"):
+        CASE_STR("--compile-only"):
+        CASE_STR("-c"):
             // 只编译，不链接
             config.setCompileOnly(true);
             return;
-        case hash("--log-file"):
-        case hash("-l"):
+        CASE_STR("--log-file"):
+        CASE_STR("-l"):
             // 输出日志到文件
             config.setLogFile(true);
             return;
-        case hash("-g"):
+        CASE_STR("-g"):
             // 额外的调试信息
             config.setDebugInfo(true);
             return;

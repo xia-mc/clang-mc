@@ -6,17 +6,14 @@
 #define CLANG_MC_CALL_H
 
 #include "Op.h"
-#include "JmpLike.h"
+#include "CallLike.h"
 #include "utils/string/StringUtils.h"
 #include "OpCommon.h"
 
-class Call : public Op {
-protected:
-    const std::string label;
-    const Hash labelHash;
+class Call : public CallLike {
 public:
-    explicit Call(const ui32 lineNumber, std::string label) noexcept:
-        Op("call", lineNumber), label(std::move(label)), labelHash(hash(this->label)) {
+    explicit Call(const i32 lineNumber, std::string label) noexcept:
+        Op("call", lineNumber), CallLike(std::move(label)) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {

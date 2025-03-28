@@ -15,7 +15,7 @@ private:
     JmpMap jmpMap = JmpMap();
 
     // 缓存data，以优化空间复杂度
-    std::vector<std::string> data = std::vector<std::string>();
+    std::vector<std::string> data;
     std::string_view *dataView = nullptr;
 public:
     explicit JmpTable(const std::vector<OpPtr> &values, const LabelMap &labelMap) noexcept:

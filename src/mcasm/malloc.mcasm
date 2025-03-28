@@ -1,0 +1,50 @@
+extern std:heap/expand:
+
+// 每个内存块前，有一个元数据头
+// struct {
+//     int blockSize;
+// }
+// 最高位存储是否可用（可用为1，占用为0），剩下的位存储块大小
+export std:_internal/init_malloc:
+    // 放置元数据头
+    mov [0], shp
+    ret
+
+// void *malloc(int size)
+export std:malloc:
+    mov rax, 0
+    inline execute if score r0 vm_regs matches ..0 run return 1
+
+    add r0, 1  // 因为blockSize是包含元数据头大小的，所以申请的内存要+1
+    mov t2, r0
+    mul t2, -1
+loop:
+    mov t1, [rax]
+    jl t1, t2, found
+    // 占用，查找下一个内存块
+    add rax, t1
+    jge rax, shp, oom
+    jmp loop
+oom:
+    mov t3, r0
+    mov r0, shp
+    call std:heap/expand
+    mov r0, t3
+    jmp loop
+found:
+    // -此时t2 = -r0
+    // 设置[t0 + r0]为[t0] - r0
+    // 给[t0]取反，标记为占用
+    // 返回t0
+    mov t1, [rax]
+    sub t1, r0
+    mov [rax + r0], t1
+    mul [rax], -1
+    ret
+
+
+// void free(void *ptr)
+export std:free:
+    // 暂时不考虑合并块
+    mul [r0 - 1], -1  // 最高位取反
+    ret

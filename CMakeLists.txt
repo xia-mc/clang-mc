@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 project(clang-mc C CXX)
+set(DEBUG_MODE OFF)
 
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -8,8 +9,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(-Wall -Wextra -Werror -Wunknown-pragmas)
 
-set(CMAKE_C_FLAGS_RELEASE "-O3 -flto -ffunction-sections -fdata-sections -DNDEBUG")
 set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
+if (DEBUG_MODE)
+    set(CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_DEBUG})
+else ()
+    set(CMAKE_C_FLAGS_RELEASE "-O3 -flto -ffunction-sections -fdata-sections -DNDEBUG")
+endif ()
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
@@ -18,7 +23,7 @@ if (NOT WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "-Wl,-static-libgcc -Wl,-static-libstdc++")
 endif ()
 
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
+if (CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT DEBUG_MODE)
     if (WIN32)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,/OPT:REF -Wl,/OPT:ICF")
     else ()
@@ -90,6 +95,16 @@ add_executable(clang-mc
         src/cpp/builder/PostOptimizer.h
         src/cpp/ir/ops/Sub.h
         src/cpp/utils/CLIUtils.cpp
+        src/cpp/ir/ops/Jg.h
+        src/cpp/ir/ops/Jge.h
+        src/cpp/ir/ops/Mul.h
+        src/cpp/ir/ops/CallLike.h
+        src/cpp/extern/ResourceManager.h
+        src/cpp/extern/ResourceManager.cpp
+        src/cpp/parse/ParseManager.cpp
+        src/cpp/parse/ParseManager.h
+        src/cpp/extern/PreProcessorAPI.h
+        src/cpp/extern/ClRustAPI.h
 )
 
 
@@ -108,6 +123,38 @@ configure_file(
 add_compile_definitions(GENERATED_SETUP)
 include_directories(${CMAKE_BINARY_DIR}/generated)
 
+
+# Components
+set(RUST_COMPONENT_DIR "D:/clang-mc/cmake-build-release/rust/release")
+set(RUST_COMPONENT_NAME "clang_mc_rust")
+if (WIN32)
+    set(RUST_COMPONENT_NAME "${RUST_COMPONENT_NAME}.lib")
+else ()
+    set(RUST_COMPONENT_NAME "${RUST_COMPONENT_NAME}.a")
+endif ()
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${RUST_COMPONENT_DIR}/${RUST_COMPONENT_NAME}")
+add_custom_command(
+        TARGET clang-mc
+        PRE_LINK
+        COMMAND cargo build -r
+        COMMENT "Building rust components"
+)
+
+
+# Building
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+set_target_properties(clang-mc PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+add_custom_command(
+        TARGET clang-mc
+        POST_BUILD
+        COMMAND python
+        ${CMAKE_SOURCE_DIR}/src/python/build_assets.py
+        COMMENT "Post building"
+)
+
+
 # Compatibility
 if (EXISTS "C:/LLVM/lib/cmake/llvm/LLVMConfig.cmake")
     set(LLVM_DIR "C:/LLVM/lib/cmake/llvm")
@@ -124,20 +171,6 @@ endif ()
 if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static/share/libzip/libzip-config.cmake")
     set(libzip_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static/share/libzip")
 endif ()
-
-
-# Building
-add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-set_target_properties(clang-mc PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-)
-add_custom_command(
-        TARGET clang-mc
-        POST_BUILD
-        COMMAND python
-        ${CMAKE_SOURCE_DIR}/src/python/build_assets.py
-        COMMENT "Post building"
-)
 
 
 # Libraries

@@ -43,9 +43,10 @@ ir.verify.rsp_to_heap: heap access using stack pointer (rsp)
 file.no_such_file_or_directory: "no such file or directory: '{}'"
 file.failed_to_open: "failed to open file: '{}'"
 file.failed_to_create: "failed to create file or directory: '{}'"
+file.file_not_found: "'{}' file not found"
 oom.oom: "\033[31mfatal error:\033[97m out of memory"
 general.no_input_files: no input files
 general.invalid_input: invalid input file, expected '.mcasm' files
 general.failed_init_build: failed to init build directory
 general.unable_to_build: unable to build input file
-general.environment_error: "failed to verify runtime environment: missing required resources. Ensure all necessary files are present or reinstall the program."
+general.environment_error: "failed to verify runtime environment: missing required resources. Ensure all necessary files are present or reinstall the program"

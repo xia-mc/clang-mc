@@ -107,5 +107,6 @@ void onTerminate() {
 }
 #else
 void onTerminate() {
+    puts("Exception in thread unknown with an unknown exception.");
 }
 #endif

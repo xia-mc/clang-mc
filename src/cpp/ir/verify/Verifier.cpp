@@ -4,7 +4,7 @@
 
 #include <execution>
 #include "Verifier.h"
-#include "ir/ops/JmpLike.h"
+#include "ir/ops/CallLike.h"
 #include "ir/ops/Nop.h"
 #include "ir/ops/CmpLike.h"
 
@@ -35,7 +35,7 @@ VerifyResult Verifier::handleSingle(IR &ir) {
     auto &ops = ir.getValues();
 
     auto definedLabels = HashMap<Hash, Label *>();
-    auto undefinedLabels = HashMap<Hash, std::vector<JmpLike *>>();  // label hash, 使用label的地方
+    auto undefinedLabels = HashMap<Hash, std::vector<CallLike *>>();  // label hash, 使用label的地方
     auto unusedLabels = HashSet<Hash>();
 
     if (ops.empty()) {
@@ -96,7 +96,7 @@ VerifyResult Verifier::handleSingle(IR &ir) {
             unreachable = false;  // 防止报一连串的unreachable
         }
 
-        if (const auto callLike = INSTANCEOF(op, JmpLike)) {
+        if (const auto callLike = INSTANCEOF(op, CallLike)) {
             const auto label = callLike->getLabelHash();
 
             if (definedLabels.contains(label)) {
@@ -152,11 +152,17 @@ void Verifier::error(const std::string &message, const IR *ir, const Op *op) {
 
 void Verifier::warn(const std::string &message, const IR *ir, const Op *op) {
     // TODO Werror
-    logger->warn(createIRMessage(ir->getFile(), op->getLineNumber(),
-                                 ir->getSource(op), message));
+    const auto lineNumber = op->getLineNumber();
+    if (lineNumber > 0) {
+        logger->warn(createIRMessage(ir->getFile(), lineNumber,
+                                     ir->getSource(op), message));
+    }
 }
 
 void Verifier::note(const std::string &message, const IR *ir, const Op *op) {
-    logger->info(createIRMessage(ir->getFile(), op->getLineNumber(),
-                                 ir->getSource(op), message));
+    const auto lineNumber = op->getLineNumber();
+    if (lineNumber > 0) {
+        logger->info(createIRMessage(ir->getFile(), lineNumber,
+                                     ir->getSource(op), message));
+    }
 }

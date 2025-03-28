@@ -15,17 +15,18 @@
 #include "StringBuilder.h"
 
 namespace string {
-    PURE static inline constexpr std::vector<std::string_view> split(const std::string_view &str, const char delimiter,
+    template<class Str = std::string_view, class Collection = std::vector<Str>>
+    PURE static inline constexpr Collection split(const std::string_view &str, const char delimiter,
                                                                      size_t maxCount = SIZE_MAX) noexcept {
         if (UNLIKELY(str.empty())) {
             return {};
         }
         WARN(maxCount > 1, "Are you sure to split a str with 1 count?");
 
-        auto result = std::vector<std::string_view>();
+        auto result = Collection();
         size_t start = 0, end;
 
-        while (LIKELY((end = str.find(delimiter, start)) != std::string_view::npos && maxCount-- > 1)) {
+        while (LIKELY((end = str.find(delimiter, start)) != Str::npos && maxCount-- > 1)) {
             result.emplace_back(str.substr(start, end - start));
             start = end + 1;
         }
@@ -158,13 +159,14 @@ namespace string {
             return "";
         }
         if (parts.size() == 1) {
-            return std::string(parts[0]);
+            return std::string(parts.front());
         }
 
-        auto result = StringBuilder(parts[0]);
-        for (size_t i = 1; i < parts.size(); ++i) {
+        auto iter = parts.begin();
+        auto result = StringBuilder(*iter++);
+        for (; iter != parts.end(); ++iter) {
             result.append(delimiter);
-            result.append(parts[i]);
+            result.append(*iter);
         }
         return result.toString();
     }

@@ -13,7 +13,7 @@
 
 class Mov : public CmpLike {
 public:
-    explicit Mov(const ui32 lineNumber, ValuePtr &&left, ValuePtr &&right)
+    explicit Mov(const i32 lineNumber, ValuePtr &&left, ValuePtr &&right)
             : Op("mov", lineNumber), CmpLike(std::move(left), std::move(right)) {
         if (INSTANCEOF_SHARED(this->left, Immediate)) {
             throw ParseException(i18n("ir.op.immediate_left"));
@@ -32,7 +32,7 @@ public:
             } else {
                 assert(INSTANCEOF_SHARED(left, Ptr));
 
-                return CAST_FAST(left, Ptr)->store(*immediate);
+                return CAST_FAST(left, Ptr)->storeFrom(*immediate);
             }
         } else if (const auto &reg = INSTANCEOF_SHARED(right, Register)) {
             if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
@@ -41,17 +41,17 @@ public:
             } else {
                 assert(INSTANCEOF_SHARED(left, Ptr));
 
-                return CAST_FAST(left, Ptr)->store(*reg);
+                return CAST_FAST(left, Ptr)->storeFrom(*reg);
             }
         } else {
             assert(INSTANCEOF_SHARED(right, Ptr));
 
             if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
-                return CAST_FAST(right, Ptr)->load(*result);
+                return CAST_FAST(right, Ptr)->loadTo(*result);
             } else {
                 assert(INSTANCEOF_SHARED(left, Ptr));
 
-                return CAST_FAST(left, Ptr)->store(*CAST_FAST(right, Ptr));
+                return CAST_FAST(left, Ptr)->storeFrom(*CAST_FAST(right, Ptr));
             }
         }
     }

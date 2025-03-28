@@ -1,0 +1,34 @@
+//
+// Created by xia__mc on 2025/3/22.
+//
+
+#ifndef CLANG_MC_PARSEMANAGER_H
+#define CLANG_MC_PARSEMANAGER_H
+
+
+#include "config/Config.h"
+#include "ir/IR.h"
+
+class ParseManager {
+private:
+    const Config &config;
+    const Logger &logger;
+    HashMap<Path, std::string> sources;
+    std::vector<IR> irs;
+public:
+    explicit ParseManager(const Config &config, const Logger &logger) noexcept : config(config), logger(logger) {
+    }
+
+    void loadSource();
+
+    void loadIR();
+
+    void freeSource();
+
+    void freeIR();
+
+    GETTER(IRs, irs);
+};
+
+
+#endif //CLANG_MC_PARSEMANAGER_H

@@ -43,6 +43,7 @@ ir.verify.rsp_to_heap: 使用栈指针 (rsp) 访问堆内存
 file.no_such_file_or_directory: "没有这样的文件或目录: '{}'"
 file.failed_to_open: "无法打开文件: '{}'"
 file.failed_to_create: "无法创建文件或目录: '{}'"
+file.file_not_found: "无法找到 '{}' 文件"
 oom.oom: "\033[31m致命错误:\033[97m 内存已耗尽"
 general.no_input_files: 没有输入文件
 general.invalid_input: 无效的输入文件，预期为 '.mcasm' 文件

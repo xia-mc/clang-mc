@@ -14,7 +14,7 @@ class Peek : public Op {
 private:
     const Register *reg;
 public:
-    explicit Peek(const ui32 lineNumber, Register *reg) : Op("peek", lineNumber), reg(reg) {
+    explicit Peek(const i32 lineNumber, Register *reg) : Op("peek", lineNumber), reg(reg) {
         assert(reg != nullptr);
         if (!reg->getPushable()) {
             throw ParseException(i18n("ir.invalid_op"));

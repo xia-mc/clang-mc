@@ -1,2 +1,5 @@
+// void *malloc(int size)
 extern std:malloc:
+
+// void free(void *ptr)
 extern std:free:

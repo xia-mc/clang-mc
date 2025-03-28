@@ -15,7 +15,8 @@
 static inline const std::unordered_set<Hash> DATA_ARGS = {
         hash("--output"), hash("-o"),
         hash("--build-dir"), hash("-B"),
-        hash("--namespace"), hash("-N")
+        hash("--namespace"), hash("-N"),
+        hash("-I")
 };
 
 class ArgParser {

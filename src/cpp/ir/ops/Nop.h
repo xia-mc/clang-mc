@@ -10,7 +10,7 @@
 
 class Nop : public Op {
 public:
-    explicit Nop(ui32 lineNumber) noexcept : Op("nop", lineNumber) {
+    explicit Nop(i32 lineNumber) noexcept : Op("nop", lineNumber) {
     }
 
     [[nodiscard]] std::string toString() const noexcept override {

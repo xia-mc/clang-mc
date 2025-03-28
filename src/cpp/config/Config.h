@@ -18,6 +18,7 @@ private:
     bool logFile = false;
     std::string nameSpace;
     bool debugInfo = false;
+    std::vector<Path> includes = std::vector<Path>();
 public:
     explicit Config() = default;
 
@@ -34,6 +35,8 @@ public:
     DATA(NameSpace, nameSpace);
 
     DATA_POD(DebugInfo, debugInfo);
+
+    DATA(Includes, includes);
 };
 
 

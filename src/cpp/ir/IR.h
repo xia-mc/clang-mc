@@ -11,6 +11,8 @@
 #include "utils/NameGenerator.h"
 #include "ir/ops/Label.h"
 
+class ParseManager;
+
 class IR {
 private:
     const Logger &logger;
@@ -23,6 +25,8 @@ private:
     std::string createForCall(const Label *labelOp);
 
     void initLabels(LabelMap &labelMap);
+
+    friend class ParseManager;
 public:
     explicit IR(const Logger &logger, const Config &config, const Path &file) : logger(logger), config(config), file(file) {
     }
@@ -36,7 +40,6 @@ public:
     [[nodiscard]] McFunctions compile();
 
     [[nodiscard]] __forceinline std::string_view getSource(const Op *op) const noexcept {
-        assert(!sourceCode.empty());
         assert(!sourceMap.empty());
 
         const auto result = sourceMap.find(op);
@@ -44,11 +47,6 @@ public:
             return result->second;
         }
         return "Unknown Source";
-    }
-
-    __forceinline void freeSource() {
-        sourceCode.clear();
-        sourceMap.clear();
     }
 
     static inline std::string generateName() {

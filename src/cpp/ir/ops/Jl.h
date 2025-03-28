@@ -26,13 +26,13 @@ private:
 
     static inline std::string cmp(const std::string_view &command, Register *left, Ptr *right) {
         return fmt::format("{}\n{}",
-                           right->load(*Registers::S1),
+                           right->loadTo(*Registers::S1),
                            cmp(command, left, Registers::S1.get()));
     }
 
     static inline std::string cmp(const std::string_view &command, Immediate *left, Ptr *right) {
         return fmt::format("{}\nexecute if score s1 vm_regs matches {}.. run return run {}",
-                           right->load(*Registers::S1), left->getValue(), command);
+                           right->loadTo(*Registers::S1), left->getValue(), command);
     }
 
     template<class T, class U>
@@ -42,8 +42,8 @@ private:
 
     friend class CmpLike;
 public:
-    explicit Jl(const ui32 lineNumber, ValuePtr &&left, ValuePtr &&right, std::string label) :
-            Op("jl", lineNumber), JmpLike(std::move(label)), CmpLike(std::move(left), std::move(right)) {
+    explicit Jl(const i32 lineNumber, ValuePtr &&left, ValuePtr &&right, std::string label) :
+            Op("jl", lineNumber), CallLike(std::move(label)), CmpLike(std::move(left), std::move(right)) {
         if (INSTANCEOF_SHARED(left, Ptr) && INSTANCEOF_SHARED(right, Ptr)) {
             throw ParseException(i18n("ir.op.memory_operands"));
         }

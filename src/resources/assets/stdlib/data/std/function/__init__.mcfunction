@@ -32,6 +32,8 @@ scoreboard players set spp vm_regs 0
 scoreboard players set sap vm_regs 0
 scoreboard players set s0 vm_regs 0
 scoreboard players set s1 vm_regs 0
+scoreboard players set s2 vm_regs 0
+scoreboard players set s3 vm_regs 0
 
 # 复杂存储
 # list[int] 栈空间
