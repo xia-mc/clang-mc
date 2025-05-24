@@ -14,13 +14,13 @@ PURE OpPtr createOp(i32 lineNumber, const std::string_view &string);
 
 PURE bool isTerminate(const OpPtr &op);
 
-PURE static __forceinline std::string createIRMessage(const Path &file, i32 lineNumber, const std::string_view &line,
+PURE static __forceinline std::string createIRMessage(const std::string &file, i32 lineNumber, const std::string_view &line,
                                                       const std::string_view &message) {
     if (lineNumber < 0) {
         lineNumber = -lineNumber;
     }
     return fmt::format("{}:{}: {}\n    {} | {}",
-                       file.string(), lineNumber, message, lineNumber, line);
+                       file, lineNumber, message, lineNumber, line);
 }
 
 

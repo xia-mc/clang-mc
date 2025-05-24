@@ -11,7 +11,6 @@
 #include "xstring"
 #include "xmemory"
 #include "algorithm"
-#include "utils/Stacktrace.h"
 #include "StringBuilder.h"
 
 namespace string {
@@ -185,51 +184,18 @@ namespace string {
     }
 }
 
-static inline void printStacktrace(const std::exception &exception) noexcept {
-    const auto threadName = getThreadName();
-    const auto stacktrace = getStacktrace();
-
-    std::cerr << fmt::format("Exception in thread \"{}\" {}: {}\n",
-                             threadName, typeid(exception).name(), exception.what());
-
-    size_t unknownCount = 0;
-    for (const auto &element: stacktrace) {
-        if (element.empty()) {
-            unknownCount++;
-            continue;
-        }
-
-        if (unknownCount > 0) {
-            std::cerr << fmt::format("        Suppressed {} unknown stack traces.\n", unknownCount);
-            unknownCount = 0;
-        }
-
-        std::cerr << fmt::format("        at {}\n", element);
+static __forceinline void printStacktrace(const std::exception &exception) noexcept {
+    auto excName = typeid(exception).name();
+    auto nameSplits = string::split(typeid(exception).name(), ' ', 2);
+    if (nameSplits.empty()) {
+        printStacktraceMsg(exception.what());
+        return;
     }
-    std::flush(std::cerr);
-}
-
-static inline void printStacktrace() noexcept {
-    const auto threadName = getThreadName();
-    const auto stacktrace = getStacktrace();
-
-    std::cerr << fmt::format("Exception in thread \"{}\" with an unknown exception.\n", threadName);
-
-    size_t unknownCount = 0;
-    for (const auto &element: stacktrace) {
-        if (element.empty()) {
-            unknownCount++;
-            continue;
-        }
-
-        if (unknownCount > 0) {
-            std::cerr << fmt::format("        Suppressed {} unknown stack traces.\n", unknownCount);
-            unknownCount = 0;
-        }
-
-        std::cerr << fmt::format("        at {}\n", element);
+    if (nameSplits[0] == "class") {
+        printStacktraceMsg(fmt::format("{}: {}", nameSplits[1], exception.what()).c_str());
+        return;
     }
-    std::flush(std::cerr);
+    printStacktraceMsg(fmt::format("{}: {}", excName, exception.what()).c_str());
 }
 
 #endif //CLANG_MC_STRINGUTILS_H

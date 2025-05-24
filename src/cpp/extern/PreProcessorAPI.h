@@ -15,23 +15,25 @@ extern "C" {
 
 PreProcessorC ClPreProcess_New(void);
 
-void ClPreProcess_Free(PreProcessorC);
+void ClPreProcess_Free(PreProcessorC instance);
 
-i32 ClPreProcess_AddIncludeDir(PreProcessorC, const char *);
+PreProcessorC ClPreProcess_Clone(PreProcessorC instance);
 
-i32 ClPreProcess_AddTarget(PreProcessorC, const char *);
+i32 ClPreProcess_AddIncludeDir(PreProcessorC instance, const char *path);
 
-i32 ClPreProcess_Load(PreProcessorC);
+i32 ClPreProcess_AddTarget(PreProcessorC instance, const char *path);
 
-i32 ClPreProcess_Process(PreProcessorC);
+i32 ClPreProcess_Load(PreProcessorC instance);
 
-ui32 ClPreProcess_BeginGetSource(PreProcessorC);
+i32 ClPreProcess_Process(PreProcessorC instance);
 
-const char **ClPreProcess_GetCodes(PreProcessorC);
+u32 ClPreProcess_BeginGetSource(PreProcessorC instance);
 
-const char **ClPreProcess_GetPaths(PreProcessorC);
+const char *const *ClPreProcess_GetPaths(PreProcessorC instance);
 
-void ClPreProcess_EndGetSource(PreProcessorC);
+const char *const *ClPreProcess_GetCodes(PreProcessorC instance);
+
+void ClPreProcess_EndGetSource(PreProcessorC instance, const char *const *paths, const char *const *codes, u32 size);
 
 #ifdef __cplusplus
 }

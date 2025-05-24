@@ -10,6 +10,7 @@
 #include "IRCommon.h"
 #include "utils/NameGenerator.h"
 #include "ir/ops/Label.h"
+#include "extern/ResourceManager.h"
 
 class ParseManager;
 
@@ -17,7 +18,7 @@ class IR {
 private:
     const Logger &logger;
     const Config &config;
-    const Path &file;
+    Path file;
     std::string sourceCode;  // 维持sourceMap中的view
     HashMap<const Op *, std::string_view> sourceMap = HashMap<const Op *, std::string_view>();
     std::vector<OpPtr> values = std::vector<OpPtr>();
@@ -28,10 +29,20 @@ private:
 
     friend class ParseManager;
 public:
-    explicit IR(const Logger &logger, const Config &config, const Path &file) : logger(logger), config(config), file(file) {
+    explicit IR(const Logger &logger, const Config &config, Path &&file) : logger(logger), config(config), file(std::move(file)) {
     }
 
-    GETTER(File, file);
+    [[nodiscard]] std::string getFileDisplay() const {
+        auto result = file.lexically_relative(BIN_PATH);
+        if (!result.empty() && result.native()[0] != '.') {
+            return result.string();
+        }
+        result = file.lexically_relative(std::filesystem::current_path());
+        if (!result.empty() && result.native()[0] != '.') {
+            return result.string();
+        }
+        return file.string();
+    }
 
     GETTER(Values, values);
 

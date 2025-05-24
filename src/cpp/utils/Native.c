@@ -29,7 +29,7 @@ void onOOM() {
 #include <DbgHelp.h>
 #include <string.h>
 
-__forceinline void printStackTrace() {
+void printStacktraceMsg(const char *err) {
     HANDLE process = GetCurrentProcess();
     HANDLE thread = GetCurrentThread();
 
@@ -61,7 +61,11 @@ __forceinline void printStackTrace() {
     stackFrame.AddrStack.Mode = AddrModeFlat;
 #endif
 
-    fprintf(stderr, "Exception in thread \"0x%" PRIxPTR "\" with an unknown exception.\n", (uintptr_t) thread);
+    if (err == NULL) {
+        fprintf(stderr, "Exception in thread \"0x%" PRIxPTR "\" with an unknown exception.\n", (uintptr_t) thread);
+    } else {
+        fprintf(stderr, "Exception in thread \"0x%" PRIxPTR "\": %s\n", (uintptr_t) thread, err);
+    }
 
     size_t unknownCount = 0;
     while (StackWalk64(machineType, process, thread, &stackFrame, &context, NULL, SymFunctionTableAccess64,
@@ -102,8 +106,12 @@ __forceinline void printStackTrace() {
     SymCleanup(process);
 }
 
+void printStacktrace() {
+    printStacktraceMsg(NULL);
+}
+
 void onTerminate() {
-    printStackTrace();
+    printStacktrace();
 }
 #else
 void onTerminate() {
