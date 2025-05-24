@@ -19,6 +19,7 @@
 #include "ir/ops/Jl.h"
 #include "ir/ops/Jg.h"
 #include "ir/ops/Jge.h"
+#include "ir/ops/Nop.h"
 
 template<typename T>
 static OpPtr createWith1Arg(const i32 lineNumber, const std::string_view &args) {
@@ -135,6 +136,8 @@ PURE OpPtr createOp(const i32 lineNumber, const std::string_view &string) {
             return std::make_unique<Pop>(lineNumber, parseToNumber(args));
         CASE_STR("peek"):
             return std::make_unique<Peek>(lineNumber, Registers::fromName(args).get());
+        CASE_STR("nop"):
+            return std::make_unique<Nop>(lineNumber);
         default: [[unlikely]]
             throw ParseException(i18nFormat("ir.unknown_op", op));
     }

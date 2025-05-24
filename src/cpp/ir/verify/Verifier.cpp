@@ -110,21 +110,6 @@ VerifyResult Verifier::handleSingle(IR &ir) {
             }
         }
 
-        if (const auto cmpLike = INSTANCEOF(op, CmpLike)) {
-            for (const auto &value : {cmpLike->getLeft(), cmpLike->getRight()}) {
-                auto ptr = INSTANCEOF(value, HeapPtr);
-                if (ptr == nullptr) continue;
-
-                for (const auto reg : {ptr->base, ptr->index}) {
-                    if (reg == nullptr) continue;
-                    if (reg != Registers::RSP.get()) continue;
-
-                    warn(i18n("ir.verify.rsp_to_heap"));
-                    break;
-                }
-            }
-        }
-
         if (isTerminate(op)) {
             unreachable = true;
         }
@@ -145,7 +130,7 @@ VerifyResult Verifier::handleSingle(IR &ir) {
 }
 
 void Verifier::error(const std::string &message, const IR *ir, const Op *op) {
-    logger->error(createIRMessage(ir->getFile(), op->getLineNumber(),
+    logger->error(createIRMessage(ir->getFileDisplay(), op->getLineNumber(),
                                   ir->getSource(op), message));
     errors++;
 }
@@ -154,7 +139,7 @@ void Verifier::warn(const std::string &message, const IR *ir, const Op *op) {
     // TODO Werror
     const auto lineNumber = op->getLineNumber();
     if (lineNumber > 0) {
-        logger->warn(createIRMessage(ir->getFile(), lineNumber,
+        logger->warn(createIRMessage(ir->getFileDisplay(), lineNumber,
                                      ir->getSource(op), message));
     }
 }
@@ -162,7 +147,7 @@ void Verifier::warn(const std::string &message, const IR *ir, const Op *op) {
 void Verifier::note(const std::string &message, const IR *ir, const Op *op) {
     const auto lineNumber = op->getLineNumber();
     if (lineNumber > 0) {
-        logger->info(createIRMessage(ir->getFile(), lineNumber,
+        logger->info(createIRMessage(ir->getFileDisplay(), lineNumber,
                                      ir->getSource(op), message));
     }
 }

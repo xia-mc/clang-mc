@@ -6,7 +6,6 @@
 #define CLANG_MC_CLIUTILS_H
 
 #include "utils/Common.h"
-#include "ClangMc.h"
 #include "i18n/I18n.h"
 
 extern int ARGC;
@@ -103,14 +102,6 @@ PURE static inline std::string getTargetMachine() noexcept {
     return result;
 }
 
-PURE static inline std::string getVersionMessage(const std::string& argv0) noexcept {
-    auto result = i18nFormat("cli.version_message_template",
-                              ClangMc::NAME, ClangMc::VERSION,
-                              getTargetMachine(), __VERSION__, getExecutableDir(argv0));
-#ifndef NDEBUG
-    result += i18n("cli.debug_mode");
-#endif
-    return result;
-}
+PURE std::string getVersionMessage(const std::string& argv0) noexcept;
 
 #endif //CLANG_MC_CLIUTILS_H

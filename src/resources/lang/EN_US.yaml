@@ -39,7 +39,6 @@ ir.verify.previous_definition: previous definition is here
 ir.verify.undeclared_label: use of undeclared label '{}'
 ir.verify.unused_label: label '{}' defined but not used
 ir.verify.jmp_to_extern: jmp to an extern label is undefined
-ir.verify.rsp_to_heap: heap access using stack pointer (rsp)
 file.no_such_file_or_directory: "no such file or directory: '{}'"
 file.failed_to_open: "failed to open file: '{}'"
 file.failed_to_create: "failed to create file or directory: '{}'"

@@ -39,7 +39,6 @@ ir.verify.previous_definition: 先前的定义在此
 ir.verify.undeclared_label: 使用了未声明的标签 '{}'
 ir.verify.unused_label: 标签 '{}' 已定义但未使用
 ir.verify.jmp_to_extern: 跳转到一个外部定义标签是未定义的
-ir.verify.rsp_to_heap: 使用栈指针 (rsp) 访问堆内存
 file.no_such_file_or_directory: "没有这样的文件或目录: '{}'"
 file.failed_to_open: "无法打开文件: '{}'"
 file.failed_to_create: "无法创建文件或目录: '{}'"

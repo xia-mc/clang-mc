@@ -19,7 +19,7 @@ private:
 
     const IR *currentIR = nullptr;
     const Op *currentOp = nullptr;
-    ui32 errors = 0;
+    u32 errors = 0;
 
     VerifyResult handleSingle(IR &ir);
 

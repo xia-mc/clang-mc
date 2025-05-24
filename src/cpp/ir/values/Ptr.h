@@ -9,46 +9,14 @@
 #include "Register.h"
 
 class Ptr : public Value {
-protected:
-    [[nodiscard]] std::string formatAddress() const noexcept {
-        auto result = std::ostringstream("[");
-        if (base != nullptr) {
-            result << base->toString();
-        }
-        if (index != nullptr) {
-            if (!result.str().empty()) {
-                result << " + ";
-            }
-            result << index->toString();
-
-            if (scale != 1) {
-                result << " * " << scale;
-            }
-        }
-        if (displacement != 0) {
-            if (displacement > 0) {
-                if (!result.str().empty()) {
-                    result << " + ";
-                }
-                result << displacement;
-            } else {
-                if (!result.str().empty()) {
-                    result << " - ";
-                }
-                result << -displacement;
-            }
-        }
-        return result.str();
-    }
-
-public:
+private:
     const Register *base;
     const Register *index;
     const i32 scale;
     const i32 displacement;
 
     void setPtr(std::ostringstream &result, const std::string &fieldName) const {
-        const auto addDisplacementToS0 = [&](){
+        const auto addDisplacementToS0 = [&]() {
             if (displacement != 0) {
                 if (displacement > 0) {
                     result << fmt::format("scoreboard players add s0 vm_regs {}\n", displacement);
@@ -93,31 +61,124 @@ public:
         }
     }
 
+public:
     explicit Ptr(const Register *base, const Register *index, const i32 scale, const i32 displacement) noexcept:
             base(base), index(index), scale(scale), displacement(displacement) {
         assert(!(index == nullptr && scale != 1));
         assert(!(base == nullptr && index != nullptr && scale == 1));
     }
 
+    [[nodiscard]] std::string toString() const noexcept override {
+        auto builder = std::ostringstream("[");
+        if (base != nullptr) {
+            builder << base->toString();
+        }
+        if (index != nullptr) {
+            if (!builder.str().empty()) {
+                builder << " + ";
+            }
+            builder << index->toString();
+
+            if (scale != 1) {
+                builder << " * " << scale;
+            }
+        }
+        if (displacement != 0) {
+            if (displacement > 0) {
+                if (!builder.str().empty()) {
+                    builder << " + ";
+                }
+                builder << displacement;
+            } else {
+                if (!builder.str().empty()) {
+                    builder << " - ";
+                }
+                builder << -displacement;
+            }
+        }
+        return fmt::format("[{}]", builder.str());
+    }
+
     /**
      * 把指针位置的内存加载到寄存器reg
      */
-    [[nodiscard]] virtual std::string loadTo(const Register &reg) const = 0;
+    [[nodiscard]] std::string loadTo(const Register &reg) const {
+        if (base == nullptr && index == nullptr) {
+            assert(scale == 1);
+            // 内联以改善性能
+            return fmt::format("execute store result score {} vm_regs run data get storage std:vm heap[{}]",
+                               reg.getName(), displacement);
+        }
+
+        auto result = std::ostringstream();
+
+        result << fmt::format("data modify storage std:vm s2 set value {{result: \"{}\", ptr: -1}}\n",
+                              reg.getName());
+        setPtr(result, "ptr");
+        result << "function std:_internal/load_heap_custom with storage std:vm s2";
+        return result.str();
+    }
 
     /**
      * 把寄存器reg的值存储到指针位置的内存
      */
-    [[nodiscard]] virtual std::string storeFrom(const Register &reg) const = 0;
+    [[nodiscard]] std::string storeFrom(const Register &reg) const {
+        if (base == nullptr && index == nullptr) {
+            assert(scale == 1);
+            // 内联以改善性能
+            return fmt::format(
+                    "execute store result storage std:vm heap[{}] int 1 run scoreboard players get {} vm_regs",
+                    displacement, reg.getName());
+        }
+
+        auto result = std::ostringstream();
+
+        result << fmt::format("data modify storage std:vm s2 set value {{ptr: -1, value: \"{}\"}}\n",
+                              reg.getName());
+        setPtr(result, "ptr");
+        result << "function std:_internal/store_heap_custom with storage std:vm s2";
+        return result.str();
+    }
 
     /**
      * 把立即数存储到指针位置的内存
      */
-    [[nodiscard]] virtual std::string storeFrom(const Immediate &immediate) const = 0;
+    [[nodiscard]] std::string storeFrom(const Immediate &immediate) const {
+        if (base == nullptr && index == nullptr) {
+            assert(scale == 1);
+            // 内联以改善性能
+            return fmt::format("data modify storage std:vm heap[{}] set value {}",
+                               displacement, immediate.getValue());
+        }
+
+        auto result = std::ostringstream();
+
+        result << fmt::format("data modify storage std:vm s2 set value {{ptr: -1, value: {}}}\n",
+                              immediate.getValue());
+        setPtr(result, "ptr");
+        result << "function std:_internal/store_heap_custom2 with storage std:vm s2";
+        return result.str();
+    }
 
     /**
      * 把入参指针位置的内存存储到指针位置的内存
      */
-    [[nodiscard]] virtual std::string storeFrom(const Ptr &ptr) const = 0;
+    [[nodiscard]] std::string storeFrom(const Ptr &ptr) const {
+        if (base == nullptr && index == nullptr && ptr.base == nullptr && ptr.index == nullptr) {
+            assert(scale == 1);
+            // 内联以改善性能
+            return fmt::format("data modify storage std:vm heap[{}] set from storage std:vm heap[{}]",
+                               displacement, ptr.displacement);
+        }
+
+        auto result = std::ostringstream();
+
+        result << "data modify storage std:vm s2 set value {{to: -1, from: -1}}\n";
+        setPtr(result, "to");
+        ptr.setPtr(result, "from");
+        result << "function std:_internal/store_heap_custom3 with storage std:vm s2";
+        return result.str();
+    }
 };
 
 #endif //CLANG_MC_PTR_H

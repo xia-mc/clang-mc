@@ -21,11 +21,15 @@ template <typename K, typename V, class Hash = ankerl::unordered_dense::hash<K>>
 using HashMap = ankerl::unordered_dense::map<K, V, Hash>;
 template <typename T>
 using HashSet = ankerl::unordered_dense::set<T>;
+using i8 = int8_t;
+using i16 = int16_t;
 using i32 = int32_t;
-using ui32 = uint32_t;
 using i64 = int64_t;
-using ui64 = uint64_t;
-using Hash = ui64;
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
+using Hash = u64;
 template <typename T>
 using Supplier = std::function<T()>;
 

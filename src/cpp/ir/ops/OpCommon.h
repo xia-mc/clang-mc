@@ -12,8 +12,6 @@
 #include "ir/values/Immediate.h"
 #include "ir/values/Register.h"
 #include "ir/values/Ptr.h"
-#include "ir/values/HeapPtr.h"
-#include "ir/values/StackPtr.h"
 #include "i18n/I18n.h"
 
 using ValuePtr = std::shared_ptr<Value>;

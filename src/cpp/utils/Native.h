@@ -16,6 +16,10 @@ void initNative();
 #endif
 void onOOM();
 
+void printStacktraceMsg(const char *err);
+
+void printStacktrace();
+
 #ifdef __cplusplus
 [[noreturn]]
 #endif

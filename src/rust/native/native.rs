@@ -3,7 +3,7 @@ unsafe extern "C" {
 }
 
 pub fn on_terminate() {
-    println!("Warning: crashed in rust");
+    println!("\x1b[31mfatal error:\x1b[97m crashed in rust\x1b[0m");
     unsafe {
         onTerminate();
     }

@@ -27,16 +27,18 @@ def main():
     for item in Const.MCASM_DIR.iterdir():
         if item.suffix != ".mcasm":
             continue
-        sources.append(f'"{item.absolute()}"')
+        sources.append(str(item.absolute()))
+    command = [str(Const.EXECUTABLE), "--compile-only", "--namespace", "std:__internal", "--build-dir", str(Const.BUILD_TMP_DIR)] + sources
+    prettyCmd = ' '.join(map(lambda s: f'"{s}"' if " " in s else s, command))
+    print(f"Compile command: {prettyCmd}")
     process = subprocess.Popen(
-        [str(Const.EXECUTABLE), "--compile-only", "--namespace", "std:__internal", "--build-dir", str(Const.BUILD_TMP_DIR)] + sources,
+        command,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         encoding="UTF-8",
         bufsize=1,
         universal_newlines=True
     )
-    print(f"Compile command: {' '.join(process.args)}")
     for out in process.communicate():
         if out is None or len(out) == 0:
             continue

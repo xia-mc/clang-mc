@@ -201,14 +201,9 @@ static __forceinline ValuePtr createImmediate(const std::string &string) {
     return std::make_shared<Immediate>(parseToNumber(string));
 }
 
-static __forceinline ValuePtr createHeapPtr(const std::string_view &string) {
+static __forceinline ValuePtr createPtr(const std::string_view &string) {
     const auto data = parsePtrData(string);
-    return std::make_shared<HeapPtr>(data.base, data.index, data.scale, data.displacement);
-}
-
-static __forceinline ValuePtr createStackPtr(const std::string_view &string) {
-    const auto data = parsePtrData(string);
-    return std::make_shared<StackPtr>(data.base, data.index, data.scale, data.displacement);
+    return std::make_shared<Ptr>(data.base, data.index, data.scale, data.displacement);
 }
 
 PURE ValuePtr createValue(const std::string &string) {
@@ -217,11 +212,7 @@ PURE ValuePtr createValue(const std::string &string) {
     }
 
     if (string.front() == '[' && string.back() == ']') {
-        return createHeapPtr(string.substr(1, string.size() - 2));
-    }
-
-    if (string.front() == '{' && string.back() == '}') {
-        return createStackPtr(string.substr(1, string.size() - 2));
+        return createPtr(string.substr(1, string.size() - 2));
     }
 
     try {

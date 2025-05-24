@@ -29,7 +29,7 @@ void IR::parse(std::string &&code) {
             this->sourceMap.emplace(op.get(), lines[i]);
             this->values.push_back(std::move(op));
         } catch (const ParseException &e) {
-            logger->error(createIRMessage(file, lineNumber, lines[i], e.what()));
+            logger->error(createIRMessage(getFileDisplay(), lineNumber, lines[i], e.what()));
             errors++;
         }
     }
@@ -81,7 +81,7 @@ __forceinline void IR::initLabels(LabelMap &labelMap) {
     }
 }
 
-static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: '{}'\n# label: '{}'\n#\n\n";
+static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: \"{}\"\n# label: \"{}\"\n#\n\n";
 
 [[nodiscard]] McFunctions IR::compile() {
     auto result = McFunctions();
@@ -102,7 +102,7 @@ static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: '{}'\n
     std::string debugMessage;
 
     if (config.getDebugInfo()) {
-        debugMessage = fmt::format(DEBUG_MSG_TEMPLATE, file.string(), CAST_FAST(this->values[0], Label)->getLabel());
+        debugMessage = fmt::format(DEBUG_MSG_TEMPLATE, getFileDisplay(), CAST_FAST(this->values[0], Label)->getLabel());
     }
 
     bool unreachable = false;
@@ -135,7 +135,7 @@ static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: '{}'\n
             builder.clear();
 
             if (config.getDebugInfo()) {
-                debugMessage = fmt::format(DEBUG_MSG_TEMPLATE, file.string(), labelOp->getLabel());
+                debugMessage = fmt::format(DEBUG_MSG_TEMPLATE, getFileDisplay(), labelOp->getLabel());
             }
 
             unreachable = false;

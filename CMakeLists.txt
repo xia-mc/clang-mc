@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.26)
 project(clang-mc C CXX)
 set(DEBUG_MODE OFF)
+set(VCPKG_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg")
 
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -17,7 +18,7 @@ else ()
 endif ()
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 
 if (NOT WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "-Wl,-static-libgcc -Wl,-static-libstdc++")
@@ -51,7 +52,6 @@ add_executable(clang-mc
         src/cpp/ir/ops/OpCommon.h
         src/cpp/ir/IRCommon.h
         src/cpp/ir/IRCommon.cpp
-        src/cpp/utils/Stacktrace.h
         src/cpp/ir/ops/Label.h
         src/cpp/utils/FileUtils.h
         src/cpp/utils/CLIUtils.h
@@ -71,7 +71,6 @@ add_executable(clang-mc
         src/cpp/ir/verify/VerifyResult.h
         src/cpp/i18n/LogFormatter.h
         src/cpp/ir/ops/Add.h
-        src/cpp/ir/values/HeapPtr.h
         src/cpp/ir/values/Ptr.h
         src/cpp/ir/ops/OpCommon.cpp
         src/cpp/utils/Native.c
@@ -105,6 +104,7 @@ add_executable(clang-mc
         src/cpp/parse/ParseManager.h
         src/cpp/extern/PreProcessorAPI.h
         src/cpp/extern/ClRustAPI.h
+        src/cpp/patches/fmt/core.h
 )
 
 
@@ -125,7 +125,23 @@ include_directories(${CMAKE_BINARY_DIR}/generated)
 
 
 # Components
-set(RUST_COMPONENT_DIR "D:/clang-mc/cmake-build-release/rust/release")
+if (DEBUG_MODE)
+    add_custom_command(
+            TARGET clang-mc
+            PRE_LINK
+            COMMAND cargo build
+            COMMENT "Building rust components"
+    )
+    set(RUST_COMPONENT_DIR "D:/clang-mc/cmake-build-release/rust/debug")
+else ()
+    add_custom_command(
+            TARGET clang-mc
+            PRE_LINK
+            COMMAND cargo build -r
+            COMMENT "Building rust components"
+    )
+    set(RUST_COMPONENT_DIR "D:/clang-mc/cmake-build-release/rust/release")
+endif ()
 set(RUST_COMPONENT_NAME "clang_mc_rust")
 if (WIN32)
     set(RUST_COMPONENT_NAME "${RUST_COMPONENT_NAME}.lib")
@@ -133,12 +149,6 @@ else ()
     set(RUST_COMPONENT_NAME "${RUST_COMPONENT_NAME}.a")
 endif ()
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${RUST_COMPONENT_DIR}/${RUST_COMPONENT_NAME}")
-add_custom_command(
-        TARGET clang-mc
-        PRE_LINK
-        COMMAND cargo build -r
-        COMMENT "Building rust components"
-)
 
 
 # Building
@@ -159,18 +169,20 @@ add_custom_command(
 if (EXISTS "C:/LLVM/lib/cmake/llvm/LLVMConfig.cmake")
     set(LLVM_DIR "C:/LLVM/lib/cmake/llvm")
 endif ()
-if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/packages/fmt_x64-mingw-static/share/fmt/fmt-config.cmake")
-    set(fmt_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg/packages/fmt_x64-mingw-static/share/fmt")
+if (EXISTS "${VCPKG_DIR}/installed/x64-windows-static/share/fmt/fmt-config.cmake")
+    set(fmt_DIR "${VCPKG_DIR}/installed/x64-windows-static/share/fmt")
 endif ()
-if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/packages/spdlog_x64-mingw-static/share/spdlog/spdlogConfig.cmake")
-    set(spdlog_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg/packages/spdlog_x64-mingw-static/share/spdlog")
+if (EXISTS "${VCPKG_DIR}/packages/spdlog_x64-windows-static/share/spdlog/spdlogConfig.cmake")
+    set(spdlog_DIR "${VCPKG_DIR}/packages/spdlog_x64-windows-static/share/spdlog")
+    set(spdlog_INCLUDE_DIR "${VCPKG_DIR}/packages/spdlog_x64-windows-static/include")
 endif ()
-if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static-md/share/yaml-cpp/yaml-cpp-config.cmake")
-    set(yaml-cpp_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static-md/share/yaml-cpp")
+if (EXISTS "${VCPKG_DIR}/installed/x64-windows-static/share/yaml-cpp/yaml-cpp-config.cmake")
+    set(yaml-cpp_DIR "${VCPKG_DIR}/installed/x64-windows-static/share/yaml-cpp")
 endif ()
-if (EXISTS "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static/share/libzip/libzip-config.cmake")
-    set(libzip_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg/installed/x64-windows-static/share/libzip")
+if (EXISTS "${VCPKG_DIR}/installed/x64-windows-static/share/libzip/libzip-config.cmake")
+    set(libzip_DIR "${VCPKG_DIR}/installed/x64-windows-static/share/libzip")
 endif ()
+include_directories(${CMAKE_SOURCE_DIR}/src/cpp/patches)
 
 
 # Libraries
@@ -198,10 +210,12 @@ add_compile_definitions(FMT_HEADER_ONLY)
 target_link_libraries(clang-mc PRIVATE fmt::fmt)
 
 find_package(spdlog CONFIG REQUIRED)
-target_link_libraries(clang-mc PRIVATE spdlog::spdlog_header_only)
+include_directories(${spdlog_INCLUDE_DIR})
+#target_link_libraries(clang-mc PRIVATE spdlog::spdlog_header_only)
 
 if (WIN32)
     target_link_libraries(clang-mc PRIVATE dbghelp)
+    target_link_libraries(clang-mc PRIVATE Userenv)
 endif ()
 
 find_package(yaml-cpp CONFIG REQUIRED)
