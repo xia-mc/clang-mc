@@ -19,7 +19,7 @@ private:
                                               const std::shared_ptr<Register> &target) {
         if (const auto &immediate = INSTANCEOF_SHARED(value, Immediate)) {
             builder.appendLine(fmt::format("scoreboard players set {} vm_regs {}",
-                                       target->getName(), immediate->getValue()));
+                                       target->getName(), static_cast<i32>(immediate->getValue())));
             return target;
         } else if (const auto &ptr = INSTANCEOF_SHARED(value, Ptr)) {
             builder.appendLine(ptr->loadTo(*target));

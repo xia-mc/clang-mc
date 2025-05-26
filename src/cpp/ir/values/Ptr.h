@@ -112,10 +112,16 @@ public:
 
         auto result = std::ostringstream();
 
-        result << fmt::format("data modify storage std:vm s2 set value {{result: \"{}\", ptr: -1}}\n",
-                              reg.getName());
-        setPtr(result, "ptr");
-        result << "function std:_internal/load_heap_custom with storage std:vm s2";
+        if (reg == *Registers::RAX) {
+            result << "data modify storage std:vm s2 set value {ptr: -1}\n";
+            setPtr(result, "ptr");
+            result << "function std:_internal/load_heap with storage std:vm s2";
+        } else {
+            result << fmt::format("data modify storage std:vm s2 set value {{result: \"{}\", ptr: -1}}\n",
+                                  reg.getName());
+            setPtr(result, "ptr");
+            result << "function std:_internal/load_heap_custom with storage std:vm s2";
+        }
         return result.str();
     }
 
@@ -133,10 +139,17 @@ public:
 
         auto result = std::ostringstream();
 
-        result << fmt::format("data modify storage std:vm s2 set value {{ptr: -1, value: \"{}\"}}\n",
-                              reg.getName());
-        setPtr(result, "ptr");
-        result << "function std:_internal/store_heap_custom with storage std:vm s2";
+        if (reg == *Registers::R1) {
+            result << "data modify storage std:vm s2 set value {ptr: -1}\n";
+            setPtr(result, "ptr");
+            result << "function std:_internal/store_heap with storage std:vm s2";
+        } else {
+            result << fmt::format("data modify storage std:vm s2 set value {{ptr: -1, value: \"{}\"}}\n",
+                                  reg.getName());
+            setPtr(result, "ptr");
+            result << "function std:_internal/store_heap_custom with storage std:vm s2";
+        }
+
         return result.str();
     }
 
@@ -148,13 +161,13 @@ public:
             assert(scale == 1);
             // 内联以改善性能
             return fmt::format("data modify storage std:vm heap[{}] set value {}",
-                               displacement, immediate.getValue());
+                               displacement, static_cast<i32>(immediate.getValue()));
         }
 
         auto result = std::ostringstream();
 
         result << fmt::format("data modify storage std:vm s2 set value {{ptr: -1, value: {}}}\n",
-                              immediate.getValue());
+                              static_cast<i32>(immediate.getValue()));
         setPtr(result, "ptr");
         result << "function std:_internal/store_heap_custom2 with storage std:vm s2";
         return result.str();

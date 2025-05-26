@@ -6,17 +6,18 @@
 #define CLANG_MC_IMMEDIATE_H
 
 #include "Value.h"
+#include "ir/objects/Int.h"
 
 class Immediate : public Value {
 private:
-    const i32 value;
+    const Int value;
 public:
     explicit Immediate(i32 value) : Value(), value(value) {
     }
 
     GETTER_POD(Value, value);
 
-    std::string toString() const noexcept override {
+    [[nodiscard]] std::string toString() const noexcept override {
         return std::to_string(getValue());
     }
 };

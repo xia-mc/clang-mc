@@ -4,6 +4,10 @@
 
 #include "PostOptimizer.h"
 
+static inline constexpr auto REPLACES = {
+        "return run return", "return"
+};
+
 void PostOptimizer::doSingleOptimize(std::string &code) {
     if (code.empty()) return;
     auto splits = string::split(code, '\n');
@@ -14,7 +18,15 @@ void PostOptimizer::doSingleOptimize(std::string &code) {
         if (line.empty() || line.front() == '#') continue;
 
         if (!first) builder.append('\n');
-        builder.append(string::trim(string::removeFromFirst(line, "#")));
+        auto fixedLine = string::trim(string::removeFromFirst(line, "#"));
+        std::string newLine;
+        for (auto from = REPLACES.begin(); from < REPLACES.end(); from += 2) {
+            const auto to = from + 1;
+            if (string::replaceFast(fixedLine, newLine, *from, *to)) {
+                fixedLine = newLine;
+            }
+        }
+        builder.append(fixedLine);
         first = false;
     }
 

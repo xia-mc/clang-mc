@@ -33,11 +33,7 @@ public:
     }
 
     [[nodiscard]] std::string getFileDisplay() const {
-        auto result = file.lexically_relative(BIN_PATH);
-        if (!result.empty() && result.native()[0] != '.') {
-            return result.string();
-        }
-        result = file.lexically_relative(std::filesystem::current_path());
+        auto result = file.lexically_relative(std::filesystem::current_path());
         if (!result.empty() && result.native()[0] != '.') {
             return result.string();
         }

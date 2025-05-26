@@ -5,7 +5,6 @@
 #include "JmpTable.h"
 #include "utils/NameGenerator.h"
 #include "utils/string/StringBuilder.h"
-#include "ir/ops/Label.h"
 
 static inline constexpr std::string_view JMP_LAST_TEMPLATE = "return run function {}";
 static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} run return 1";

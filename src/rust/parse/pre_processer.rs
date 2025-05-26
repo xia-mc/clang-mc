@@ -100,9 +100,14 @@ impl PreProcesser {
     }
 
     fn get_include(&self, cur_file: &Path, file_str: &str) -> Option<Rc<String>> {
-        let path = cur_file.join(file_str);
-        if let Ok(result) = self.get_code(path) {
-            return Some(result);
+        match cur_file.parent() {
+            None => {}
+            Some(parent) => {
+                let path = parent.join(file_str);
+                if let Ok(result) = self.get_code(path) {
+                    return Some(result);
+                }
+            }
         }
 
         for begin in self.include_dirs.borrow().iter() {

@@ -8,25 +8,37 @@
 #include "utils/FileUtils.h"
 #include "utils/CLIUtils.h"
 
-extern Path BIN_PATH;
+inline Path INSTALL_PATH;
 
-extern Path ASSETS_PATH;
+inline Path BIN_PATH;
 
-extern Path STDLIB_PATH;
+inline Path ASSETS_PATH;
 
-extern Path INCLUDE_PATH;
+inline Path STDLIB_PATH;
+
+inline Path INCLUDE_PATH;
 
 static inline bool initResources() {
-    BIN_PATH = Path(getExecutableDir(getArgv0()));
-    ASSETS_PATH = BIN_PATH / "assets";
-    STDLIB_PATH = ASSETS_PATH / "stdlib";
-    INCLUDE_PATH = BIN_PATH / "include";
+    try {
+        BIN_PATH = Path(getExecutableDir(getArgv0()));
+        if (!BIN_PATH.has_parent_path()) {
+            return false;
+        }
+        INSTALL_PATH = BIN_PATH.parent_path();
+        if (BIN_PATH != INSTALL_PATH / "bin") {
+            return false;
+        }
+        ASSETS_PATH = INSTALL_PATH / "assets";
+        STDLIB_PATH = ASSETS_PATH / "stdlib";
+        INCLUDE_PATH = INSTALL_PATH / "include";
 
-#pragma unroll
-    for (const auto &path : {ASSETS_PATH, STDLIB_PATH, INCLUDE_PATH}) {
-        if (!exists(path) || !is_directory(path)) return false;
+        for (const auto &path : {ASSETS_PATH, STDLIB_PATH, INCLUDE_PATH}) {
+            if (!exists(path) || !is_directory(path)) return false;
+        }
+        return true;
+    } catch (...) {
+        return false;
     }
-    return true;
 }
 
 #endif //CLANG_MC_RESOURCEMANAGER_H

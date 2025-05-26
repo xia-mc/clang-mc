@@ -33,14 +33,14 @@ public:
         if (const auto &immediate = INSTANCEOF_SHARED(right, Immediate)) {
             if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
                 return fmt::format("scoreboard players remove {} vm_regs {}",
-                                   result->getName(), immediate->getValue());
+                                   result->getName(), static_cast<i32>(immediate->getValue()));
             } else {
                 assert(INSTANCEOF_SHARED(left, Ptr));
 
                 // 与x86不同，mc不支持直接对storage（内存）中的值做计算
                 return fmt::format("{}\nscoreboard players remove s1 vm_regs {}\n{}",
                                    CAST_FAST(left, Ptr)->loadTo(*Registers::S1),
-                                   immediate->getValue(),
+                                   static_cast<i32>(immediate->getValue()),
                                    CAST_FAST(left, Ptr)->storeFrom(*Registers::S1));
             }
         } else if (const auto &reg = INSTANCEOF_SHARED(right, Register)) {

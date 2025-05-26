@@ -20,6 +20,10 @@
 #include "ir/ops/Jg.h"
 #include "ir/ops/Jge.h"
 #include "ir/ops/Nop.h"
+#include "ir/ops/Jle.h"
+#include "ir/ops/Jne.h"
+#include "ir/controlFlow/JmpTable.h"
+#include "ir/ops/Syscall.h"
 
 template<typename T>
 static OpPtr createWith1Arg(const i32 lineNumber, const std::string_view &args) {
@@ -37,6 +41,16 @@ static OpPtr createWith2Arg(const i32 lineNumber, const std::string_view &args) 
     auto rightStr = std::string(string::trim(parts[1]));
 
     return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr));
+}
+
+static OpPtr createSyscall(const i32 lineNumber, const std::string_view &args) {
+    auto parts = string::split(args, ',', 2);
+    assert(parts.size() == 2);
+
+    auto leftStr = std::string(string::trim(parts[0]));
+    auto rightStr = std::string(string::trim(parts[1]));
+
+    return std::make_unique<Syscall>(lineNumber, std::move(leftStr), Json::parse(rightStr));
 }
 
 static __forceinline OpPtr createLabel(const i32 lineNumber, const std::string_view &string) {
@@ -79,6 +93,19 @@ static OpPtr createConJmp(const i32 lineNumber, const std::string_view &args) {
     return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr), label);
 }
 
+template<typename T>
+static OpPtr createConRet(const i32 lineNumber, const std::string_view &args) {
+    auto parts = string::split(args, ',');
+    if (UNLIKELY(parts.size() != 2)) {
+        throw ParseException(i18nFormat("ir.invalid_op", args));
+    }
+
+    auto leftStr = std::string(string::trim(parts[0]));
+    auto rightStr = std::string(string::trim(parts[1]));
+
+    return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr), LABEL_RET);
+}
+
 PURE OpPtr createOp(const i32 lineNumber, const std::string_view &string) {
     assert(!string.empty());
     if (UNLIKELY(string[string.length() - 1] == ':')) {
@@ -106,14 +133,36 @@ PURE OpPtr createOp(const i32 lineNumber, const std::string_view &string) {
             return createWith1Arg<Jmp>(lineNumber, args);
         CASE_STR("call"):
             return createWith1Arg<Call>(lineNumber, args);
+        CASE_STR("syscall"):
+            return createSyscall(lineNumber, args);
         CASE_STR("je"):
+        CASE_STR("jz"):
             return createConJmp<Je>(lineNumber, args);
+        CASE_STR("jne"):
+        CASE_STR("jnz"):
+            return createConJmp<Jne>(lineNumber, args);
         CASE_STR("jl"):
             return createConJmp<Jl>(lineNumber, args);
         CASE_STR("jg"):
             return createConJmp<Jg>(lineNumber, args);
         CASE_STR("jge"):
             return createConJmp<Jge>(lineNumber, args);
+        CASE_STR("jle"):
+            return createConJmp<Jle>(lineNumber, args);
+        CASE_STR("re"):
+        CASE_STR("rz"):
+            return createConRet<Je>(lineNumber, args);
+        CASE_STR("rne"):
+        CASE_STR("rnz"):
+            return createConRet<Jne>(lineNumber, args);
+        CASE_STR("rl"):
+            return createConRet<Jl>(lineNumber, args);
+        CASE_STR("rg"):
+            return createConRet<Jg>(lineNumber, args);
+        CASE_STR("rge"):
+            return createConRet<Jge>(lineNumber, args);
+        CASE_STR("rle"):
+            return createConRet<Jle>(lineNumber, args);
         CASE_STR("inline"):
             return std::make_unique<Inline>(lineNumber, std::string(args));
         CASE_STR("push"):
