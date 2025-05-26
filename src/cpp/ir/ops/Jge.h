@@ -21,7 +21,7 @@ private:
 
     static inline std::string cmp(const std::string_view &command, Register *left, Immediate *right) {
         return fmt::format("execute if score {} vm_regs matches {}.. run return run {}",
-                           left->getName(), right->getValue(), command);
+                           left->getName(), static_cast<i32>(right->getValue()), command);
     }
 
     static inline std::string cmp(const std::string_view &command, Register *left, Ptr *right) {
@@ -31,6 +31,9 @@ private:
     }
 
     static inline std::string cmp(const std::string_view &command, Immediate *left, Ptr *right) {
+        if (!left->getValue().checkSub(1)) {
+            return "";
+        }
         return fmt::format("{}\nexecute if score s1 vm_regs matches ..{} run return run {}",
                            right->loadTo(*Registers::S1), left->getValue() - 1, command);
     }

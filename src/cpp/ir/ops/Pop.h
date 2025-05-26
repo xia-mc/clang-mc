@@ -39,7 +39,7 @@ public:
         if (reg != nullptr) {
             return fmt::format("function std:stack/pop_{}", reg->getName());
         }
-        return string::repeat("function std:stack/pop_ignore", repeat, '\n');
+        return string::repeat("scoreboard players add rsp vm_regs 1", repeat, '\n');  // equals to 'function std:stack/pop_ignore'
     }
 };
 

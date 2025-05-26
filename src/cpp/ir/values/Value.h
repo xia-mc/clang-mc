@@ -17,7 +17,7 @@ public:
      * 如"42", "rax"
      * @return 字符串表示
      */
-    virtual std::string toString() const noexcept = 0;
+    [[nodiscard]] virtual std::string toString() const noexcept = 0;
 };
 
 #endif //CLANG_MC_VALUE_H

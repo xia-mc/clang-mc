@@ -99,12 +99,15 @@ add_executable(clang-mc
         src/cpp/ir/ops/Mul.h
         src/cpp/ir/ops/CallLike.h
         src/cpp/extern/ResourceManager.h
-        src/cpp/extern/ResourceManager.cpp
         src/cpp/parse/ParseManager.cpp
         src/cpp/parse/ParseManager.h
         src/cpp/extern/PreProcessorAPI.h
         src/cpp/extern/ClRustAPI.h
         src/cpp/patches/fmt/core.h
+        src/cpp/ir/ops/Jne.h
+        src/cpp/ir/objects/Int.h
+        src/cpp/ir/ops/Syscall.h
+        src/cpp/ir/ops/Jle.h
 )
 
 
@@ -132,7 +135,7 @@ if (DEBUG_MODE)
             COMMAND cargo build
             COMMENT "Building rust components"
     )
-    set(RUST_COMPONENT_DIR "D:/clang-mc/cmake-build-release/rust/debug")
+    set(RUST_COMPONENT_DIR "${CMAKE_BINARY_DIR}/rust/debug")
 else ()
     add_custom_command(
             TARGET clang-mc
@@ -140,7 +143,7 @@ else ()
             COMMAND cargo build -r
             COMMENT "Building rust components"
     )
-    set(RUST_COMPONENT_DIR "D:/clang-mc/cmake-build-release/rust/release")
+    set(RUST_COMPONENT_DIR "${CMAKE_BINARY_DIR}/rust/release")
 endif ()
 set(RUST_COMPONENT_NAME "clang_mc_rust")
 if (WIN32)
@@ -154,7 +157,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${RUST_COMPONENT_DIR}/${RU
 # Building
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 set_target_properties(clang-mc PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/bin"
 )
 add_custom_command(
         TARGET clang-mc
@@ -181,6 +184,9 @@ if (EXISTS "${VCPKG_DIR}/installed/x64-windows-static/share/yaml-cpp/yaml-cpp-co
 endif ()
 if (EXISTS "${VCPKG_DIR}/installed/x64-windows-static/share/libzip/libzip-config.cmake")
     set(libzip_DIR "${VCPKG_DIR}/installed/x64-windows-static/share/libzip")
+endif ()
+if (EXISTS "${VCPKG_DIR}/packages/nlohmann-json_x64-windows-static/share/nlohmann_json/nlohmann_jsonConfig.cmake")
+    set(nlohmann_json_DIR "${VCPKG_DIR}/packages/nlohmann-json_x64-windows-static/share/nlohmann_json")
 endif ()
 include_directories(${CMAKE_SOURCE_DIR}/src/cpp/patches)
 
@@ -212,6 +218,9 @@ target_link_libraries(clang-mc PRIVATE fmt::fmt)
 find_package(spdlog CONFIG REQUIRED)
 include_directories(${spdlog_INCLUDE_DIR})
 #target_link_libraries(clang-mc PRIVATE spdlog::spdlog_header_only)
+
+find_package(nlohmann_json CONFIG REQUIRED)
+target_link_libraries(clang-mc PRIVATE nlohmann_json::nlohmann_json)
 
 if (WIN32)
     target_link_libraries(clang-mc PRIVATE dbghelp)

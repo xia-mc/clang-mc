@@ -1,4 +1,10 @@
-extern std:_internal/init_malloc:
+#include <malloc>
 
 export std:_internal/__init__:
     call std:_internal/init_malloc
+
+    // 初始化栈
+    mov r0, 256  // 1kb内存
+    call std:malloc
+    mov rsp, rax
+    add rsp, 256  // 栈顶

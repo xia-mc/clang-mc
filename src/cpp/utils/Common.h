@@ -14,6 +14,7 @@
 #include "spdlog/spdlog.h"
 #include "cstdint"
 #include "utils/include/UnorderedDense.h"
+#include <nlohmann/json.hpp>
 
 using Path = std::filesystem::path;
 using Logger = std::shared_ptr<spdlog::logger>;
@@ -32,6 +33,7 @@ using u64 = uint64_t;
 using Hash = u64;
 template <typename T>
 using Supplier = std::function<T()>;
+using Json = nlohmann::json;
 
 class ParseException : public std::runtime_error {
 public:

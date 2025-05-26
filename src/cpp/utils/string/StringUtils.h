@@ -117,6 +117,28 @@ namespace string {
         return result.str();
     }
 
+    PURE static inline bool replaceFast(const std::string_view &str, std::string &out,
+                                        const std::string_view &from, const std::string_view &to) {
+        if (UNLIKELY(str.empty() || from.empty())) {
+            return false;
+        }
+
+        auto result = std::ostringstream();
+        size_t start = 0, end;
+
+        while (LIKELY((end = str.find(from, start)) != std::string_view::npos)) {
+            result << str.substr(start, end - start) << to;
+            start = end + from.size();
+        }
+
+        if (start == 0) {
+            return false;
+        }
+        result << str.substr(start);  // 追加剩余部分
+
+        out = result.str();
+        return true;
+    }
 
     PURE static inline constexpr size_t count(const std::string_view &str, const char ch) {
         size_t result = 0;

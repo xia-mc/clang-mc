@@ -8,8 +8,8 @@ from internal import *
 def initialize():
     assert Const.BUILD_DIR.exists()
     assert Const.BUILD_BIN_DIR.exists()
-    FileUtils.ensureDirectoryNotExist(Path(Const.BUILD_BIN_DIR, "assets"))
-    FileUtils.ensureDirectoryNotExist(Path(Const.BUILD_BIN_DIR, "include"))
+    FileUtils.ensureDirectoryNotExist(Path(Const.BUILD_DIR, "assets"))
+    FileUtils.ensureDirectoryNotExist(Path(Const.BUILD_DIR, "include"))
     FileUtils.ensureDirectoryEmpty(Const.BUILD_TMP_DIR)
 
 
@@ -18,18 +18,18 @@ def main():
 
     # 拷贝基本stdlib
     print("Copying runtime assets to bin...")
-    shutil.copytree(Path(Const.RESOURCES_DIR, "assets"), Path(Const.BUILD_BIN_DIR, "assets"))
-    shutil.copytree(Path(Const.RESOURCES_DIR, "include"), Path(Const.BUILD_BIN_DIR, "include"))
+    shutil.copytree(Path(Const.RESOURCES_DIR, "assets"), Path(Const.BUILD_DIR, "assets"))
+    shutil.copytree(Path(Const.RESOURCES_DIR, "include"), Path(Const.BUILD_DIR, "include"))
 
     # 编译stdlib
     print("Compiling stdlib...")
-    sources: list[str] = []
-    for item in Const.MCASM_DIR.iterdir():
-        if item.suffix != ".mcasm":
-            continue
-        sources.append(str(item.absolute()))
+    sources: list[str] = [Const.MCASM_DIR / "stdlib.mcasm"]
+    # for item in Const.MCASM_DIR.iterdir():
+    #     if item.suffix != ".mcasm":
+    #         continue
+    #     sources.append(str(item.absolute()))
     command = [str(Const.EXECUTABLE), "--compile-only", "--namespace", "std:__internal", "--build-dir", str(Const.BUILD_TMP_DIR)] + sources
-    prettyCmd = ' '.join(map(lambda s: f'"{s}"' if " " in s else s, command))
+    prettyCmd = ' '.join(map(lambda s: f'"{s}"' if " " in s else s, map(str, command)))
     print(f"Compile command: {prettyCmd}")
     process = subprocess.Popen(
         command,
@@ -46,7 +46,10 @@ def main():
 
     # 拷贝stdlib
     print("Copying stdlib to bin...")
-    shutil.copytree(Const.BUILD_TMP_DIR, Path(Const.BUILD_BIN_DIR, "assets/stdlib"), dirs_exist_ok=True)
+    shutil.copytree(Const.BUILD_TMP_DIR, Path(Const.BUILD_DIR, "assets/stdlib"), dirs_exist_ok=True)
+
+    print("Cleaning...")
+    shutil.rmtree(Path(Const.BUILD_DIR, "tmp"))
 
 
 if __name__ == '__main__':

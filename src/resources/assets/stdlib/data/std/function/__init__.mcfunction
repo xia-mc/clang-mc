@@ -36,8 +36,8 @@ scoreboard players set s2 vm_regs 0
 scoreboard players set s3 vm_regs 0
 
 # 复杂存储
-# list[int] 栈空间
-data modify storage std:vm stack set value []
+# list[int] 栈空间 (已移除)
+# data modify storage std:vm stack set value []
 # list[int] 堆空间
 data modify storage std:vm heap set value []
 # 字符串堆（用于优化字符串）

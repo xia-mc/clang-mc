@@ -28,7 +28,7 @@ public:
         if (const auto &immediate = INSTANCEOF_SHARED(right, Immediate)) {
             if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
                 return fmt::format("scoreboard players set {} vm_regs {}",
-                                   result->getName(), immediate->getValue());
+                                   result->getName(), static_cast<i32>(immediate->getValue()));
             } else {
                 assert(INSTANCEOF_SHARED(left, Ptr));
 
