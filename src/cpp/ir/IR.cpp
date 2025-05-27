@@ -10,26 +10,69 @@
 #include "utils/string/StringBuilder.h"
 #include "ir/ops/Call.h"
 #include "ir/controlFlow/JmpTable.h"
+#include "objects/MatrixStack.h"
 
 void IR::parse(std::string &&code) {
     this->sourceCode = std::move(code);
     auto lines = string::split(sourceCode, '\n');
 
+    auto line = Line(1, getFileDisplay());
+    auto lineStack = MatrixStack<Line>();
+
     size_t errors = 0;
-    for (size_t i = 0; i < lines.size(); ++i) {
-        const auto line = string::trim(string::removeComment(lines[i]));
-        if (UNLIKELY(line.empty())) {
+    for (size_t i = 0; i < lines.size(); ++i, ++line.lineNumber) {
+        const auto str = string::trim(string::removeComment(lines[i]));
+        if (UNLIKELY(str.empty())) {
             continue;
         }
 
-        const i32 lineNumber = static_cast<i32>(i) + 1;
-
         try {
-            auto op = createOp(lineNumber, line);
-            this->sourceMap.emplace(op.get(), lines[i]);
-            this->values.push_back(std::move(op));
+            if (str[0] == '#') {
+                SWITCH_STR(str) {
+                    CASE_STR("#push line"):
+                        lineStack.pushMatrix(line);
+                        break;
+                    CASE_STR("#pop line"):
+                        if (lineStack.isEmpty()) {
+                            throw ParseException(i18nFormat("ir.invalid_pop", str));
+                        }
+                        line = lineStack.popMatrix();
+                        break;
+                    default:
+                        auto splits = string::split(str.substr(1), ' ', 2);
+                        assert(!splits.empty());
+                        if (splits.size() != 2) break;
+
+                        auto op = splits[0];
+                        auto param = splits[1];
+                        SWITCH_STR(op) {
+                            CASE_STR("line"): {
+                                auto params = string::split(param, ' ', 2);
+                                assert(!params.empty());
+                                assert(params.size() < 3);
+
+                                if (params.size() == 2) {
+                                    auto name = params[1];
+                                    if (name.size() < 2 || name.front() != '"' || name.back() != '"') {
+                                        throw ParseException(i18nFormat("ir.invalid_pre_op", str));
+                                    }
+                                    line.filename = name;
+                                }
+                                line.lineNumber = parseToNumber(params[0]);
+                                break;
+                            }
+                            default:
+                                throw ParseException(i18nFormat("ir.invalid_pre_op", str));
+                        }
+                }
+            } else {
+                auto op = createOp(line.lineNumber, str);
+                this->sourceMap.emplace(op.get(), lines[i]);
+                this->lineMap.emplace(op.get(), line);
+                this->values.push_back(std::move(op));
+            }
         } catch (const ParseException &e) {
-            logger->error(createIRMessage(getFileDisplay(), lineNumber, lines[i], e.what()));
+            logger->error(createIRMessage(line, lines[i], e.what()));
             errors++;
         }
     }
@@ -120,7 +163,7 @@ static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: \"{}\"
 
             if (!unreachable) {
                 // 因为实际上采用“代码块”模式编译，而不是label，所以每个代码块末尾都需要显式跳转到下个代码块
-                auto jmp = std::make_unique<Jmp>(0, labelOp->getLabel());
+                auto jmp = std::make_unique<Jmp>(-1, labelOp->getLabel());
                 builder.appendLine(jmp->compile(jmpMap));
             }
 

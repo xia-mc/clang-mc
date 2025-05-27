@@ -29,6 +29,8 @@ ir.op.invalid_ptr: 无效的内存操作数
 ir.value.register.unknown_register: 未知寄存器 '{}'
 ir.errors_generated: "生成了 {} 个错误"
 ir.invalid_op: "无效的指令: '{}'"
+ir.invalid_pre_op: "无效的预处理指令: '{}'"
+ir.invalid_pop: "无效的预处理pop指令: '{}'，因为栈已经耗尽"
 ir.invalid_label: 标签名不能包含空格
 ir.invalid_label_identifier: 需要有效的标签标识符，但得到了 '{}'
 ir.unknown_op: "未知指令: '{}'"

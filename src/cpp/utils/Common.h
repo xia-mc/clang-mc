@@ -13,7 +13,7 @@
 #include "filesystem"
 #include "spdlog/spdlog.h"
 #include "cstdint"
-#include "utils/include/UnorderedDense.h"
+#include "objects/include/UnorderedDense.h"
 #include <nlohmann/json.hpp>
 
 using Path = std::filesystem::path;
@@ -59,6 +59,12 @@ public:
     }
 };
 
+class NullPointerException : public std::runtime_error {
+public:
+    explicit NullPointerException(const std::string &string) : std::runtime_error(string) {
+    }
+};
+
 #define GETTER(name, field) __forceinline auto &get##name() noexcept { return field; } __forceinline const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
 #define GETTER_POD(name, field) __forceinline auto get##name() const noexcept { return field; }
 #define SETTER(name, field) __forceinline void set##name(const auto &value) noexcept { field = value; }
@@ -81,7 +87,7 @@ public:
 #define UNREACHABLE() __builtin_unreachable()
 #define PURE [[nodiscard]]
 
-PURE static __forceinline constexpr Hash hash(const std::string_view &str) noexcept {
+PURE static inline constexpr Hash hash(const std::string_view &str) noexcept {
     Hash hash = 14695981039346656037U;
     for (const char c: str) {
         hash ^= static_cast<Hash>(c);
@@ -109,5 +115,13 @@ PURE static __forceinline constexpr Hash hash(const std::string_view &str) noexc
     } while (expression)
 #define WARN(condition, message) UNUSED(condition); UNUSED(message)
 #endif
+
+template<class T>
+static __forceinline constexpr T *requireNonNull(T *object) {
+    if (UNLIKELY(object == nullptr)) {
+        throw NullPointerException("null");
+    }
+    return object;
+}
 
 #endif //CLANG_MC_COMMON_H

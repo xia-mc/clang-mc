@@ -3,7 +3,7 @@
 //
 
 #include "JmpTable.h"
-#include "utils/NameGenerator.h"
+#include "objects/NameGenerator.h"
 #include "utils/string/StringBuilder.h"
 
 static inline constexpr std::string_view JMP_LAST_TEMPLATE = "return run function {}";

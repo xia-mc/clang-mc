@@ -79,6 +79,7 @@ void ParseManager::loadIR() {
 void ParseManager::freeSource() {
     for (auto &ir: irs) {
         HashMap<const Op *, std::string_view>().swap(ir.sourceMap);
+        HashMap<const Op *, Line>().swap(ir.lineMap);
         std::string().swap(ir.sourceCode);
     }
 }
