@@ -6,7 +6,7 @@
 #define CLANG_MC_NAMEGENERATOR_H
 
 #include <cstdlib>
-#include "Native.h"
+#include "utils/Native.h"
 
 class NameGenerator {
 private:

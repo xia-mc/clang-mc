@@ -130,24 +130,15 @@ VerifyResult Verifier::handleSingle(IR &ir) {
 }
 
 void Verifier::error(const std::string &message, const IR *ir, const Op *op) {
-    logger->error(createIRMessage(ir->getFileDisplay(), op->getLineNumber(),
-                                  ir->getSource(op), message));
+    logger->error(createIRMessage(*requireNonNull(ir), op, message));
     errors++;
 }
 
 void Verifier::warn(const std::string &message, const IR *ir, const Op *op) {
     // TODO Werror
-    const auto lineNumber = op->getLineNumber();
-    if (lineNumber > 0) {
-        logger->warn(createIRMessage(ir->getFileDisplay(), lineNumber,
-                                     ir->getSource(op), message));
-    }
+    logger->warn(createIRMessage(*requireNonNull(ir), op, message));
 }
 
 void Verifier::note(const std::string &message, const IR *ir, const Op *op) {
-    const auto lineNumber = op->getLineNumber();
-    if (lineNumber > 0) {
-        logger->info(createIRMessage(ir->getFileDisplay(), lineNumber,
-                                     ir->getSource(op), message));
-    }
+    logger->info(createIRMessage(*requireNonNull(ir), op, message));
 }

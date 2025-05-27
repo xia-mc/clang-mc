@@ -60,8 +60,8 @@ impl PreProcesser {
         0
     }
 
-    fn get_code(&self, path: PathBuf) -> Result<Rc<String>, i32> {
-        if self.include_cache.borrow().get(&path).is_none() {
+    fn get_code(&self, path: &PathBuf) -> Result<Rc<String>, i32> {
+        if self.include_cache.borrow().get(path.as_path()).is_none() {
             match File::open(&path) {
                 Ok(mut file) => {
                     let mut str = String::new();
@@ -88,7 +88,7 @@ impl PreProcesser {
         }
 
         let cache = self.include_cache.borrow();
-        let result = cache.get(&path);
+        let result = cache.get(path);
         match result {
             None => {
                 Err(0xff4)
@@ -99,21 +99,21 @@ impl PreProcesser {
         }
     }
 
-    fn get_include(&self, cur_file: &Path, file_str: &str) -> Option<Rc<String>> {
+    fn get_include(&self, cur_file: &Path, file_str: &str) -> Option<(PathBuf, Rc<String>)> {
         match cur_file.parent() {
             None => {}
             Some(parent) => {
                 let path = parent.join(file_str);
-                if let Ok(result) = self.get_code(path) {
-                    return Some(result);
+                if let Ok(result) = self.get_code(&path) {
+                    return Some((path, result));
                 }
             }
         }
 
         for begin in self.include_dirs.borrow().iter() {
             let path = begin.join(file_str);
-            if let Ok(result) = self.get_code(path) {
-                return Some(result);
+            if let Ok(result) = self.get_code(&path) {
+                return Some((path, result));
             }
         }
 
@@ -175,8 +175,11 @@ impl PreProcesser {
                         None => {
                             return Err(0xff9);
                         }
-                        Some(code) => {
-                            result.push_str(&**code);
+                        Some((file, code)) => {
+                            result.push_str("#push line\n");
+                            result.push_str(format!("#line 0 \"{}\"\n", file.to_str().unwrap_or("Unknown Source")).as_str());
+                            result.push_str(&code);
+                            result.push_str("\n#pop line\n");
                             continue;
                         }
                     }
@@ -186,7 +189,6 @@ impl PreProcesser {
                 }
             }
 
-            result.push_str(line);
             result.push('\n');
         }
 

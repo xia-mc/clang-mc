@@ -59,8 +59,8 @@ add_executable(clang-mc
         src/cpp/Main.h
         src/cpp/i18n/I18n.h
         src/cpp/i18n/I18n.cpp
-        src/cpp/utils/NameGenerator.h
-        src/cpp/utils/include/UnorderedDense.h
+        src/cpp/objects/NameGenerator.h
+        src/cpp/objects/include/UnorderedDense.h
         src/cpp/ir/ops/Ret.h
         src/cpp/ir/verify/Verifier.cpp
         src/cpp/ir/verify/Verifier.h
@@ -105,9 +105,11 @@ add_executable(clang-mc
         src/cpp/extern/ClRustAPI.h
         src/cpp/patches/fmt/core.h
         src/cpp/ir/ops/Jne.h
-        src/cpp/ir/objects/Int.h
+        src/cpp/objects/Int.h
         src/cpp/ir/ops/Syscall.h
         src/cpp/ir/ops/Jle.h
+        src/cpp/objects/MatrixStack.h
+        src/cpp/objects/MatrixStack.h
 )
 
 

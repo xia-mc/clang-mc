@@ -29,6 +29,8 @@ ir.op.invalid_ptr: invalid memory operand
 ir.value.register.unknown_register: unknown register '{}'
 ir.errors_generated: "{} errors generated"
 ir.invalid_op: "invalid instruction: '{}'"
+ir.invalid_pre_op: "invalid preprocessed instruction: '{}'"
+ir.invalid_pop: "Invalid preprocessed pop instruction: '{}' because the stack is exhausted"
 ir.invalid_label: label name cannot contain spaces
 ir.invalid_label_identifier: expected a valid label identifier, but found '{}'
 ir.unknown_op: "unknown instruction: '{}'"

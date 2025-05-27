@@ -204,6 +204,14 @@ namespace string {
 
         return builder.toString();
     }
+
+    PURE static inline std::string getPrettyPath(const Path &file) {
+        auto result = file.lexically_relative(std::filesystem::current_path());
+        if (!result.empty() && result.native()[0] != '.') {
+            return result.string();
+        }
+        return file.string();
+    }
 }
 
 static __forceinline void printStacktrace(const std::exception &exception) noexcept {

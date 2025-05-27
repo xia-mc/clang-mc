@@ -6,7 +6,7 @@
 #define CLANG_MC_IMMEDIATE_H
 
 #include "Value.h"
-#include "ir/objects/Int.h"
+#include "objects/Int.h"
 
 class Immediate : public Value {
 private:
