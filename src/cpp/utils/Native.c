@@ -81,8 +81,8 @@ void printStacktraceMsg(const char *err) {
 
         if (SymFromAddr(process, address, NULL, symbol)) {
             if (unknownCount > 0) {
-                unknownCount = 0;
                 fprintf(stderr, "        Suppressed %zu unknown stack traces.\n", unknownCount);
+                unknownCount = 0;
             }
             fprintf(stderr, "        at %s", symbol->Name);
         } else {

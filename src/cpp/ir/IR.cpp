@@ -16,7 +16,7 @@ void IR::parse(std::string &&code) {
     this->sourceCode = std::move(code);
     auto lines = string::split(sourceCode, '\n');
 
-    auto line = Line(1, getFileDisplay());
+    auto line = Line(1, false, getFileDisplay());
     auto lineStack = MatrixStack<Line>();
 
     size_t errors = 0;
@@ -28,11 +28,11 @@ void IR::parse(std::string &&code) {
 
         try {
             if (str[0] == '#') {
-                SWITCH_STR(str) {
-                    CASE_STR("#push line"):
+                SWITCH_STR(str.substr(1)) {
+                    CASE_STR("push"):
                         lineStack.pushMatrix(line);
                         break;
-                    CASE_STR("#pop line"):
+                    CASE_STR("pop"):
                         if (lineStack.isEmpty()) {
                             throw ParseException(i18nFormat("ir.invalid_pop", str));
                         }
@@ -41,10 +41,9 @@ void IR::parse(std::string &&code) {
                     default:
                         auto splits = string::split(str.substr(1), ' ', 2);
                         assert(!splits.empty());
-                        if (splits.size() != 2) break;
 
                         auto op = splits[0];
-                        auto param = splits[1];
+                        auto param = splits.size() == 2 ? splits[1] : "";
                         SWITCH_STR(op) {
                             CASE_STR("line"): {
                                 auto params = string::split(param, ' ', 2);
@@ -61,6 +60,12 @@ void IR::parse(std::string &&code) {
                                 line.lineNumber = parseToNumber(params[0]);
                                 break;
                             }
+                            CASE_STR("nowarn"):
+                                if (!string::trim(param).empty()) {
+                                    throw ParseException(i18nFormat("ir.invalid_pre_op", str));
+                                }
+                                line.noWarn = true;
+                                break;
                             default:
                                 throw ParseException(i18nFormat("ir.invalid_pre_op", str));
                         }

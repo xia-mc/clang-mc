@@ -23,7 +23,7 @@ public:
      * 生成指令的字符串表示
      * @return 字符串表示
      */
-    [[nodiscard]] virtual std::string toString() const noexcept = 0;
+    [[nodiscard]] virtual std::string toString() const = 0;
 
     /**
      * 编译指令到McFunction

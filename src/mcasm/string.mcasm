@@ -1,0 +1,12 @@
+#include "int"
+
+// String from_int(int value)
+export std:string/from_int:
+    inline data modify storage std:vm s3 set value {value: -1, string: "?", length: 1}
+    inline execute store result storage std:vm s3.value int 1 run scoreboard players get r0 vm_regs
+    inline function std:_internal/int_to_string with storage std:vm s3
+
+    call std:int/declen
+    inline execute store result storage std:vm s3.length int 1 run scoreboard players get rax vm_regs
+    inline function std:string/alloc_str with storage std:vm s3
+    ret

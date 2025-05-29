@@ -8,10 +8,8 @@
 #include "ir/IRCommon.h"
 #include "ir/ops/Label.h"
 
-#define LABEL_RET "__internel_ret"
-
 namespace {
-    static inline std::string_view LABEL_RET_CMD = "function " LABEL_RET;
+    inline std::string_view LABEL_RET_CMD = "function " LABEL_RET;
 }
 
 class JmpTable {
@@ -26,7 +24,7 @@ private:
 public:
     explicit JmpTable(const std::vector<OpPtr> &values, const LabelMap &labelMap) noexcept:
             values(values), labelMap(labelMap) {
-        jmpMap.emplace(hash(LABEL_RET), std::span<std::string_view>(&LABEL_RET_CMD, LABEL_RET_CMD.size()));
+        jmpMap.emplace(hash(LABEL_RET), std::span(&LABEL_RET_CMD, 1));
     }
 
     ~JmpTable() {

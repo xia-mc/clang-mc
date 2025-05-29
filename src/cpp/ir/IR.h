@@ -16,6 +16,7 @@ class ParseManager;
 
 struct Line {
     i32 lineNumber;
+    bool noWarn;
     std::string_view filename;
 };
 
@@ -44,6 +45,8 @@ public:
         return fileDisplay;
     }
 
+    GETTER(File, file);
+
     GETTER(Values, values);
 
     void parse(std::string &&code);
@@ -67,7 +70,7 @@ public:
         if (result != lineMap.end()) {
             return result->second;
         }
-        return Line(-1, "Unknown Source");
+        return Line(-1, false, "Unknown Source");
     }
 
     static inline std::string generateName() {

@@ -83,6 +83,18 @@ void ArgParser::next(const std::string &arg) {
             // 额外的调试信息
             config.setDebugInfo(true);
             return;
+        CASE_STR("-Werror"):
+            // 把警告视为错误
+            config.setWerror(true);
+            return;
+        CASE_STR("-E"):
+            // 只预处理，不编译
+            config.setPreprocessOnly(true);
+            return;
+        CASE_STR("-w"):
+            // 抑制所有警告
+            config.setNoWarn(true);
+            return;
         default:
             break;
     }

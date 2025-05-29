@@ -4,13 +4,16 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use crate::objects::matrix_stack::MatrixStack;
 
 pub struct PreProcesser {
     include_dirs: RefCell<Vec<PathBuf>>,
     include_cache: Rc<RefCell<HashMap<PathBuf, Rc<String>>>>,
     targets: Rc<RefCell<Vec<(PathBuf, String)>>>,
-    processed: Rc<RefCell<Vec<PathBuf>>>,
     processing: Rc<RefCell<HashSet<PathBuf>>>,
+    defines: Rc<RefCell<HashMap<PathBuf, HashMap<String, String>>>>,
+    include_once: Rc<RefCell<HashSet<PathBuf>>>,
+    bypass_include: Rc<RefCell<HashMap<PathBuf, HashSet<PathBuf>>>>,
 }
 
 impl PreProcesser {
@@ -19,8 +22,10 @@ impl PreProcesser {
             include_dirs: RefCell::new(Vec::new()),
             include_cache: Rc::new(RefCell::new(HashMap::new())),
             targets: Rc::new(RefCell::new(Vec::new())),
-            processed: Rc::new(RefCell::new(Vec::new())),
             processing: Rc::new(RefCell::new(HashSet::new())),
+            defines: Rc::new(RefCell::new(HashMap::new())),
+            include_once: Rc::new(RefCell::new(HashSet::new())),
+            bypass_include: Rc::new(RefCell::new(HashMap::new())),
         }
     }
 
@@ -29,8 +34,10 @@ impl PreProcesser {
             include_dirs: self.include_dirs.clone(),
             include_cache: self.include_cache.clone(),
             targets: self.targets.clone(),
-            processed: self.processed.clone(),
             processing: self.processing.clone(),
+            defines: self.defines.clone(),
+            include_once: self.include_once.clone(),
+            bypass_include: self.bypass_include.clone(),
         }
     }
 
@@ -40,7 +47,9 @@ impl PreProcesser {
     }
 
     pub fn add_target(&mut self, path: PathBuf) -> i32 {
-        self.targets.borrow_mut().push((path, String::new()));
+        self.targets.borrow_mut().push((path.clone(), String::new()));
+        self.defines.borrow_mut().insert(path.clone(), HashMap::new());
+        self.bypass_include.borrow_mut().insert(path, HashSet::new());
         0
     }
 
@@ -60,7 +69,7 @@ impl PreProcesser {
         0
     }
 
-    fn get_code(&self, path: &PathBuf) -> Result<Rc<String>, i32> {
+    fn get_code(&self, target: &Path, path: &PathBuf) -> Result<String, i32> {
         if self.include_cache.borrow().get(path.as_path()).is_none() {
             match File::open(&path) {
                 Ok(mut file) => {
@@ -69,17 +78,7 @@ impl PreProcesser {
                         return Err(0xff2);
                     }
 
-                    match self.handle_target(path.as_path(), &str) {
-                        Ok(result) => {
-                            self.include_cache.borrow_mut().insert(path.clone(), Rc::new(result));
-                        }
-                        Err(err) => {
-                            if err != 0 {
-                                return Err(err);
-                            }
-                            self.include_cache.borrow_mut().insert(path.clone(), Rc::new(str));
-                        }
-                    };
+                    self.include_cache.borrow_mut().insert(path.clone(), Rc::from(str));
                 }
                 Err(_) => {
                     return Err(0xff3);
@@ -87,24 +86,22 @@ impl PreProcesser {
             }
         }
 
-        let cache = self.include_cache.borrow();
-        let result = cache.get(path);
-        match result {
-            None => {
-                Err(0xff4)
+        match self.handle_target(target, path.as_path(), self.include_cache.borrow().get(path.as_path()).unwrap()) {
+            Ok(res) => {
+                Ok(res)
             }
-            Some(value) => {
-                Ok(value.clone())
+            Err(err) => {
+                Err(err)
             }
         }
     }
 
-    fn get_include(&self, cur_file: &Path, file_str: &str) -> Option<(PathBuf, Rc<String>)> {
+    fn get_include(&self, target: &Path, cur_file: &Path, file_str: &str) -> Option<(PathBuf, String)> {
         match cur_file.parent() {
             None => {}
             Some(parent) => {
                 let path = parent.join(file_str);
-                if let Ok(result) = self.get_code(&path) {
+                if let Ok(result) = self.get_code(target, &path) {
                     return Some((path, result));
                 }
             }
@@ -112,36 +109,33 @@ impl PreProcesser {
 
         for begin in self.include_dirs.borrow().iter() {
             let path = begin.join(file_str);
-            if let Ok(result) = self.get_code(&path) {
+            if let Ok(result) = self.get_code(target, &path) {
                 return Some((path, result));
             }
         }
 
-        if file_str.ends_with(".mcasm") {
+        if file_str.ends_with(".mch") {
             return None;
         }
-        if let Some(result) = self.get_include(cur_file, format!("{}.mcasm", file_str).as_str()) {
-            return Some(result);
-        }
-        None
+        self.get_include(target, cur_file, format!("{}.mch", file_str).as_str())
     }
 
-    #[allow(unreachable_code)]
-    fn handle_target(&self, path: &Path, code: &String) -> Result<String, i32> {
+    fn handle_target(&self, target: &Path, path: &Path, code: &String) -> Result<String, i32> {
         let path_buf = path.to_path_buf();
-        if self.processed.borrow().contains(&path_buf) {
-            return Err(0xff5);
-        }
         if self.processing.borrow().contains(&path_buf) {
             return Err(0xff6);
         }
         self.processing.borrow_mut().insert(path_buf.clone());
 
+        let mut ignore = false;
+        let mut ignore_stack = MatrixStack::new();
         let mut result = String::new();
         for line in code.lines() {
             if !line.starts_with('#') {
-                result.push_str(line);
-                result.push('\n');
+                if !ignore {
+                    result.push_str(line);
+                    result.push('\n');
+                }
                 continue;
             }
 
@@ -150,7 +144,7 @@ impl PreProcesser {
             match line.find(' ').and_then(|pos|
                 if pos == line.len() - 1 { None } else { Some(pos) }) {
                 None => {
-                    op = line;
+                    op = &line[1..];
                     params = "";
                 }
                 Some(pos) => {
@@ -161,6 +155,7 @@ impl PreProcesser {
 
             match op {
                 "include" => {
+                    if ignore { continue }
                     if params.len() < 3 {
                         return Err(0xff7);
                     }
@@ -171,35 +166,113 @@ impl PreProcesser {
                     } else {
                         return Err(0xff8);
                     }
-                    match self.get_include(path, params) {
+
+                    match self.get_include(target, path, params) {
                         None => {
                             return Err(0xff9);
                         }
                         Some((file, code)) => {
-                            result.push_str("#push line\n");
-                            result.push_str(format!("#line 0 \"{}\"\n", file.to_str().unwrap_or("Unknown Source")).as_str());
+                            if self.include_once.borrow().contains(file.as_path()) {
+                                if self.bypass_include.borrow().get(target).unwrap().contains(file.as_path()) {
+                                    continue;
+                                }
+                                self.bypass_include.borrow_mut().get_mut(target).unwrap().insert(file.clone());
+                            }
+
+                            result.push_str("#push\n");
+                            result.push_str(format!("#line -1 \"{}\"\n", file.to_str().unwrap_or("Unknown Source")).as_str());
+                            result.push_str("#nowarn\n");
                             result.push_str(&code);
-                            result.push_str("\n#pop line\n");
-                            continue;
+                            result.push_str("\n#pop");
                         }
                     }
+                }
+                "ifdef" => {
+                    if params.contains(char::is_whitespace) {
+                        return Err(0xffb);
+                    }
+
+                    ignore_stack.push_matrix(ignore);
+                    if !self.defines.borrow().get(target).unwrap().contains_key(params.trim()) {
+                        ignore = true;
+                    } else {
+                        ignore = false;
+                    }
+                }
+                "ifndef" => {
+                    if params.contains(char::is_whitespace) {
+                        return Err(0xffc);
+                    }
+
+                    ignore_stack.push_matrix(ignore);
+                    if self.defines.borrow().get(target).unwrap().contains_key(params.trim()) {
+                        ignore = true;
+                    } else {
+                        ignore = false;
+                    }
+                }
+                "endif" => {
+                    if !params.is_empty() {
+                        return Err(0xffd);
+                    }
+
+                    if ignore_stack.is_empty() {
+                        return Err(0xffe);
+                    }
+                    ignore = ignore_stack.pop_matrix();
+                }
+                "define" => {
+                    if ignore { continue }
+
+                    let key: String;
+                    let value: String;
+                    match params.find(' ').and_then(|pos|
+                        if pos == params.len() - 1 { None } else { Some(pos) }) {
+                        None => {
+                            key = params.trim().to_string();
+                            value = String::new();
+                        }
+                        Some(pos) => {
+                            key = params[..pos].trim().to_string();
+                            value = params[pos + 1..].trim().to_string();
+                        }
+                    };
+                    if value.contains(char::is_whitespace) {
+                        return Err(0xfff);
+                    }
+
+                    self.defines.borrow_mut().get_mut(target).unwrap().insert(key, value);
+                }
+                "undef" => {
+                    if ignore { continue }
+                    let key = params.trim();
+                    if key.is_empty() {
+                        return Err(0x1000);
+                    }
+                    self.defines.borrow_mut().get_mut(target).unwrap().remove(key);
+                }
+                "once" => {
+                    if ignore { continue }
+                    self.include_once.borrow_mut().insert(PathBuf::from(path));
                 }
                 _ => {
                     return Err(0xffa);
                 }
             }
+            result.push_str("\n");
+        }
 
-            result.push('\n');
+        if !ignore_stack.is_empty() {
+            return Err(0x1001)
         }
 
         self.processing.borrow_mut().remove(&path_buf);
-        self.processed.borrow_mut().push(path_buf);
         Ok(result)
     }
 
     pub fn process(&mut self) -> i32 {
         for (path, code) in self.targets.borrow_mut().iter_mut() {
-            match self.handle_target(path, code) {
+            match self.handle_target(path, path, code) {
                 Ok(new_code) => {
                     *code = new_code;
                 }
