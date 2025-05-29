@@ -15,6 +15,7 @@
 class Verifier {
 private:
     const Logger &logger;
+    const Config &config;
     std::vector<IR> &irs;
 
     const IR *currentIR = nullptr;
@@ -29,17 +30,17 @@ private:
         return error(message, currentIR, currentOp);
     }
 
-    void warn(const std::string &message, const IR *ir, const Op *op);
+    bool warn(const std::string &message, const IR *ir, const Op *op);
 
-    __forceinline void warn(const std::string &message) {
+    __forceinline bool warn(const std::string &message) {
         return warn(message, currentIR, currentOp);
     }
 
     void note(const std::string &message, const IR *ir, const Op *op);
 
 public:
-    explicit Verifier(const Logger &logger, std::vector<IR> &irs) :
-            logger(logger), irs(irs) {
+    explicit Verifier(const Logger &logger, const Config &config, std::vector<IR> &irs) :
+            logger(logger), config(config), irs(irs) {
     }
 
     void verify();

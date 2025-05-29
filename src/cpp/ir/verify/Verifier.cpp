@@ -6,7 +6,6 @@
 #include "Verifier.h"
 #include "ir/ops/CallLike.h"
 #include "ir/ops/Nop.h"
-#include "ir/ops/CmpLike.h"
 
 void Verifier::verify() {
     for (auto& ir : irs) {
@@ -35,6 +34,7 @@ VerifyResult Verifier::handleSingle(IR &ir) {
     auto &ops = ir.getValues();
 
     auto definedLabels = HashMap<Hash, Label *>();
+    definedLabels.emplace(hash(LABEL_RET), &labelRet);
     auto undefinedLabels = HashMap<Hash, std::vector<CallLike *>>();  // label hash, 使用label的地方
     auto unusedLabels = HashSet<Hash>();
 
@@ -45,8 +45,9 @@ VerifyResult Verifier::handleSingle(IR &ir) {
     static const auto reportUnreachable = [&](const int start) {
         const auto firstLabel = findNextLabel(ops, start);
 
-        warn(i18n("ir.verify.unreachable"));
-        note(i18n("ir.verify.unreachable_before"), &ir, ops[firstLabel - 1].get());
+        if (warn(i18n("ir.verify.unreachable"))) {
+            note(i18n("ir.verify.unreachable_before"), &ir, ops[firstLabel - 1].get());
+        }
 
         // 避免后续编译时预期的代码流非法
         for (size_t i = 0; i < firstLabel; ++i) {
@@ -90,9 +91,10 @@ VerifyResult Verifier::handleSingle(IR &ir) {
         }
 
         if (unreachable) {
-            warn(i18n("ir.verify.unreachable"));
-            const auto nextLabel = findNextLabel(ops, i + 1);
-            note(i18n("ir.verify.unreachable_before"), &ir, ops[nextLabel - 1].get());
+            if (warn(i18n("ir.verify.unreachable"))) {
+                const auto nextLabel = findNextLabel(ops, i + 1);
+                note(i18n("ir.verify.unreachable_before"), &ir, ops[nextLabel - 1].get());
+            }
             unreachable = false;  // 防止报一连串的unreachable
         }
 
@@ -102,8 +104,9 @@ VerifyResult Verifier::handleSingle(IR &ir) {
             if (definedLabels.contains(label)) {
                 unusedLabels.erase(label);
                 if (INSTANCEOF(op, Jmp) && definedLabels[label]->getExtern()) {
-                    warn(i18n("ir.verify.jmp_to_extern"));
-                    note(i18n("ir.verify.previous_definition"), &ir, definedLabels[label]);
+                    if (warn(i18n("ir.verify.jmp_to_extern"))) {
+                        note(i18n("ir.verify.previous_definition"), &ir, definedLabels[label]);
+                    }
                 }
             } else {
                 undefinedLabels[label].push_back(callLike);
@@ -134,9 +137,18 @@ void Verifier::error(const std::string &message, const IR *ir, const Op *op) {
     errors++;
 }
 
-void Verifier::warn(const std::string &message, const IR *ir, const Op *op) {
-    // TODO Werror
-    logger->warn(createIRMessage(*requireNonNull(ir), op, message));
+bool Verifier::warn(const std::string &message, const IR *ir, const Op *op) {
+    if (config.getNoWarn())
+        return false;
+    if (ir->getLine(op).noWarn)
+        return false;
+
+    if (config.getWerror()) {
+        error(message, ir, op);
+    } else {
+        logger->warn(createIRMessage(*requireNonNull(ir), op, message));
+    }
+    return true;
 }
 
 void Verifier::note(const std::string &message, const IR *ir, const Op *op) {

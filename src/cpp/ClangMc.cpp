@@ -5,7 +5,7 @@
 #include "ClangMc.h"
 #include "utils/FileUtils.h"
 #include "ir/verify/Verifier.h"
-#include "i18n/LogFormatter.h"
+#include "objects/LogFormatter.h"
 #include "builder/Builder.h"
 #include "builder/PostOptimizer.h"
 #include "extern/ResourceManager.h"
@@ -53,9 +53,24 @@ void ClangMc::start() {
         auto &irs = parseManager.getIRs();
 
         // verify
-        Verifier(logger, irs).verify();
+        Verifier(logger, config, irs).verify();
         if (!config.getDebugInfo()) {
             parseManager.freeSource();
+        }
+
+        if (config.getPreprocessOnly()) {
+            for (const auto &ir: irs) {
+                auto path = Path(ir.getFile());
+                path.replace_extension(".mci");
+
+                StringBuilder builder = StringBuilder();
+                for (const auto &op: ir.getValues()) {
+                    builder.appendLine(op->toString());
+                }
+                ensureParentDir(path);
+                writeFile(path, builder.toString());
+            }
+            return;
         }
 
         // compiling
@@ -79,10 +94,12 @@ void ClangMc::start() {
         // building
         builder.build();
 
-        // linking
-        if (!config.getCompileOnly()) {
-            builder.link();
+        if (config.getCompileOnly()) {
+            return;
         }
+
+        // linking
+        builder.link();
         return;
     } catch (const IOException &e) {
         logger->error(e.what());
@@ -96,13 +113,8 @@ void ClangMc::start() {
 
 [[noreturn]] void ClangMc::exit() {
     spdlog::drop_all();
-#ifndef NDEBUG
-    fprintf(stderr, "Called ClangMc::exit.\n");
-    onTerminate();
-#else
     std::exit(0);
     UNREACHABLE();
-#endif
 }
 
 void ClangMc::ensureEnvironment() const {
@@ -113,6 +125,7 @@ void ClangMc::ensureEnvironment() const {
 
 void ClangMc::ensureValidConfig() {
     if (config.getInput().empty()) {
+        std::cout << string::removeFromLast(getExecutableName(getArgv0()), ".") << ": ";
         logger->error(i18n("general.no_input_files"));
         exit();
     }

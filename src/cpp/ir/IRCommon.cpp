@@ -44,7 +44,7 @@ static OpPtr createWith2Arg(const i32 lineNumber, const std::string_view &args) 
 }
 
 static OpPtr createSyscall(const i32 lineNumber, const std::string_view &args) {
-    auto parts = string::split(args, ',', 2);
+    auto parts = string::split(args, ' ', 2);
     assert(parts.size() == 2);
 
     auto leftStr = std::string(string::trim(parts[0]));

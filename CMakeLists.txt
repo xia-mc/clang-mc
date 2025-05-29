@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 project(clang-mc C CXX)
-set(DEBUG_MODE OFF)
+set(DEBUG_MODE ON)
 set(VCPKG_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg")
 
 set(CMAKE_C_STANDARD 17)
@@ -69,7 +69,7 @@ add_executable(clang-mc
         src/cpp/ir/verify/Verifier.cpp
         src/cpp/ir/ops/JmpLike.h
         src/cpp/ir/verify/VerifyResult.h
-        src/cpp/i18n/LogFormatter.h
+        src/cpp/objects/LogFormatter.h
         src/cpp/ir/ops/Add.h
         src/cpp/ir/values/Ptr.h
         src/cpp/ir/ops/OpCommon.cpp

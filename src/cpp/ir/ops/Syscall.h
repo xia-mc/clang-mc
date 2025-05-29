@@ -13,11 +13,11 @@ private:
     const std::string target;
     const Json params;
 public:
-    explicit Syscall(i32 lineNumber, std::string &&target, Json &&params) noexcept :
+    explicit Syscall(i32 lineNumber, std::string &&target, Json &&params) :
         Op("syscall", lineNumber), target(target), params(params) {
     }
 
-    [[nodiscard]] std::string toString() const noexcept override {
+    [[nodiscard]] std::string toString() const override {
         return fmt::format("syscall {}, {}", target, params.dump());
     }
 

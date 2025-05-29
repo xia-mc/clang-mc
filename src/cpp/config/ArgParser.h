@@ -12,7 +12,7 @@
 #include "utils/Common.h"
 
 // 需要额外参数的参数项
-static inline const std::unordered_set<Hash> DATA_ARGS = {
+static inline const HashSet<Hash> DATA_ARGS = {
         hash("--output"), hash("-o"),
         hash("--build-dir"), hash("-B"),
         hash("--namespace"), hash("-N"),

@@ -1,4 +1,4 @@
-#include <malloc>
+#include "memory"
 
 export std:_internal/__init__:
     call std:_internal/init_malloc

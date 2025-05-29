@@ -73,6 +73,29 @@ namespace string {
         return str;
     }
 
+    PURE static inline constexpr std::string_view removeFromLast(const std::string_view &str,
+                                                                  const std::string_view &substr) noexcept {
+        if (UNLIKELY(str.empty())) {
+            return "";
+        }
+        if (UNLIKELY(substr.empty())) {
+            return "";
+        }
+
+        auto subLength = substr.length();
+        char last = substr.back();
+        size_t i = str.length() - 1;
+        while (i > 0) {
+            i--;
+            if (str[i] == last) {
+                if (str.substr(i - subLength + 1, substr.length()) == substr) {
+                    return str.substr(0, i);
+                }
+            }
+        }
+        return str;
+    }
+
     PURE static inline constexpr std::string_view removeComment(const std::string_view &str) noexcept {
         return removeFromFirst(str, "//");
     }

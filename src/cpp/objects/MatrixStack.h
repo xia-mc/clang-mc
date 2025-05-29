@@ -19,8 +19,8 @@ public:
         stack.push(std::move(object));
     }
 
-    __forceinline void pushMatrix(const T &object) {
-        pushMatrix(T(object));
+    __forceinline void pushMatrix(const T object) {
+        stack.push(std::move(object));
     }
 
     __forceinline T popMatrix() {
@@ -31,6 +31,10 @@ public:
 
     __forceinline bool isEmpty() {
         return stack.empty();
+    }
+
+    __forceinline u32 size() {
+        return stack.size();
     }
 };
 

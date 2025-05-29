@@ -7,9 +7,12 @@ cli.help_message_template: |
      --log-file (-l)         \t将日志写入文件
      --output (-o) <名称>    \t指定输出文件名
      --build-dir (-B) <名称> \t指定构建目录
-     --namespace (-N) <名称> \t指定非导出函数的命名空间路径用于编译。
+     --namespace (-N) <名称> \t指定非导出函数的命名空间路径用于编译
      --compile-only (-c)     \t仅编译，不链接为 .zip
-     -g                      \t生成额外的调试信息。
+     -g                      \t生成额外的调试信息
+     -Werror                 \t将所有警告视为错误
+     -E                      \t仅运行预处理器
+     -w                      \t抑制所有警告
 cli.version_message_template: |
   {} 版本 {}
   目标: {}
@@ -30,7 +33,7 @@ ir.value.register.unknown_register: 未知寄存器 '{}'
 ir.errors_generated: "生成了 {} 个错误"
 ir.invalid_op: "无效的指令: '{}'"
 ir.invalid_pre_op: "无效的预处理指令: '{}'"
-ir.invalid_pop: "无效的预处理pop指令: '{}'，因为栈已经耗尽"
+ir.invalid_pop: "无效的预处理弹出指令: '{}'，因为栈已经耗尽"
 ir.invalid_label: 标签名不能包含空格
 ir.invalid_label_identifier: 需要有效的标签标识符，但得到了 '{}'
 ir.unknown_op: "未知指令: '{}'"

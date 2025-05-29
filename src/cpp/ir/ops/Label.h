@@ -30,6 +30,12 @@ public:
     GETTER_POD(Extern, extern_);
 
     [[nodiscard]] std::string toString() const noexcept override {
+        if (export_) {
+            return fmt::format("export {}:", label);
+        }
+        if (extern_) {
+            return fmt::format("extern {}:", label);
+        }
         return fmt::format("{}:", label);
     }
 
@@ -37,5 +43,8 @@ public:
         throw UnsupportedOperationException("Label op can't be compile normally.");
     }
 };
+
+#define LABEL_RET "__internel_ret"
+inline Label labelRet = Label(-1, LABEL_RET, false, false);
 
 #endif //CLANG_MC_LABEL_H

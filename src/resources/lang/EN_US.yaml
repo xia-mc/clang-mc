@@ -7,9 +7,12 @@ cli.help_message_template: |
      --log-file (-l)         \tWrite logs to a file
      --output (-o) <name>    \tSpecify the output file name
      --build-dir (-B) <name> \tSpecify the build directory
-     --namespace (-N) <name> \tSpecify the namespace path for compiling non-exported functions.
+     --namespace (-N) <name> \tSpecify the namespace path for compiling non-exported functions
      --compile-only (-c)     \tOnly compile, do not link as .zip
-     -g                      \tGenerate additional debug information.
+     -g                      \tGenerate additional debug information
+     -Werror                 \tMake all warnings into errors
+     -E                      \tOnly run the preprocessor
+     -w                      \tSuppress all warnings
 cli.version_message_template: |
   {} version {}
   Target: {}

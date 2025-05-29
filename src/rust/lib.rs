@@ -7,7 +7,7 @@ use crate::native::native::on_terminate;
 
 mod native;
 mod parse;
-
+mod objects;
 
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]

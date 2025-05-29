@@ -24,11 +24,11 @@ def main():
     # 编译stdlib
     print("Compiling stdlib...")
     sources: list[str] = [Const.MCASM_DIR / "stdlib.mcasm"]
-    # for item in Const.MCASM_DIR.iterdir():
-    #     if item.suffix != ".mcasm":
-    #         continue
-    #     sources.append(str(item.absolute()))
-    command = [str(Const.EXECUTABLE), "--compile-only", "--namespace", "std:__internal", "--build-dir", str(Const.BUILD_TMP_DIR)] + sources
+    for item in Const.MCASM_DIR.iterdir():
+        if item.suffix != ".mcasm":
+            continue
+        sources.append(str(item.absolute()))
+    command = [str(Const.EXECUTABLE), "--compile-only", "--namespace", "std:_internal", "--build-dir", str(Const.BUILD_TMP_DIR)] + sources
     prettyCmd = ' '.join(map(lambda s: f'"{s}"' if " " in s else s, map(str, command)))
     print(f"Compile command: {prettyCmd}")
     process = subprocess.Popen(
