@@ -5,18 +5,15 @@
 #ifndef CLANG_MC_SUB_H
 #define CLANG_MC_SUB_H
 
-#include "Op.h"
+#include "ir/iops/Op.h"
 #include "utils/string/StringUtils.h"
-#include "OpCommon.h"
+#include "ir/OpCommon.h"
 #include "Mov.h"
 
-class Sub : public Op {
-private:
-    const ValuePtr left;
-    const ValuePtr right;
+class Sub : public CmpLike {
 public:
     explicit Sub(const i32 lineNumber, ValuePtr &&left, ValuePtr &&right) :
-            Op("sub", lineNumber), left(std::move(left)), right(std::move(right)) {
+            Op("sub", lineNumber), CmpLike(std::move(left), std::move(right)) {
         if (INSTANCEOF_SHARED(left, Immediate)) {
             throw ParseException(i18n("ir.op.immediate_left"));
         }

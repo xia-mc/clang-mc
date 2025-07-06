@@ -5,7 +5,7 @@
 #ifndef CLANG_MC_PEEK_H
 #define CLANG_MC_PEEK_H
 
-#include "Op.h"
+#include "ir/iops/Op.h"
 #include "ir/values/Register.h"
 #include "utils/string/StringUtils.h"
 #include "utils/Common.h"
@@ -26,7 +26,10 @@ public:
     }
 
     [[nodiscard]] std::string compile() const override {
-        return fmt::format("function std:stack/peek_{}", reg->getName());
+        return fmt::format("data modify storage std:vm s2 set value {{name: \"{}\", rsp: -1}}\n"
+                           "execute store result storage std:vm s2.rsp int 1 run scoreboard players get rsp vm_regs\n"
+                           "\n"
+                           "function std:_internal/peek with storage std:vm s2", reg->getName());
     }
 };
 

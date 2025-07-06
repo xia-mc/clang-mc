@@ -8,11 +8,6 @@
 #include "spdlog/spdlog.h"
 #include "utils/string/StringUtils.h"
 
-static inline bool isInClion() {
-    static const bool result = std::getenv("CLION_IDE") != nullptr;
-    return result;
-}
-
 static inline const char *getLevelColor(spdlog::level::level_enum level) {
     switch (level) {
         case spdlog::level::critical:
@@ -26,50 +21,52 @@ static inline const char *getLevelColor(spdlog::level::level_enum level) {
         case spdlog::level::trace:
             return "\033[0;90m"; // 灰色（暗）
         default:
-            return "\033[0m";    // 重置
+            return "";
     }
 }
 
 
-static auto fmtColor = spdlog::pattern_formatter("%^%l:%$ %v");
-static auto fmtNoteColor = spdlog::pattern_formatter("%^note:%$ %v");
-static auto fmtNoColor = spdlog::pattern_formatter("%l: %v");
-static auto fmtNoteNoColor = spdlog::pattern_formatter("note: %v");
+static inline const char *getLevelName(spdlog::level::level_enum level) {
+    switch (level) {
+        case spdlog::level::critical:
+            return "fatal error";
+        case spdlog::level::err:
+            return "error";
+        case spdlog::level::warn:
+            return "warn";
+        case spdlog::level::info:
+            return "note";
+        case spdlog::level::debug:
+            return "debug";
+        case spdlog::level::trace:
+            return "trace";
+        default:
+            return "?";
+    }
+}
 
 class LogFormatter : public spdlog::formatter {
 public:
     void format(const spdlog::details::log_msg &msg, spdlog::memory_buf_t &dest) override {
-        if (isInClion()) { // Clion不知道为什么不能解析ANSI颜色代码
-            if (msg.level == spdlog::level::info) {
-                fmtNoteNoColor.format(msg, dest);
-            } else {
-                fmtNoColor.format(msg, dest);
-            }
+        if (!string::contains(msg.payload.data(), '\n')) {
+            auto string = fmt::format(
+                    "{}{}: \033[97m{}\033[0m\n",
+                    getLevelColor(msg.level),
+                    getLevelName(msg.level),
+                    msg.payload
+            );
+            dest.append(string);
         } else {
-            if (msg.level == spdlog::level::info) {
-                fmtNoteColor.format(msg, dest);
-            } else {
-                if (!string::contains(msg.payload.data(), '\n')) {
-                    auto string = fmt::format(
-                            "{}{}: \033[97m{}\033[0m\n",
-                            getLevelColor(msg.level),
-                            spdlog::level::to_string_view(msg.level),
-                            msg.payload
-                    );
-                    dest.append(string);
-                } else {
-                    auto splits = string::split(msg.payload.data(), '\n', 2);
-                    assert(splits.size() == 2);
-                    auto string = fmt::format(
-                            "{}{}: \033[97m{}\033[0m\n{}\n",
-                            getLevelColor(msg.level),
-                            spdlog::level::to_string_view(msg.level),
-                            splits[0],
-                            splits[1]
-                    );
-                    dest.append(string);
-                }
-            }
+            auto splits = string::split(msg.payload.data(), '\n', 2);
+            assert(splits.size() == 2);
+            auto string = fmt::format(
+                    "{}{}: \033[97m{}\033[0m\n{}\n",
+                    getLevelColor(msg.level),
+                    getLevelName(msg.level),
+                    splits[0],
+                    splits[1]
+            );
+            dest.append(string);
         }
     }
 

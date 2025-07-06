@@ -6,11 +6,13 @@
 #define CLANG_MC_IRCOMMON_H
 
 #include "utils/Common.h"
-#include "ops/OpCommon.h"
+#include "OpCommon.h"
+
+struct LineState;
 
 using McFunctions = HashMap<Path, std::string>;
 
-PURE OpPtr createOp(i32 lineNumber, const std::string_view &string);
+PURE OpPtr createOp(const LineState &line, const std::string_view &string);
 
 PURE bool isTerminate(const OpPtr &op);
 

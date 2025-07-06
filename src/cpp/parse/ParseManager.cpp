@@ -52,34 +52,54 @@ void ParseManager::loadSource() {
         handleError(instance, err);
     }
 
-    auto size = ClPreProcess_BeginGetSource(instance);
-    auto paths = ClPreProcess_GetPaths(instance);
-    auto codes = ClPreProcess_GetCodes(instance);
-    if (paths == nullptr || codes == nullptr) {
-        ClPreProcess_EndGetSource(instance, paths, codes, size);
-        handleError(instance, INT_MAX);
+    Targets *targets;
+    if ((err = ClPreProcess_GetTargets(instance, &targets))) {
+        handleError(instance, err);
     }
-    sources.reserve(size);
-    for (u32 i = 0; i < size; ++i) {
-        sources.emplace(Path(paths[i]), std::string(codes[i]));
+    sources.reserve(targets->size);
+    for (u32 i = 0; i < targets->size; ++i) {
+        auto target = targets->targets[i];
+        sources.emplace(target->path, target->code);
     }
+    ClPreProcess_FreeTargets(instance, targets);
+    targets = nullptr;
 
-    ClPreProcess_EndGetSource(instance, paths, codes, size);
+    DefineMap *defineMap;
+    if ((err = ClPreProcess_GetDefines(instance, &defineMap))) {
+        handleError(instance, err);
+    }
+    defines.reserve(defineMap->size);
+    for (u32 i = 0; i < defineMap->size; ++i) {
+        auto cDefines = defineMap->defines[i];
+        auto map = HashMap<std::string, std::string>(cDefines->size);
+        for (u32 j = 0; j < cDefines->size; ++j) {
+            auto define = cDefines->values[j];
+            map.emplace(define->key, define->value);
+        }
+
+        defines.emplace(cDefines->path, map);
+    }
+    ClPreProcess_FreeDefines(instance, defineMap);
+    defineMap = nullptr;
+
     ClPreProcess_Free(instance);
 }
 
 void ParseManager::loadIR() {
     irs.reserve(sources.size());
-    for (auto &item: sources) {
-        irs.emplace_back(logger, config, std::move(item.first)).parse(std::move(item.second));
+    for (auto &[path, code]: sources) {
+        auto iter = defines.find(path);
+        auto defines_ = iter == defines.end() ? HashMap<std::string, std::string>() : iter->second;
+        irs.emplace_back(logger, config, std::move(path), std::move(defines_)).parse(std::move(code));
     }
     HashMap<Path, std::string>().swap(sources);
+    HashMap<Path, HashMap<std::string, std::string>>().swap(defines);
 }
 
 void ParseManager::freeSource() {
     for (auto &ir: irs) {
         HashMap<const Op *, std::string_view>().swap(ir.sourceMap);
-        HashMap<const Op *, Line>().swap(ir.lineMap);
+        HashMap<const Op *, LineState>().swap(ir.lineStateMap);
         std::string().swap(ir.sourceCode);
     }
 }

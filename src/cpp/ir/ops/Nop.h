@@ -5,8 +5,8 @@
 #ifndef CLANG_MC_NOP_H
 #define CLANG_MC_NOP_H
 
-#include "Op.h"
-#include "OpCommon.h"
+#include "ir/iops/Op.h"
+#include "ir/OpCommon.h"
 
 class Nop : public Op {
 public:

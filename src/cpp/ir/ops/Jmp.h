@@ -5,10 +5,10 @@
 #ifndef CLANG_MC_JMP_H
 #define CLANG_MC_JMP_H
 
-#include "Op.h"
-#include "JmpLike.h"
+#include "ir/iops/Op.h"
+#include "ir/iops/JmpLike.h"
 #include "utils/string/StringUtils.h"
-#include "OpCommon.h"
+#include "ir/OpCommon.h"
 #include "utils/string/StringBuilder.h"
 
 class Jmp : public JmpLike {

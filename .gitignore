@@ -53,3 +53,4 @@ bin/
 /cmake-build-release/
 /build/
 /target/
+/cmake-build-release-/

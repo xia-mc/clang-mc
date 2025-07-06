@@ -9,7 +9,7 @@
 #include "ir/ops/Label.h"
 
 namespace {
-    inline std::string_view LABEL_RET_CMD = "function " LABEL_RET;
+    inline std::string_view LABEL_RET_CMD = "return 1";
 }
 
 class JmpTable {

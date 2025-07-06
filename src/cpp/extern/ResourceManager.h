@@ -32,7 +32,7 @@ static inline bool initResources() {
         STDLIB_PATH = ASSETS_PATH / "stdlib";
         INCLUDE_PATH = INSTALL_PATH / "include";
 
-        for (const auto &path : {ASSETS_PATH, STDLIB_PATH, INCLUDE_PATH}) {
+        for (const auto &path : {ASSETS_PATH, STDLIB_PATH, INCLUDE_PATH}) {  // NOLINT(*-use-anyofallof)
             if (!exists(path) || !is_directory(path)) return false;
         }
         return true;

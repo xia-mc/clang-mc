@@ -49,15 +49,20 @@ std::string getSystemLanguage() {
 
 void initI18n() {
     std::setlocale(LC_ALL, ".UTF-8");
-    if (getSystemLanguage() == "zh-CN") {
-        loadLanguage(ZH_CN);
-    } else {
-        loadLanguage(EN_US);
+    loadLanguage(EN_US);  // fallback
+
+    SWITCH_STR (getSystemLanguage()) {
+        CASE_STR("zh-CN"):
+            loadLanguage(ZH_CN);
+            break;
+        default:
+            break;
     }
 }
 
 std::string &i18n(const std::string_view &key, const Hash keyHash) {
     assert(TRANSLATIONS.contains(keyHash));
+
     try {
         return TRANSLATIONS.at(keyHash);
     } catch (const std::out_of_range &) {

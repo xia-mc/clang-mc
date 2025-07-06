@@ -13,6 +13,7 @@ mod objects;
 #[unsafe(no_mangle)]
 pub extern "C" fn ClRust_Init() {
     set_hook(Box::new(|_panic_info| {
+        println!("\x1b[31mfatal error:\x1b[97m {}\x1b[0m", _panic_info.to_string());
         let _ = catch_unwind(|| {});
         on_terminate();
         abort();

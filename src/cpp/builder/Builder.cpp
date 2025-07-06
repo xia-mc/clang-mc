@@ -35,7 +35,7 @@ void Builder::link() const {
     for (const auto& entry : std::filesystem::recursive_directory_iterator(STDLIB_PATH)) {
         entries.push_back(entry.path());
     }
-#pragma omp parallel for
+//#pragma omp parallel for default(none) shared(entries, STDLIB_PATH)
     for (size_t i = 0; i < entries.size(); ++i) {  // NOLINT(modernize-loop-convert)
         const Path& path = entries[i];
         if (is_regular_file(path) && path.extension() != ".mcmeta") {

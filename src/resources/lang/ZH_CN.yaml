@@ -35,15 +35,22 @@ ir.invalid_op: "无效的指令: '{}'"
 ir.invalid_pre_op: "无效的预处理指令: '{}'"
 ir.invalid_pop: "无效的预处理弹出指令: '{}'，因为栈已经耗尽"
 ir.invalid_label: 标签名不能包含空格
+ir.invalid_local_label: 无效的局部标签
 ir.invalid_label_identifier: 需要有效的标签标识符，但得到了 '{}'
 ir.unknown_op: "未知指令: '{}'"
+ir.unknown_symbol: "未知符号: '{}'"
 ir.verify.unreachable: 此代码不会被执行
 ir.verify.unreachable_before: 此位置之前的代码不可达
 ir.verify.label_redefinition: 标签 '{}' 重定义
+ir.verify.symbol_redefinition: 符号 '{}' 重定义
 ir.verify.previous_definition: 先前的定义在此
 ir.verify.undeclared_label: 使用了未声明的标签 '{}'
+ir.verify.undeclared_symbol: 使用了未声明的符号 '{}'
 ir.verify.unused_label: 标签 '{}' 已定义但未使用
+ir.verify.unused_symbol: 符号 '{}' 已定义但未使用
 ir.verify.jmp_to_extern: 跳转到一个外部定义标签是未定义的
+ir.verify.never_return: 某些控制流入口点缺乏有效的退出路径
+ir.verify.never_return_inner: 入口点在此
 file.no_such_file_or_directory: "没有这样的文件或目录: '{}'"
 file.failed_to_open: "无法打开文件: '{}'"
 file.failed_to_create: "无法创建文件或目录: '{}'"

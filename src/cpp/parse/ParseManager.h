@@ -14,6 +14,7 @@ private:
     const Config &config;
     const Logger &logger;
     HashMap<Path, std::string> sources;
+    HashMap<Path, HashMap<std::string, std::string>> defines;
     std::vector<IR> irs;
 public:
     explicit ParseManager(const Config &config, const Logger &logger) noexcept : config(config), logger(logger) {
@@ -26,6 +27,8 @@ public:
     void freeSource();
 
     void freeIR();
+
+    GETTER(Sources, sources)
 
     GETTER(IRs, irs);
 };

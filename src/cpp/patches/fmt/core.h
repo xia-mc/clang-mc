@@ -5,6 +5,10 @@
 #ifndef CLANG_MC_FORMAT_H
 #define CLANG_MC_FORMAT_H
 
+#ifdef CMC_DEFINED___cpp_lib_is_constant_evaluated
+#error "Name 'CMC_DEFINED___cpp_lib_is_constant_evaluated' shouldn't be defined."
+#endif
+
 // patch for fmt/base.h
 #ifdef __cpp_lib_is_constant_evaluated // NOLINT(*-reserved-identifier)
 #define CMC_DEFINED___cpp_lib_is_constant_evaluated __cpp_lib_is_constant_evaluated // NOLINT(*-reserved-identifier)

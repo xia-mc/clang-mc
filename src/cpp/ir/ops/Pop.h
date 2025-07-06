@@ -5,7 +5,7 @@
 #ifndef CLANG_MC_POP_H
 #define CLANG_MC_POP_H
 
-#include "Op.h"
+#include "ir/iops/Op.h"
 #include "ir/values/Register.h"
 #include "utils/string/StringUtils.h"
 #include "utils/Common.h"
@@ -37,9 +37,14 @@ public:
 
     [[nodiscard]] std::string compile() const override {
         if (reg != nullptr) {
-            return fmt::format("function std:stack/pop_{}", reg->getName());
+            return fmt::format("scoreboard players add rsp vm_regs 1\n"
+                               "\n"
+                               "data modify storage std:vm s2 set value {{name: \"{}\", rsp: -1}}\n"
+                               "execute store result storage std:vm s2.rsp int 1 run scoreboard players get rsp vm_regs\n"
+                               "\n"
+                               "function std:_internal/pop with storage std:vm s2", reg->getName());
         }
-        return string::repeat("scoreboard players add rsp vm_regs 1", repeat, '\n');  // equals to 'function std:stack/pop_ignore'
+        return string::repeat("scoreboard players add rsp vm_regs 1", repeat, '\n');
     }
 };
 

@@ -5,11 +5,11 @@
 #ifndef CLANG_MC_MOV_H
 #define CLANG_MC_MOV_H
 
-#include "Op.h"
+#include "ir/iops/Op.h"
 #include "ir/values/Value.h"
 #include "utils/string/StringUtils.h"
 #include "i18n/I18n.h"
-#include "CmpLike.h"
+#include "ir/iops/CmpLike.h"
 
 class Mov : public CmpLike {
 public:

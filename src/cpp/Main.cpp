@@ -63,10 +63,11 @@ extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
         return 0;
     } catch (const std::bad_alloc &e) {
         onOOM();
-    } catch (const std::exception &e) {
-        printStacktrace(e);
-    } catch (...) {
-        printStacktrace();
+// 让异常termiate，以看到stacktrace
+//    } catch (const std::exception &e) {
+//        printStacktrace(e);
+//    } catch (...) {
+//        printStacktrace();
     }
     return 1;
 }

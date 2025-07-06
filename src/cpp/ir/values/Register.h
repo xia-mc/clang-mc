@@ -86,15 +86,14 @@ public:
     static inline const auto X15 = create("x15");  // 保存寄存器16 callee-saved
 
     // VM内部保留寄存器
-    static inline const auto RIP = create("rip", false);  // 程序计数器
     static inline const auto RSP = create("rsp", false);  // 栈指针
     static inline const auto SHP = create("shp", false);  // 堆大小
-    static inline const auto SPP = create("spp", false);  // 字符串堆大小
-    static inline const auto SAP = create("sap", false);  // 字符串堆空闲空间指针
-    static inline const auto S0 = create("s0", false);  // 标准库保留
-    static inline const auto S1 = create("s1", false);  // 标准库保留
-    static inline const auto S2 = create("s2", false);  // 标准库保留
-    static inline const auto S3 = create("s3", false);  // 标准库保留
+    static inline const auto SBP = create("sbp", false);  // 静态数据基址指针
+    static inline const auto S0 = create("s0", false);  // 编译器保留
+    static inline const auto S1 = create("s1", false);  // 编译器保留
+    static inline const auto S2 = create("s2", false);  // 编译器保留
+    static inline const auto S3 = create("s3", false);  // 编译器保留
+    static inline const auto S4 = create("s4", false);  // 编译器保留
 
     static std::shared_ptr<Register> fromName(const std::string_view &name) {
         SWITCH_STR (string::toLowerCase(name)) {
@@ -131,11 +130,9 @@ public:
             CASE_STR("x13"): return X13;
             CASE_STR("x14"): return X14;
             CASE_STR("x15"): return X15;
-            CASE_STR("rip"): return RIP;
             CASE_STR("rsp"): return RSP;
             CASE_STR("shp"): return SHP;
-            CASE_STR("spp"): return SPP;
-            CASE_STR("sap"): return SAP;
+            CASE_STR("sbp"): return SBP;
             default: [[unlikely]]
                 throw ParseException(i18nFormat("ir.value.register.unknown_register", name));
         }
