@@ -5,29 +5,37 @@
 #ifndef CLANG_MC_LABEL_H
 #define CLANG_MC_LABEL_H
 
-#include "Op.h"
+#include "ir/iops/Op.h"
 #include "ir/values/Value.h"
 #include "utils/string/StringUtils.h"
 
 class Label : public Op {
 private:
-    const std::string label;
-    const Hash labelHash;
+    std::string label;
+    Hash labelHash;
     const bool export_;
     const bool extern_;
+    const bool local;
 public:
-    explicit Label(const i32 lineNumber, std::string label, const bool export_, const bool extern_) noexcept:
+    explicit Label(const i32 lineNumber, std::string label, const bool export_, const bool extern_, const bool local) noexcept:
             Op("label", lineNumber), label(std::move(label)), labelHash(hash(this->label)),
-            export_(export_), extern_(extern_) {
+            export_(export_), extern_(extern_), local(local) {
     }
 
     GETTER(Label, label);
+
+    void setLabel(std::string newLabel) {
+        label = std::move(newLabel);
+        labelHash = hash(this->label);
+    }
 
     GETTER_POD(LabelHash, labelHash);
 
     GETTER_POD(Export, export_);
 
     GETTER_POD(Extern, extern_);
+
+    GETTER_POD(Local, local);
 
     [[nodiscard]] std::string toString() const noexcept override {
         if (export_) {
@@ -45,6 +53,6 @@ public:
 };
 
 #define LABEL_RET "__internel_ret"
-inline Label labelRet = Label(-1, LABEL_RET, false, false);
+inline Label labelRet = Label(-1, LABEL_RET, false, false, false);
 
 #endif //CLANG_MC_LABEL_H

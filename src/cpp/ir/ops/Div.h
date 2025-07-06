@@ -2,8 +2,8 @@
 // Created by xia__mc on 2025/3/15.
 //
 
-#ifndef CLANG_MC_MUL_H
-#define CLANG_MC_MUL_H
+#ifndef CLANG_MC_DIV_H
+#define CLANG_MC_DIV_H
 
 #include "ir/iops/Op.h"
 #include "utils/string/StringUtils.h"
@@ -11,7 +11,7 @@
 #include "Mov.h"
 #include "ir/values/Symbol.h"
 
-class Mul : public CmpLike {
+class Div : public CmpLike {
 private:
     static std::shared_ptr<Register> movToReg(StringBuilder &builder, const ValuePtr &value,
                                               const std::shared_ptr<Register> &target) {
@@ -28,8 +28,8 @@ private:
         }
     }
 public:
-    explicit Mul(const i32 lineNumber, ValuePtr &&left, ValuePtr &&right) :
-            Op("mul", lineNumber), CmpLike(std::move(left), std::move(right)) {
+    explicit Div(const i32 lineNumber, ValuePtr &&left, ValuePtr &&right) :
+            Op("div", lineNumber), CmpLike(std::move(left), std::move(right)) {
         if (INSTANCEOF_SHARED(left, Immediate)) {
             throw ParseException(i18n("ir.op.immediate_left"));
         }
@@ -39,7 +39,7 @@ public:
     }
 
     [[nodiscard]] std::string toString() const noexcept override {
-        return fmt::format("mul {}, {}", left->toString(), right->toString());
+        return fmt::format("div {}, {}", left->toString(), right->toString());
     }
 
     [[nodiscard]] std::string compile() const override {
@@ -49,7 +49,7 @@ public:
         std::shared_ptr<Register> rightVal = movToReg(builder, right, Registers::S3);
 
 
-        builder.append(fmt::format("scoreboard players operation {} vm_regs *= {} vm_regs",
+        builder.append(fmt::format("scoreboard players operation {} vm_regs /= {} vm_regs",
                                    leftVal->getName(), rightVal->getName()));
 
         if (leftVal != left) {
@@ -62,4 +62,4 @@ public:
     }
 };
 
-#endif //CLANG_MC_MUL_H
+#endif //CLANG_MC_DIV_H

@@ -3,6 +3,7 @@
 //
 
 #include "IRCommon.h"
+#include "ops/Div.h"
 #include "ops/Mov.h"
 #include "ir/ops/Label.h"
 #include "ir/ops/Ret.h"
@@ -11,6 +12,7 @@
 #include "ir/ops/Add.h"
 #include "ir/ops/Sub.h"
 #include "ir/ops/Mul.h"
+#include "ir/ops/Div.h"
 #include "ir/ops/Inline.h"
 #include "ir/ops/Push.h"
 #include "ir/ops/Pop.h"
@@ -22,16 +24,16 @@
 #include "ir/ops/Nop.h"
 #include "ir/ops/Jle.h"
 #include "ir/ops/Jne.h"
-#include "ir/controlFlow/JmpTable.h"
-#include "ir/ops/Syscall.h"
+#include "ir/ops/Static.h"
+#include "IR.h"
 
 template<typename T>
-static OpPtr createWith1Arg(const i32 lineNumber, const std::string_view &args) {
-    return std::make_unique<T>(lineNumber, std::string(args));
+static OpPtr createWith1Arg(const std::string_view &args) {
+    return std::make_unique<T>(INT_MIN, std::string(args));
 }
 
 template<typename T>
-static OpPtr createWith2Arg(const i32 lineNumber, const std::string_view &args) {
+static OpPtr createWith2Arg(const std::string_view &args) {
     auto parts = string::split(args, ',');
     if (UNLIKELY(parts.size() != 2)) {
         throw ParseException(i18nFormat("ir.invalid_op", args));
@@ -40,47 +42,62 @@ static OpPtr createWith2Arg(const i32 lineNumber, const std::string_view &args) 
     auto leftStr = std::string(string::trim(parts[0]));
     auto rightStr = std::string(string::trim(parts[1]));
 
-    return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr));
+    return std::make_unique<T>(INT_MIN, createValue(leftStr), createValue(rightStr));
 }
 
-static OpPtr createSyscall(const i32 lineNumber, const std::string_view &args) {
-    auto parts = string::split(args, ' ', 2);
-    assert(parts.size() == 2);
-
-    auto leftStr = std::string(string::trim(parts[0]));
-    auto rightStr = std::string(string::trim(parts[1]));
-
-    return std::make_unique<Syscall>(lineNumber, std::move(leftStr), Json::parse(rightStr));
+static inline bool isLocalLabel(const std::string_view &rawLabel) {
+    if (string::contains(rawLabel, ' ')) {
+        throw ParseException(i18n("ir.invalid_label"));
+    }
+    return rawLabel[0] == '.';
 }
 
-static __forceinline OpPtr createLabel(const i32 lineNumber, const std::string_view &string) {
+static std::string fixLabel(const LineState &line, const std::string_view &rawLabel) {
+    if (isLocalLabel(rawLabel)) {
+        if (line.lastLabel == nullptr) {
+            throw ParseException(i18n("ir.invalid_local_label"));
+        }
+        return fmt::format("{}{}", line.lastLabel->getLabel(), rawLabel);  // rawLabel已经包含一个.了
+    }
+    return std::string(rawLabel);
+}
+
+static __forceinline OpPtr createLabel(const LineState &line, const std::string_view &string) {
     assert(!string.empty());
     assert(string[string.length() - 1] == ':');
 
-    auto name = std::string(string.substr(0, string.length() - 1));
-    auto parts = string::split(name, ' ', 2);
+    auto rawLabel = string.substr(0, string.length() - 1);
+    if (rawLabel.empty()) {
+        throw ParseException(i18n("ir.invalid_label"));
+    }
+    auto parts = string::split(rawLabel, ' ', 2);
 
     if (UNLIKELY(parts.size() > 1)) {  // 带标签的label
-        if (string::contains(parts[1], ' ')) {
-            throw ParseException(i18n("ir.invalid_label"));
+        if (isLocalLabel(parts[1])) {
+            throw ParseException(i18n("ir.invalid_local_label"));
         }
-
         SWITCH_STR (parts[0]) {
             CASE_STR("export"):
-                return std::make_unique<Label>(lineNumber, std::string(parts[1]), true, false);
+                return std::make_unique<Label>(INT_MIN, std::string(parts[1]), true, false, false);
             CASE_STR("extern"):
-                return std::make_unique<Label>(lineNumber, std::string(parts[1]), false, true);
+                return std::make_unique<Label>(INT_MIN, std::string(parts[1]), false, true, false);
             default:
-                throw ParseException(i18nFormat("ir.invalid_label_identifier",
-                                                 parts[0]));
+                throw ParseException(i18nFormat("ir.invalid_label_identifier", parts[0]));
         }
     }
 
-    return std::make_unique<Label>(lineNumber, name, false, false);
+    return std::make_unique<Label>(
+            INT_MIN, fixLabel(line, rawLabel),
+            false, false, isLocalLabel(rawLabel));
 }
 
 template<typename T>
-static OpPtr createConJmp(const i32 lineNumber, const std::string_view &args) {
+static OpPtr createCallLike(const LineState &line, const std::string_view &args) {
+    return std::make_unique<T>(INT_MIN, fixLabel(line, args));
+}
+
+template<typename T>
+static OpPtr createConJmp(const LineState &line, const std::string_view &args) {
     auto parts = string::split(args, ',');
     if (UNLIKELY(parts.size() != 3)) {
         throw ParseException(i18nFormat("ir.invalid_op", args));
@@ -90,11 +107,11 @@ static OpPtr createConJmp(const i32 lineNumber, const std::string_view &args) {
     auto rightStr = std::string(string::trim(parts[1]));
     auto label = std::string(string::trim(parts[2]));
 
-    return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr), label);
+    return std::make_unique<T>(INT_MIN, createValue(leftStr), createValue(rightStr), fixLabel(line, label));
 }
 
 template<typename T>
-static OpPtr createConRet(const i32 lineNumber, const std::string_view &args) {
+static OpPtr createConRet(const std::string_view &args) {
     auto parts = string::split(args, ',');
     if (UNLIKELY(parts.size() != 2)) {
         throw ParseException(i18nFormat("ir.invalid_op", args));
@@ -103,13 +120,31 @@ static OpPtr createConRet(const i32 lineNumber, const std::string_view &args) {
     auto leftStr = std::string(string::trim(parts[0]));
     auto rightStr = std::string(string::trim(parts[1]));
 
-    return std::make_unique<T>(lineNumber, createValue(leftStr), createValue(rightStr), LABEL_RET);
+    return std::make_unique<T>(INT_MIN, createValue(leftStr), createValue(rightStr), LABEL_RET);
 }
 
-PURE OpPtr createOp(const i32 lineNumber, const std::string_view &string) {
+static OpPtr createStatic(const std::string_view &args) {
+    auto parts = string::split(args, ' ', 2);
+    if (UNLIKELY(parts.size() != 2)) {
+        throw ParseException(i18nFormat("ir.invalid_op", args));
+    }
+    auto name = parts[0];
+    auto dataStr = parts[1];
+    if (UNLIKELY(dataStr.length() <= 2 || dataStr.front() != '[' || dataStr.back() != ']')) {  // TODO "abc" 不自动0结尾的字符串支持
+        throw ParseException(i18nFormat("ir.invalid_op", args));
+    }
+    auto data = stream::map(stream::map(string::split(
+            dataStr.substr(1, dataStr.length() - 2), ','
+            ),FUNC_WITH(string::trim)
+            ),FUNC_WITH(parseToNumber));
+
+    return std::make_unique<Static>(INT_MIN, std::string(name), std::move(data));
+}
+
+PURE OpPtr createOp(const LineState &line, const std::string_view &string) {
     assert(!string.empty());
-    if (UNLIKELY(string[string.length() - 1] == ':')) {
-        return createLabel(lineNumber, string);
+    if (string[string.length() - 1] == ':') {
+        return createLabel(line, string);
     }
 
     auto parts = string::split(string, ' ', 2);
@@ -120,73 +155,75 @@ PURE OpPtr createOp(const i32 lineNumber, const std::string_view &string) {
 
     SWITCH_STR (op) {
         CASE_STR("mov"):
-            return createWith2Arg<Mov>(lineNumber, args);
+            return createWith2Arg<Mov>(args);
         CASE_STR("add"):
-            return createWith2Arg<Add>(lineNumber, args);
+            return createWith2Arg<Add>(args);
         CASE_STR("sub"):
-            return createWith2Arg<Sub>(lineNumber, args);
+            return createWith2Arg<Sub>(args);
         CASE_STR("mul"):
-            return createWith2Arg<Mul>(lineNumber, args);
+            return createWith2Arg<Mul>(args);
+        CASE_STR("div"):
+            return createWith2Arg<Div>(args);
         CASE_STR("ret"):
-            return std::make_unique<Ret>(lineNumber);
+            return std::make_unique<Ret>(INT_MIN);
         CASE_STR("jmp"):
-            return createWith1Arg<Jmp>(lineNumber, args);
+            return createCallLike<Jmp>(line, args);
         CASE_STR("call"):
-            return createWith1Arg<Call>(lineNumber, args);
-        CASE_STR("syscall"):
-            return createSyscall(lineNumber, args);
+            return createCallLike<Call>(line, args);
         CASE_STR("je"):
         CASE_STR("jz"):
-            return createConJmp<Je>(lineNumber, args);
+            return createConJmp<Je>(line, args);
         CASE_STR("jne"):
         CASE_STR("jnz"):
-            return createConJmp<Jne>(lineNumber, args);
+            return createConJmp<Jne>(line, args);
         CASE_STR("jl"):
-            return createConJmp<Jl>(lineNumber, args);
+            return createConJmp<Jl>(line, args);
         CASE_STR("jg"):
-            return createConJmp<Jg>(lineNumber, args);
+            return createConJmp<Jg>(line, args);
         CASE_STR("jge"):
-            return createConJmp<Jge>(lineNumber, args);
+            return createConJmp<Jge>(line, args);
         CASE_STR("jle"):
-            return createConJmp<Jle>(lineNumber, args);
+            return createConJmp<Jle>(line, args);
         CASE_STR("re"):
         CASE_STR("rz"):
-            return createConRet<Je>(lineNumber, args);
+            return createConRet<Je>(args);
         CASE_STR("rne"):
         CASE_STR("rnz"):
-            return createConRet<Jne>(lineNumber, args);
+            return createConRet<Jne>(args);
         CASE_STR("rl"):
-            return createConRet<Jl>(lineNumber, args);
+            return createConRet<Jl>(args);
         CASE_STR("rg"):
-            return createConRet<Jg>(lineNumber, args);
+            return createConRet<Jg>(args);
         CASE_STR("rge"):
-            return createConRet<Jge>(lineNumber, args);
+            return createConRet<Jge>(args);
         CASE_STR("rle"):
-            return createConRet<Jle>(lineNumber, args);
+            return createConRet<Jle>(args);
         CASE_STR("inline"):
-            return std::make_unique<Inline>(lineNumber, std::string(args));
+            return std::make_unique<Inline>(INT_MIN, std::string(args));
         CASE_STR("push"):
             if (args.empty()) {
-                return std::make_unique<Push>(lineNumber);
+                return std::make_unique<Push>(INT_MIN);
             }
             try {
-                return std::make_unique<Push>(lineNumber, Registers::fromName(args).get());
+                return std::make_unique<Push>(INT_MIN, Registers::fromName(args).get());
             } catch (const ParseException &) {
             }
-            return std::make_unique<Push>(lineNumber, parseToNumber(args));
+            return std::make_unique<Push>(INT_MIN, parseToNumber(args));
         CASE_STR("pop"):
             if (args.empty()) {
-                return std::make_unique<Pop>(lineNumber);
+                return std::make_unique<Pop>(INT_MIN);
             }
             try {
-                return std::make_unique<Pop>(lineNumber, Registers::fromName(args).get());
+                return std::make_unique<Pop>(INT_MIN, Registers::fromName(args).get());
             } catch (const ParseException &) {
             }
-            return std::make_unique<Pop>(lineNumber, parseToNumber(args));
+            return std::make_unique<Pop>(INT_MIN, parseToNumber(args));
         CASE_STR("peek"):
-            return std::make_unique<Peek>(lineNumber, Registers::fromName(args).get());
+            return std::make_unique<Peek>(INT_MIN, Registers::fromName(args).get());
         CASE_STR("nop"):
-            return std::make_unique<Nop>(lineNumber);
+            return std::make_unique<Nop>(INT_MIN);
+        CASE_STR("static"):
+            return createStatic(args);
         default: [[unlikely]]
             throw ParseException(i18nFormat("ir.unknown_op", op));
     }

@@ -15,6 +15,7 @@
 #include "cstdint"
 #include "objects/include/UnorderedDense.h"
 #include <nlohmann/json.hpp>
+#include "utils/Native.h"
 
 using Path = std::filesystem::path;
 using Logger = std::shared_ptr<spdlog::logger>;
@@ -77,6 +78,7 @@ public:
 #define CAST_SHARED(sharedPtr, type) (dynamic_pointer_cast<type>(sharedPtr))
 #define INSTANCEOF(ptr, type) (dynamic_cast<type *>((ptr).get()))
 #define INSTANCEOF_SHARED(sharedPtr, type) CAST_SHARED(sharedPtr, type)
+#define FUNC_WITH(method) ([](auto&&... args) { return method(std::forward<decltype(args)>(args)...); })
 #define FUNC_THIS(method) ([this](auto&&... args) { return this->method(std::forward<decltype(args)>(args)...); })
 #define FUNC_ARG0(method) ([](auto &object, auto&&... args) { return object.method(std::forward<decltype(args)>(args)...); })
 #define UNUSED(expr) ((void) (expr))
@@ -101,19 +103,36 @@ PURE static inline constexpr Hash hash(const std::string_view &str) noexcept {
 
 
 #ifndef NDEBUG
+#undef assert
+#define assert(expression) do { \
+    if (!(expression)) { \
+        printStacktrace(); \
+        _wassert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)); \
+    } \
+} while (0)
 #define WARN(condition, message) \
     do { \
         if (!(condition)) { \
             std::cerr << "Warning: " << message << " (" << __FILE__ << ":" << __LINE__ << ")\n"; \
         } \
     } while (0)
+#define DEBUG_PRINT(message) \
+    do { \
+        asm volatile("" ::: "memory"); \
+        __sync_synchronize(); \
+        std::cout << message << std::endl; \
+        asm volatile("" ::: "memory"); \
+        __sync_synchronize(); \
+    } while (0)
 #else
 #undef assert
 #define assert(expression) \
-    do { \
-        break; \
-    } while (expression)
+    if (false) { \
+        UNREACHABLE();
+        ((void) expression); \
+    }
 #define WARN(condition, message) UNUSED(condition); UNUSED(message)
+#define DEBUG_PRINT(message) UNUSED(message)
 #endif
 
 template<class T>

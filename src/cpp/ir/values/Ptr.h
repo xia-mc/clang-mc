@@ -69,34 +69,35 @@ public:
     }
 
     [[nodiscard]] std::string toString() const noexcept override {
-        auto builder = std::ostringstream("[");
+        auto builder = StringBuilder();
         if (base != nullptr) {
-            builder << base->toString();
+            builder.append(base->toString());
         }
         if (index != nullptr) {
-            if (!builder.str().empty()) {
-                builder << " + ";
+            if (!builder.isEmpty()) {
+                builder.append(" + ");
             }
-            builder << index->toString();
+            builder.append(index->toString());
 
             if (scale != 1) {
-                builder << " * " << scale;
+                builder.append(" * ");
+                builder.append(std::to_string(scale));
             }
         }
-        if (displacement != 0) {
-            if (displacement > 0) {
-                if (!builder.str().empty()) {
-                    builder << " + ";
+        if (displacement != 0 || builder.isEmpty()) {
+            if (displacement >= 0) {
+                if (!builder.isEmpty()) {
+                    builder.append(" + ");
                 }
-                builder << displacement;
+                builder.append(std::to_string(displacement));
             } else {
-                if (!builder.str().empty()) {
-                    builder << " - ";
+                if (!builder.isEmpty()) {
+                    builder.append(" - ");
                 }
-                builder << -displacement;
+                builder.append(std::to_string(-displacement));
             }
         }
-        return fmt::format("[{}]", builder.str());
+        return fmt::format("[{}]", builder.toString());
     }
 
     /**
@@ -186,7 +187,7 @@ public:
 
         auto result = std::ostringstream();
 
-        result << "data modify storage std:vm s2 set value {{to: -1, from: -1}}\n";
+        result << "data modify storage std:vm s2 set value {to: -1, from: -1}\n";
         setPtr(result, "to");
         ptr.setPtr(result, "from");
         result << "function std:_internal/store_heap_custom3 with storage std:vm s2";

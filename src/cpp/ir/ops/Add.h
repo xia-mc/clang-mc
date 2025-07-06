@@ -5,18 +5,15 @@
 #ifndef CLANG_MC_ADD_H
 #define CLANG_MC_ADD_H
 
-#include "Op.h"
+#include "ir/iops/Op.h"
 #include "utils/string/StringUtils.h"
-#include "OpCommon.h"
+#include "ir/OpCommon.h"
 #include "Mov.h"
 
-class Add : public Op {
-private:
-    const ValuePtr left;
-    const ValuePtr right;
+class Add : public CmpLike {
 public:
     explicit Add(const i32 lineNumber, ValuePtr &&left, ValuePtr &&right) :
-            Op("add", lineNumber), left(std::move(left)), right(std::move(right)) {
+            Op("add", lineNumber), CmpLike(std::move(left), std::move(right)) {
         if (INSTANCEOF_SHARED(left, Immediate)) {
             throw ParseException(i18n("ir.op.immediate_left"));
         }
@@ -30,41 +27,40 @@ public:
     }
 
     [[nodiscard]] std::string compile() const override {
-        if (const auto &immediate = INSTANCEOF_SHARED(right, Immediate)) {
+        if (const auto &value = INSTANCEOF_SHARED(right, Immediate)) {
             if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
                 return fmt::format("scoreboard players add {} vm_regs {}",
-                                   result->getName(), static_cast<i32>(immediate->getValue()));
-            } else {
-                assert(INSTANCEOF_SHARED(left, Ptr));
-
-                // 与x86不同，mc不支持直接对storage（内存）中的值做计算
-                return fmt::format("{}\nscoreboard players add s1 vm_regs {}\n{}",
-                                   CAST_FAST(left, Ptr)->loadTo(*Registers::S1),
-                                   static_cast<i32>(immediate->getValue()),
-                                   CAST_FAST(left, Ptr)->storeFrom(*Registers::S1));
+                                   result->getName(), static_cast<i32>(value->getValue()));
             }
-        } else if (const auto &reg = INSTANCEOF_SHARED(right, Register)) {
-            if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
-                return fmt::format("scoreboard players operation {} vm_regs += {} vm_regs",
-                                   result->getName(), reg->getName());
-            } else {
-                assert(INSTANCEOF_SHARED(left, Ptr));
-
-                // 与x86不同，mc不支持直接对storage（内存）中的值做计算
-                return fmt::format("{}\nscoreboard players operation s1 vm_regs += {} vm_regs\n{}",
-                                   CAST_FAST(left, Ptr)->loadTo(*Registers::S1),
-                                   reg->getName(),
-                                   CAST_FAST(left, Ptr)->storeFrom(*Registers::S1));
-            }
-        } else {
-            assert(INSTANCEOF_SHARED(right, Ptr));
-            assert(INSTANCEOF_SHARED(left, Register));
 
             // 与x86不同，mc不支持直接对storage（内存）中的值做计算
-            return fmt::format("{}\nscoreboard players operation {} vm_regs += s1 vm_regs",
-                               CAST_FAST(right, Ptr)->loadTo(*Registers::S1),
-                               CAST_FAST(left, Register)->getName());
+            return fmt::format("{}\nscoreboard players add s1 vm_regs {}\n{}",
+                               CAST_FAST(left, Ptr)->loadTo(*Registers::S1),
+                               static_cast<i32>(value->getValue()),
+                               CAST_FAST(left, Ptr)->storeFrom(*Registers::S1));
         }
+        if (const auto &value = INSTANCEOF_SHARED(right, Register)) {
+            if (const auto &result = INSTANCEOF_SHARED(left, Register)) {
+                return fmt::format("scoreboard players operation {} vm_regs += {} vm_regs",
+                                   result->getName(), value->getName());
+            }
+
+            assert(INSTANCEOF_SHARED(left, Ptr));
+
+            // 与x86不同，mc不支持直接对storage（内存）中的值做计算
+            return fmt::format("{}\nscoreboard players operation s1 vm_regs += {} vm_regs\n{}",
+                               CAST_FAST(left, Ptr)->loadTo(*Registers::S1),
+                               value->getName(),
+                               CAST_FAST(left, Ptr)->storeFrom(*Registers::S1));
+        }
+
+        assert(INSTANCEOF_SHARED(right, Ptr));
+        assert(INSTANCEOF_SHARED(left, Register));
+
+        // 与x86不同，mc不支持直接对storage（内存）中的值做计算
+        return fmt::format("{}\nscoreboard players operation {} vm_regs += s1 vm_regs",
+                           CAST_FAST(right, Ptr)->loadTo(*Registers::S1),
+                           CAST_FAST(left, Register)->getName());
     }
 };
 

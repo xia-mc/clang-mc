@@ -15,6 +15,8 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <execution>
 #include <llvm/TargetParser/Host.h>
+#include "vector"
+#include "array"
 
 ClangMc::ClangMc(const Config &config) : config(config) {
     auto consoleSink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
@@ -46,12 +48,18 @@ void ClangMc::start() {
         ensureValidConfig();
         ensureBuildDir();
 
+#ifndef NDEBUG
+        logger->debug("pre parse");
+#endif
         // parse
         auto parseManager = ParseManager(config, logger);
         parseManager.loadSource();
         parseManager.loadIR();
         auto &irs = parseManager.getIRs();
 
+#ifndef NDEBUG
+        logger->debug("pre verify");
+#endif
         // verify
         Verifier(logger, config, irs).verify();
         if (!config.getDebugInfo()) {
@@ -73,9 +81,12 @@ void ClangMc::start() {
             return;
         }
 
+#ifndef NDEBUG
+        logger->debug("pre compile");
+#endif
         // compiling
         auto mcFunctions = std::vector<McFunctions>(irs.size());
-#pragma omp parallel for
+//#pragma omp parallel for default(none) shared(irs, mcFunctions)
         for (size_t i = 0; i < irs.size(); ++i) {
             mcFunctions[i] = irs[i].compile();
         }
@@ -90,16 +101,33 @@ void ClangMc::start() {
             postOptimizer.optimize();
         }
 
+#ifndef NDEBUG
+        logger->debug("pre build");
+#endif
         auto builder = Builder(config, std::move(mcFunctions));
         // building
+#ifndef NDEBUG
+        logger->debug("pre call build");
+#endif
         builder.build();
 
         if (config.getCompileOnly()) {
+#ifndef NDEBUG
+            logger->debug("exited normally.");
+#endif
             return;
         }
 
+
+#ifndef NDEBUG
+        logger->debug("pre link");
+#endif
         // linking
         builder.link();
+
+#ifndef NDEBUG
+        logger->debug("exited normally.");
+#endif
         return;
     } catch (const IOException &e) {
         logger->error(e.what());

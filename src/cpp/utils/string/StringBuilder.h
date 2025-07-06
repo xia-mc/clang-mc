@@ -31,6 +31,18 @@ public:
         buffer.str("");
     }
 
+    __forceinline bool isEmpty() {
+        return buffer.str().empty();
+    }
+
+    __forceinline u32 size() {
+        return buffer.str().size();
+    }
+
+    __forceinline u32 length() {
+        return buffer.str().length();
+    }
+
     template<class StrLike>
     __forceinline void append(const StrLike &string) noexcept {
         try {

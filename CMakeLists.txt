@@ -10,15 +10,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_compile_options(-Wall -Wextra -Werror -Wunknown-pragmas)
 
-set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -g -fopenmp")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -flto -ffunction-sections -fdata-sections -DNDEBUG -fopenmp")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
 if (DEBUG_MODE)
     set(CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_DEBUG})
-else ()
-    set(CMAKE_C_FLAGS_RELEASE "-O3 -flto -ffunction-sections -fdata-sections -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_DEBUG})
 endif ()
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 
 if (NOT WIN32)
     set(CMAKE_EXE_LINKER_FLAGS "-Wl,-static-libgcc -Wl,-static-libstdc++")
@@ -42,14 +43,14 @@ add_executable(clang-mc
         src/cpp/config/ArgParser.h
         src/cpp/utils/string/StringUtils.h
         src/cpp/utils/Common.h
-        src/cpp/ir/ops/Op.h
+        src/cpp/ir/iops/Op.h
         src/cpp/ir/IR.cpp
         src/cpp/ir/IR.h
         src/cpp/ir/values/Value.h
         src/cpp/ir/values/Immediate.h
         src/cpp/ir/values/Register.h
         src/cpp/ir/ops/Mov.h
-        src/cpp/ir/ops/OpCommon.h
+        src/cpp/ir/OpCommon.h
         src/cpp/ir/IRCommon.h
         src/cpp/ir/IRCommon.cpp
         src/cpp/ir/ops/Label.h
@@ -67,12 +68,12 @@ add_executable(clang-mc
         src/cpp/ir/ops/Jmp.h
         src/cpp/ir/ops/Call.h
         src/cpp/ir/verify/Verifier.cpp
-        src/cpp/ir/ops/JmpLike.h
+        src/cpp/ir/iops/JmpLike.h
         src/cpp/ir/verify/VerifyResult.h
         src/cpp/objects/LogFormatter.h
         src/cpp/ir/ops/Add.h
         src/cpp/ir/values/Ptr.h
-        src/cpp/ir/ops/OpCommon.cpp
+        src/cpp/ir/OpCommon.cpp
         src/cpp/utils/Native.c
         src/cpp/utils/Native.h
         src/cpp/ir/ops/Inline.h
@@ -80,7 +81,7 @@ add_executable(clang-mc
         src/cpp/ir/ops/Pop.h
         src/cpp/ir/ops/Peek.h
         src/cpp/ir/ops/Je.h
-        src/cpp/ir/ops/CmpLike.h
+        src/cpp/ir/iops/CmpLike.h
         src/cpp/utils/string/StringBuilder.h
         src/cpp/ir/ops/Nop.h
         src/cpp/builder/Builder.cpp
@@ -97,7 +98,7 @@ add_executable(clang-mc
         src/cpp/ir/ops/Jg.h
         src/cpp/ir/ops/Jge.h
         src/cpp/ir/ops/Mul.h
-        src/cpp/ir/ops/CallLike.h
+        src/cpp/ir/iops/CallLike.h
         src/cpp/extern/ResourceManager.h
         src/cpp/parse/ParseManager.cpp
         src/cpp/parse/ParseManager.h
@@ -106,10 +107,18 @@ add_executable(clang-mc
         src/cpp/patches/fmt/core.h
         src/cpp/ir/ops/Jne.h
         src/cpp/objects/Int.h
-        src/cpp/ir/ops/Syscall.h
         src/cpp/ir/ops/Jle.h
         src/cpp/objects/MatrixStack.h
         src/cpp/objects/MatrixStack.h
+        src/cpp/ir/ops/Div.h
+        src/cpp/ir/iops/Special.h
+        src/cpp/ir/ops/Static.h
+        src/cpp/utils/Stream.h
+        src/cpp/ir/values/Symbol.h
+        src/cpp/ir/values/SymbolPtr.h
+)
+target_precompile_headers(clang-mc PRIVATE
+        src/cpp/utils/Native.h
 )
 
 
@@ -137,7 +146,7 @@ if (DEBUG_MODE)
             COMMAND cargo build
             COMMENT "Building rust components"
     )
-    set(RUST_COMPONENT_DIR "${CMAKE_BINARY_DIR}/rust/debug")
+    set(RUST_COMPONENT_DIR "${CMAKE_SOURCE_DIR}/cmake-build-release/rust/debug")
 else ()
     add_custom_command(
             TARGET clang-mc
@@ -145,7 +154,7 @@ else ()
             COMMAND cargo build -r
             COMMENT "Building rust components"
     )
-    set(RUST_COMPONENT_DIR "${CMAKE_BINARY_DIR}/rust/release")
+    set(RUST_COMPONENT_DIR "${CMAKE_SOURCE_DIR}/cmake-build-release/rust/release")
 endif ()
 set(RUST_COMPONENT_NAME "clang_mc_rust")
 if (WIN32)

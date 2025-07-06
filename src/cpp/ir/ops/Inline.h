@@ -5,7 +5,7 @@
 #ifndef CLANG_MC_INLINE_H
 #define CLANG_MC_INLINE_H
 
-#include "Op.h"
+#include "ir/iops/Op.h"
 #include "utils/string/StringUtils.h"
 #include "utils/Common.h"
 

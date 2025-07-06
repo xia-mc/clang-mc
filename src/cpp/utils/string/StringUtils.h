@@ -96,8 +96,78 @@ namespace string {
         return str;
     }
 
-    PURE static inline constexpr std::string_view removeComment(const std::string_view &str) noexcept {
-        return removeFromFirst(str, "//");
+    PURE static inline constexpr std::string_view removeComment(const std::string_view &line) noexcept {
+        bool inString = false;
+        bool inChar = false;
+        bool isEscaped = false;
+        for (size_t i = 0; i < line.size(); ++i) {
+            const char c = line[i];
+            if (isEscaped) {
+                isEscaped = false;
+                continue;
+            }
+
+            switch (c) {
+                case '\\':
+                    isEscaped = true; // 标记下一个字符被转义
+                    break;
+                case '"':
+                    if (!inChar) {
+                        // Toggle inString when we encounter a string literal
+                        inString = !inString;
+                    }
+                    break;
+                case '\'':
+                    if (!inString) {
+                        // Toggle inChar when we encounter a character literal
+                        inChar = !inChar;
+                    }
+                    break;
+                default:
+                    bool hasNextChar = i < line.size() - 1;
+                    switch (c) {
+                        case '/':
+                            if (!hasNextChar || line[i + 1] != '/') break;
+                        case ';':
+                            // Found comment, return the substring up to this point
+                            return line.substr(0, i);
+                        default:
+                            break;
+                    }
+                    break;
+            }
+        }
+        // If no comment found, return the full line
+        return line;
+    }
+
+    PURE static inline constexpr std::string_view removeMcFunctionComment(const std::string_view &line) noexcept {
+        bool inString = false;
+        bool isEscaped = false; // 更清晰的变量名
+        for (size_t i = 0; i < line.size(); ++i) {
+            if (isEscaped) {
+                // 当前字符被转义，视为普通字符
+                isEscaped = false; // 重置转义状态
+                continue;
+            }
+
+            switch (line[i]) {
+                case '\\':
+                    isEscaped = true; // 标记下一个字符被转义
+                    break;
+                case '"':
+                    inString = !inString; // 切换字符串状态
+                    break;
+                case '#':
+                    if (!inString) {
+                        return line.substr(0, i); // 截断注释
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        return line;
     }
 
     template<typename T>

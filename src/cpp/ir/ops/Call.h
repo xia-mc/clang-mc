@@ -5,10 +5,10 @@
 #ifndef CLANG_MC_CALL_H
 #define CLANG_MC_CALL_H
 
-#include "Op.h"
-#include "CallLike.h"
+#include "ir/iops/Op.h"
+#include "ir/iops/CallLike.h"
 #include "utils/string/StringUtils.h"
-#include "OpCommon.h"
+#include "ir/OpCommon.h"
 
 class Call : public CallLike {
 public:

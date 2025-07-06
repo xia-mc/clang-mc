@@ -11,16 +11,21 @@
 #include "ir/ops/Call.h"
 #include "ir/controlFlow/JmpTable.h"
 #include "objects/MatrixStack.h"
+#include "ir/iops/Special.h"
+#include "ir/ops/Static.h"
 
 void IR::parse(std::string &&code) {
     this->sourceCode = std::move(code);
     auto lines = string::split(sourceCode, '\n');
 
-    auto line = Line(1, false, getFileDisplay());
-    auto lineStack = MatrixStack<Line>();
+    auto lineState = LineState(1, false, getFileDisplay(), nullptr);
+    auto labelState = LabelState();
+    auto lineStack = MatrixStack<LineState>();
+    auto labelStack = MatrixStack<LabelState>();
+    auto labelRenamer = NameGenerator();
 
     size_t errors = 0;
-    for (size_t i = 0; i < lines.size(); ++i, ++line.lineNumber) {
+    for (size_t i = 0; i < lines.size(); ++i, ++lineState.lineNumber) {
         const auto str = string::trim(string::removeComment(lines[i]));
         if (UNLIKELY(str.empty())) {
             continue;
@@ -28,61 +33,108 @@ void IR::parse(std::string &&code) {
 
         try {
             if (str[0] == '#') {
-                SWITCH_STR(str.substr(1)) {
+                auto splits = string::split(str.substr(1), ' ', 2);
+                assert(!splits.empty());
+
+                auto op = splits[0];
+                auto param = splits.size() == 2 ? splits[1] : "";
+                SWITCH_STR (op) {
                     CASE_STR("push"):
-                        lineStack.pushMatrix(line);
-                        break;
-                    CASE_STR("pop"):
-                        if (lineStack.isEmpty()) {
-                            throw ParseException(i18nFormat("ir.invalid_pop", str));
+                        if (param.empty()) {
+                            throw ParseException(i18nFormat("ir.invalid_pre_op", str));
                         }
-                        line = lineStack.popMatrix();
-                        break;
-                    default:
-                        auto splits = string::split(str.substr(1), ' ', 2);
-                        assert(!splits.empty());
-
-                        auto op = splits[0];
-                        auto param = splits.size() == 2 ? splits[1] : "";
-                        SWITCH_STR(op) {
-                            CASE_STR("line"): {
-                                auto params = string::split(param, ' ', 2);
-                                assert(!params.empty());
-                                assert(params.size() < 3);
-
-                                if (params.size() == 2) {
-                                    auto name = params[1];
-                                    if (name.size() < 2 || name.front() != '"' || name.back() != '"') {
-                                        throw ParseException(i18nFormat("ir.invalid_pre_op", str));
-                                    }
-                                    line.filename = name;
-                                }
-                                line.lineNumber = parseToNumber(params[0]);
+                        SWITCH_STR (param) {
+                            CASE_STR("line"):
+                                lineStack.pushMatrix(lineState);
                                 break;
-                            }
-                            CASE_STR("nowarn"):
-                                if (!string::trim(param).empty()) {
-                                    throw ParseException(i18nFormat("ir.invalid_pre_op", str));
-                                }
-                                line.noWarn = true;
+                            CASE_STR("label"):
+                                labelStack.pushMatrix(labelState);
                                 break;
                             default:
                                 throw ParseException(i18nFormat("ir.invalid_pre_op", str));
                         }
+                        break;
+                    CASE_STR("pop"):
+                        if (param.empty()) {
+                            throw ParseException(i18nFormat("ir.invalid_pre_op", str));
+                        }
+                        SWITCH_STR (param) {
+                            CASE_STR("line"):
+                                if (lineStack.isEmpty()) {
+                                    throw ParseException(i18nFormat("ir.invalid_pop", param));
+                                }
+                                lineState = lineStack.popMatrix();
+                                break;
+                            CASE_STR("label"):
+                                if (labelStack.isEmpty()) {
+                                    throw ParseException(i18nFormat("ir.invalid_pop", param));
+                                }
+                                for (auto ptr : labelState.toRename) {
+                                    if (labelState.renameMap.contains(ptr->getLabelHash())) {
+                                        ptr->setLabel(labelState.renameMap.at(ptr->getLabelHash()));
+                                    }
+                                }
+                                labelState = labelStack.popMatrix();
+                                break;
+                            default:
+                                throw ParseException(i18nFormat("ir.invalid_pre_op", str));
+                        }
+                        break;
+                    CASE_STR("line"): {
+                        auto params = string::split(param, ' ', 2);
+                        if (params.empty() || params.size() >= 3) {
+                            throw ParseException(i18nFormat("ir.invalid_pre_op", str));
+                        }
+
+                        if (params.size() == 2) {
+                            auto name = params[1];
+                            if (name.size() < 2 || name.front() != '"' || name.back() != '"') {
+                                throw ParseException(i18nFormat("ir.invalid_pre_op", str));
+                            }
+                            lineState.filename = name.substr(1, name.size() - 2);
+                        }
+                        lineState.lineNumber = parseToNumber(params[0]);
+                        break;
+                    }
+                    CASE_STR("nowarn"):
+                        if (!string::trim(param).empty()) {
+                            throw ParseException(i18nFormat("ir.invalid_pre_op", str));
+                        }
+                        lineState.noWarn = true;
+                        break;
+                    default:
+                        throw ParseException(i18nFormat("ir.invalid_pre_op", str));
                 }
             } else {
-                auto op = createOp(line.lineNumber, str);
+                auto op = createOp(lineState, str);
+
+                if (Label *ptr = INSTANCEOF(op, Label)) {
+                    if (!labelStack.isEmpty() && !ptr->getExtern() && !ptr->getExport()) {
+                        auto newLabel = fmt::format("__label_{}",  labelRenamer.generate());
+                        labelState.renameMap.emplace(ptr->getLabelHash(), newLabel);
+                        ptr->setLabel(std::move(newLabel));
+                    }
+                    if (!ptr->getLocal()) {
+                        lineState.lastLabel = ptr;
+                    }
+                }
+                if (CallLike *ptr = INSTANCEOF(op, CallLike)) {
+                    if (!labelStack.isEmpty()) {
+                        labelState.toRename.emplace_back(ptr);
+                    }
+                }
+
                 this->sourceMap.emplace(op.get(), lines[i]);
-                this->lineMap.emplace(op.get(), line);
+                this->lineStateMap.emplace(op.get(), lineState);
                 this->values.push_back(std::move(op));
             }
         } catch (const ParseException &e) {
-            logger->error(createIRMessage(line, lines[i], e.what()));
+            logger->error(createIRMessage(lineState, lines[i], e.what()));
             errors++;
         }
     }
 
-    if (UNLIKELY(errors != 0)) {
+    if (errors != 0) {
         throw ParseException(i18nFormat("ir.errors_generated", errors));
     }
 }
@@ -129,17 +181,37 @@ __forceinline void IR::initLabels(LabelMap &labelMap) {
     }
 }
 
+void IR::preCompile() {
+    staticDataMap.clear();
+    staticData.clear();
+    staticData.reserve(256);
+
+    for (const auto &op : this->values) {
+        if (const auto staticOp = INSTANCEOF(op, Static)) {
+            assert(!staticDataMap.contains(staticOp->getNameHash()));
+
+            const auto &data = staticOp->getData();
+            staticDataMap.emplace(staticOp->getNameHash(), staticData.size());
+            staticData.insert(staticData.end(), data.begin(), data.end());
+        }
+    }
+
+    for (const auto &op : this->values) {
+        op->withIR(this);
+    }
+}
+
 static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: \"{}\"\n# label: \"{}\"\n#\n\n";
 
 [[nodiscard]] McFunctions IR::compile() {
+    preCompile();
+
     auto result = McFunctions();
     if (UNLIKELY(this->values.empty())) {
         return result;
     }
     assert(INSTANCEOF(this->values[0], Label));
 
-    Label *labelOp = CAST_FAST(this->values[0], Label);
-    Hash label = labelOp->getLabelHash();
     auto labelMap = LabelMap();
     initLabels(labelMap);
     auto jmpTable = JmpTable(values, labelMap);
@@ -153,10 +225,12 @@ static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: \"{}\"
         debugMessage = fmt::format(DEBUG_MSG_TEMPLATE, getFileDisplay(), CAST_FAST(this->values[0], Label)->getLabel());
     }
 
+    Label *labelOp = CAST_FAST(this->values[0], Label);
+    Hash label = labelOp->getLabelHash();
     bool unreachable = false;
     for (size_t i = 1; i < this->values.size(); ++i) {
         const auto &op = this->values[i];
-        if (INSTANCEOF(op, Nop)) {
+        if (INSTANCEOF(op, Nop) || INSTANCEOF(op, Special)) {
             continue;
         }
 
@@ -202,7 +276,11 @@ static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: \"{}\"
             }
         }
 
-        std::string compiled;
+        std::string compiled = op->compilePrefix();
+        if (!compiled.empty()) {
+            builder.appendLine(compiled);
+        }
+
         if (const auto &call = INSTANCEOF(op, Call)) {
             compiled = call->compile(labelMap);
         } else if (const auto &jmpLike = INSTANCEOF(op, JmpLike)) {
@@ -227,4 +305,9 @@ static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: \"{}\"
     }
 
     return result;
+}
+
+std::string createIRMessage(const IR &ir, const Op *op, const std::string_view &message) {
+    auto source = ir.getSource(op);
+    return createIRMessage(ir.getLine(op), UNLIKELY(source == "Unknown Source") ? fmt::format("(aka) {}", op->toString()) : source, message);
 }

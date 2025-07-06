@@ -1,31 +1,21 @@
 #once
+#include "int"
 
-// void free_str(String string)
-extern std:string/free_str:
 
-// String from_int(int value)
-extern std:string/from_int:
+// int String_Len(char *string)
+String_Len:
+    mov rax, 0
+.loop:
+    re [r0], 0
+    add r0, 1
+    add rax, 1
+    jmp .loop
 
-// void print(String string)
-extern std:string/print:
 
-// char char_at(String string, int index)
-extern std:string/char_at:
-
-// int find(String string, char target)
-extern std:string/find:
-
-// String from_char(char c)
-extern std:string/from_char:
-
-// int get_length(String string)
-extern std:string/get_length:
-
-// String merge_string(String left, String right)
-extern std:string/merge_string:
-
-// String substring(String string, int start, int end)
-extern std:string/substring:
-
-// char to_char(String string)
-extern std:string/to_char:
+// void String_Copy(char *src, char *dst)
+String_Copy:
+    mov [r1], [r0]
+    re [r0], 0
+    add r0, 1
+    add r1, 1
+    jmp String_Copy

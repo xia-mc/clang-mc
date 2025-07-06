@@ -5,11 +5,11 @@
 #ifndef CLANG_MC_JLE_H
 #define CLANG_MC_JLE_H
 
-#include "Op.h"
-#include "JmpLike.h"
-#include "CmpLike.h"
+#include "ir/iops/Op.h"
+#include "ir/iops/JmpLike.h"
+#include "ir/iops/CmpLike.h"
 #include "utils/string/StringUtils.h"
-#include "OpCommon.h"
+#include "ir/OpCommon.h"
 #include "utils/string/StringBuilder.h"
 
 class Jle : public JmpLike, public CmpLike {

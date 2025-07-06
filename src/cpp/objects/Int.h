@@ -17,13 +17,13 @@ public:
     __forceinline constexpr Int(i32 value) noexcept: value(value) { // NOLINT(*-explicit-constructor)
     }
 
-    [[nodiscard]] __forceinline constexpr bool checkAdd(Int rhs) const noexcept {
+    [[nodiscard]] inline constexpr bool checkAdd(Int rhs) const noexcept {
         return LIKELY((rhs.value >= 0)
                       ? value <= (INT32_MAX - rhs.value)
                       : value >= (INT32_MIN - rhs.value));
     }
 
-    [[nodiscard]] __forceinline constexpr bool checkSub(Int rhs) const noexcept {
+    [[nodiscard]] inline constexpr bool checkSub(Int rhs) const noexcept {
         return LIKELY((rhs.value >= 0)
                       ? value >= (INT32_MIN + rhs.value)
                       : value <= (INT32_MAX + (-rhs.value)));
@@ -37,7 +37,7 @@ public:
         return LIKELY(result / rhs.value == value);
     }
 
-    [[nodiscard]] __forceinline constexpr bool checkDiv(Int rhs) const noexcept {
+    [[nodiscard]] inline constexpr bool checkDiv(Int rhs) const noexcept {
         return LIKELY(!(value == INT32_MIN && rhs.value == -1) && rhs.value != 0);
     }
 
@@ -91,6 +91,10 @@ public:
     }
 
     __forceinline constexpr operator i32() const noexcept { return value; } // NOLINT(*-explicit-constructor)
+
+    [[nodiscard]] __forceinline constexpr std::string toString() const {
+        return std::to_string(value);
+    }
 };
 
 

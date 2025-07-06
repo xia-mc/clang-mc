@@ -33,17 +33,24 @@ ir.value.register.unknown_register: unknown register '{}'
 ir.errors_generated: "{} errors generated"
 ir.invalid_op: "invalid instruction: '{}'"
 ir.invalid_pre_op: "invalid preprocessed instruction: '{}'"
-ir.invalid_pop: "Invalid preprocessed pop instruction: '{}' because the stack is exhausted"
+ir.invalid_pop: "pop could not pop '{}' no matching push"
 ir.invalid_label: label name cannot contain spaces
+ir.invalid_local_label: invalid local label
 ir.invalid_label_identifier: expected a valid label identifier, but found '{}'
 ir.unknown_op: "unknown instruction: '{}'"
+ir.unknown_symbol: "unknown symbol: '{}'"
 ir.verify.unreachable: code will never be executed
 ir.verify.unreachable_before: unreachable code before this point
 ir.verify.label_redefinition: redefinition of label '{}'
+ir.verify.symbol_redefinition: redefinition of symbol '{}'
 ir.verify.previous_definition: previous definition is here
 ir.verify.undeclared_label: use of undeclared label '{}'
+ir.verify.undeclared_symbol: use of undeclared symbol '{}'
 ir.verify.unused_label: label '{}' defined but not used
-ir.verify.jmp_to_extern: jmp to an extern label is undefined
+ir.verify.unused_symbol: symbol '{}' defined but not used
+ir.verify.jmp_to_extern: jump to an extern label is undefined
+ir.verify.never_return: some control flow entry points lack a valid exit path
+ir.verify.never_return_inner: entry point is here
 file.no_such_file_or_directory: "no such file or directory: '{}'"
 file.failed_to_open: "failed to open file: '{}'"
 file.failed_to_create: "failed to create file or directory: '{}'"
