@@ -34,11 +34,9 @@ void PostOptimizer::doSingleOptimize(std::string &code) {
 }
 
 void PostOptimizer::optimize() {
-#pragma omp parallel for default(none)
     for (size_t i = 0; i < mcFunctions.size(); i++) {  // NOLINT(modernize-loop-convert)
         auto &mcFunction = mcFunctions[i].values();
 
-#pragma omp parallel for default(none) shared(mcFunction)
         for (size_t j = 0; j < mcFunction.size(); j++) {  // NOLINT(modernize-loop-convert)
             doSingleOptimize(mcFunction[j].second);
         }

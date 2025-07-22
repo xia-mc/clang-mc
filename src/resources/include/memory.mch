@@ -97,3 +97,62 @@ memcpy:
     re r0, r2
 
     jmp .loop
+
+// void memmove(void *src, void *dst, int size)
+memmove:
+    rle r2, 0
+    re r0, r1
+
+    jl r0, r1, .backward
+
+.forward:
+    add r2, r0
+.forwardLoop:
+    mov [r1], [r0]
+    add r0, 1
+    add r1, 1
+    re r0, r2
+
+    mov [r1], [r0]
+    add r0, 1
+    add r1, 1
+    re r0, r2
+
+    mov [r1], [r0]
+    add r0, 1
+    add r1, 1
+    re r0, r2
+
+    mov [r1], [r0]
+    add r0, 1
+    add r1, 1
+    re r0, r2
+
+    jmp .forwardLoop
+
+.backward:
+    mov t0, r0
+    add r0, r2
+    add r1, r2
+.backwardLoop:
+    sub r0, 1
+    sub r1, 1
+    mov [r1], [r0]
+    re r0, t0
+
+    sub r0, 1
+    sub r1, 1
+    mov [r1], [r0]
+    re r0, t0
+
+    sub r0, 1
+    sub r1, 1
+    mov [r1], [r0]
+    re r0, t0
+    
+    sub r0, 1
+    sub r1, 1
+    mov [r1], [r0]
+    re r0, t0
+
+    jmp .backwardLoop

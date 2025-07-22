@@ -44,6 +44,8 @@ i32 ClPreProcess_AddIncludeDir(PreProcessorC instance, const char *path);
 
 i32 ClPreProcess_AddTarget(PreProcessorC instance, const char *path);
 
+i32 ClPreProcess_AddTargetString(PreProcessorC instance, const char *code);
+
 i32 ClPreProcess_Load(PreProcessorC instance);
 
 i32 ClPreProcess_Process(PreProcessorC instance);

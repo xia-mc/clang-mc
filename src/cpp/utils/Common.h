@@ -16,6 +16,7 @@
 #include "objects/include/UnorderedDense.h"
 #include <nlohmann/json.hpp>
 #include "utils/Native.h"
+#include <intrin.h>
 
 using Path = std::filesystem::path;
 using Logger = std::shared_ptr<spdlog::logger>;
@@ -128,8 +129,8 @@ PURE static inline constexpr Hash hash(const std::string_view &str) noexcept {
 #undef assert
 #define assert(expression) \
     if (false) { \
-        UNREACHABLE();
-        ((void) expression); \
+        UNREACHABLE(); \
+        ((void) (expression)); \
     }
 #define WARN(condition, message) UNUSED(condition); UNUSED(message)
 #define DEBUG_PRINT(message) UNUSED(message)
@@ -141,6 +142,12 @@ static __forceinline constexpr T *requireNonNull(T *object) {
         throw NullPointerException("null");
     }
     return object;
+}
+
+static __forceinline u64 getRsp() {
+    u64 rsp;
+    asm inline("mov %%rsp, %0" : "=r"(rsp));
+    return rsp;
 }
 
 #endif //CLANG_MC_COMMON_H

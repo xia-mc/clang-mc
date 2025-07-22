@@ -27,12 +27,10 @@ Int_Declen:
 // void Int_ToString(char *result, int value)
 Int_ToString:
     // 特殊处理0
-    jne r1, 0, .init
-    mov [r0], '0'
-    mov [r0 + 1], 0  // C字符串结束符
-    ret
+    je r1, 0, .special_0
+    // 特殊处理-2147483648
+    je r1, -2147483648, .special_INT_MIN
 
-.init:
     push x0
     push x1
 
@@ -76,4 +74,24 @@ Int_ToString:
 
     pop x1
     pop x0
+    ret
+
+.special_0:
+    mov [r0], '0'
+    mov [r0 + 1], 0  // C字符串结束符
+    ret
+
+.special_INT_MIN:
+    mov [r0], '-'
+    mov [r0 + 1], '2'
+    mov [r0 + 2], '1'
+    mov [r0 + 3], '4'
+    mov [r0 + 4], '7'
+    mov [r0 + 5], '4'
+    mov [r0 + 6], '8'
+    mov [r0 + 7], '3'
+    mov [r0 + 8], '6'
+    mov [r0 + 9], '4'
+    mov [r0 + 10], '8'
+    mov [r0 + 11], 0
     ret

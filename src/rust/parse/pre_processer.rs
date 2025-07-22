@@ -58,8 +58,18 @@ impl PreProcesser {
         self.bypass_include.borrow_mut().insert(p, HashSet::new());
         0
     }
+    pub fn add_target_string(&mut self, p: String) -> i32 {
+        self.targets.borrow_mut().push((PathBuf::new(), p));
+        self.defines.borrow_mut().insert(PathBuf::new(), HashMap::new());
+        self.func_macros.borrow_mut().insert(PathBuf::new(), HashMap::new());
+        self.bypass_include.borrow_mut().insert(PathBuf::new(), HashSet::new());
+        0
+    }
     pub fn load(&mut self) -> i32 {
         for (p, s) in self.targets.borrow_mut().iter_mut() {
+            if !s.is_empty() {
+                continue;
+            }
             if File::open(p).and_then(|mut f| f.read_to_string(s)).is_err() {
                 return 0xff0;
             }
@@ -337,9 +347,8 @@ impl PreProcesser {
                     }
                     self.include_once.borrow_mut().insert(PathBuf::from(cur));
                 }
-
-                /* ---------- 未知 ---------- */
-                _ => return Err(0xffa),
+                
+                _ => {}
             }
             out.push('\n');
         }

@@ -67,7 +67,8 @@ void ClangMc::start() {
         }
 
         if (config.getPreprocessOnly()) {
-            for (const auto &ir: irs) {
+            for (auto &ir: irs) {
+                ir.preCompile();
                 auto path = Path(ir.getFile());
                 path.replace_extension(".mci");
 

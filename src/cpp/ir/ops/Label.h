@@ -52,7 +52,7 @@ public:
     }
 };
 
-#define LABEL_RET "__internel_ret"
+#define LABEL_RET "__internal_ret"
 inline Label labelRet = Label(-1, LABEL_RET, false, false, false);
 
 #endif //CLANG_MC_LABEL_H
