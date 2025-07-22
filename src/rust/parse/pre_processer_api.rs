@@ -107,6 +107,16 @@ pub extern "C" fn ClPreProcess_AddTarget(instance: CPreProcesser, path: *const c
 
 #[allow(non_snake_case)]
 #[unsafe(no_mangle)]
+pub extern "C" fn ClPreProcess_AddTargetString(instance: CPreProcesser, code: *const c_char) -> i32 {
+    assert!(!instance.is_null());
+    unsafe {
+        let code_str = CStr::from_ptr(code).to_str().unwrap();
+        as_processer(instance).add_target_string(code_str.to_string())
+    }
+}
+
+#[allow(non_snake_case)]
+#[unsafe(no_mangle)]
 pub extern "C" fn ClPreProcess_Load(instance: CPreProcesser) -> i32 {
     assert!(!instance.is_null());
     as_processer(instance).load()

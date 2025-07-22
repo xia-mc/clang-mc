@@ -38,6 +38,13 @@ private:
                            right->loadTo(*Registers::S1), static_cast<i32>(left->getValue()), command);
     }
 
+    template<class T>
+    static inline std::string cmp(const std::string_view &command, Ptr *left, T *right) {
+        return fmt::format("{}\n{}",
+                           left->loadTo(*Registers::S1),
+                           cmp(command, Registers::S1.get(), right));
+    }
+
     template<class T, class U>
     inline std::string cmp(const JmpMap &jmpMap, T *left, U *right) const {
         return CmpLike::cmp(this, jmpMap.at(labelHash), left, right);
@@ -88,10 +95,10 @@ public:
         assert(INSTANCEOF_SHARED(this->left, Ptr));
         const auto &left = CAST_FAST(this->left, Ptr);
         if (const auto &right = INSTANCEOF_SHARED(this->right, Register)) {
-            return cmp(jmpMap, right.get(), left);
+            return cmp(jmpMap, left, right.get());
         }
         assert(INSTANCEOF_SHARED(this->right, Immediate));
-        return cmp(jmpMap, CAST_FAST(this->right, Immediate), left);
+        return cmp(jmpMap, left, CAST_FAST(this->right, Immediate));
     }
 };
 

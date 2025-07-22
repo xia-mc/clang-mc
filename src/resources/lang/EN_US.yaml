@@ -35,12 +35,15 @@ ir.invalid_op: "invalid instruction: '{}'"
 ir.invalid_pre_op: "invalid preprocessed instruction: '{}'"
 ir.invalid_pop: "pop could not pop '{}' no matching push"
 ir.invalid_label: label name cannot contain spaces
+ir.invalid_symbol: symbol name cannot contain spaces
 ir.invalid_local_label: invalid local label
+ir.invalid_local_symbol: invalid local symbol
 ir.invalid_label_identifier: expected a valid label identifier, but found '{}'
 ir.unknown_op: "unknown instruction: '{}'"
 ir.unknown_symbol: "unknown symbol: '{}'"
 ir.verify.unreachable: code will never be executed
 ir.verify.unreachable_before: unreachable code before this point
+ir.verify.reserved_label: use of reserved label prefix '{}'
 ir.verify.label_redefinition: redefinition of label '{}'
 ir.verify.symbol_redefinition: redefinition of symbol '{}'
 ir.verify.previous_definition: previous definition is here

@@ -54,3 +54,4 @@ bin/
 /build/
 /target/
 /cmake-build-release-/
+/cmake-build-release-obfuscate/

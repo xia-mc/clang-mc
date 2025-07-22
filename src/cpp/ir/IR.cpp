@@ -13,6 +13,10 @@
 #include "objects/MatrixStack.h"
 #include "ir/iops/Special.h"
 #include "ir/ops/Static.h"
+#include "ir/ops/Inline.h"
+#include "extern/PreProcessorAPI.h"
+#include "random"
+#include "objects/include/uuid.h"
 
 void IR::parse(std::string &&code) {
     this->sourceCode = std::move(code);
@@ -69,9 +73,9 @@ void IR::parse(std::string &&code) {
                                 if (labelStack.isEmpty()) {
                                     throw ParseException(i18nFormat("ir.invalid_pop", param));
                                 }
-                                for (auto ptr : labelState.toRename) {
-                                    if (labelState.renameMap.contains(ptr->getLabelHash())) {
-                                        ptr->setLabel(labelState.renameMap.at(ptr->getLabelHash()));
+                                for (auto ptr: labelState.toRenameLabel) {
+                                    if (labelState.renameLabelMap.contains(ptr->getLabelHash())) {
+                                        ptr->setLabel(labelState.renameLabelMap.at(ptr->getLabelHash()));
                                     }
                                 }
                                 labelState = labelStack.popMatrix();
@@ -110,23 +114,31 @@ void IR::parse(std::string &&code) {
 
                 if (Label *ptr = INSTANCEOF(op, Label)) {
                     if (!labelStack.isEmpty() && !ptr->getExtern() && !ptr->getExport()) {
-                        auto newLabel = fmt::format("__label_{}",  labelRenamer.generate());
-                        labelState.renameMap.emplace(ptr->getLabelHash(), newLabel);
+                        auto newLabel = fmt::format("__label_{}", labelRenamer.generate());
+                        labelState.renameLabelMap.emplace(ptr->getLabelHash(), newLabel);
                         ptr->setLabel(std::move(newLabel));
-                    }
-                    if (!ptr->getLocal()) {
-                        lineState.lastLabel = ptr;
                     }
                 }
                 if (CallLike *ptr = INSTANCEOF(op, CallLike)) {
                     if (!labelStack.isEmpty()) {
-                        labelState.toRename.emplace_back(ptr);
+                        labelState.toRenameLabel.emplace_back(ptr);
                     }
                 }
 
                 this->sourceMap.emplace(op.get(), lines[i]);
                 this->lineStateMap.emplace(op.get(), lineState);
-                this->values.push_back(std::move(op));
+
+                if (Label *ptr = INSTANCEOF(op, Label)) {
+                    if (!ptr->getLocal()) {
+                        lineState.lastLabel = ptr;
+                    }
+                    if (ptr->getExport()) {
+                        this->values.emplace_back(std::move(op));
+                        this->values.emplace_back(std::make_unique<Nop>(INT_MIN));
+                        continue;
+                    }
+                }
+                this->values.emplace_back(std::move(op));
             }
         } catch (const ParseException &e) {
             logger->error(createIRMessage(lineState, lines[i], e.what()));
@@ -176,17 +188,20 @@ __forceinline void IR::initLabels(LabelMap &labelMap) {
         label = labelOp->getLabelHash();
 
         assert(!labelMap.contains(label));
-        auto a = createForCall(labelOp);
-        labelMap.emplace(label, a);
+        labelMap.emplace(label, createForCall(labelOp));
     }
 }
+
+static std::mt19937 random(std::random_device{}());
+static std::uniform_int_distribution<> distrib(INT32_MIN, INT32_MAX);
 
 void IR::preCompile() {
     staticDataMap.clear();
     staticData.clear();
     staticData.reserve(256);
 
-    for (const auto &op : this->values) {
+    // collect datas
+    for (const auto &op: this->values) {
         if (const auto staticOp = INSTANCEOF(op, Static)) {
             assert(!staticDataMap.contains(staticOp->getNameHash()));
 
@@ -196,7 +211,90 @@ void IR::preCompile() {
         }
     }
 
-    for (const auto &op : this->values) {
+    if (staticData.empty()) {
+        return;
+    }
+
+    // ensure initialized
+    std::string code;
+    {
+        bool hasMalloc = false;
+        for (const auto &item: values) {
+            if (auto *ptr = INSTANCEOF(item, Label)) {
+                if (ptr->getLabelHash() == hash("malloc")) {
+                    hasMalloc = true;
+                    break;
+                }
+            }
+        }
+        static uuids::basic_uuid_random_generator generator = uuids::basic_uuid_random_generator(random);
+        i32 uid = distrib(random);
+        auto id = to_string(generator());
+        auto builder = StringBuilder();
+        for (const auto &item: staticData) {
+            builder.appendLine(fmt::format("mov [rax], {}", item));
+            builder.appendLine("add rax, 1");
+        }
+        code = fmt::format(
+                "#push line\n"
+                "{}\n"
+                "\n"
+                "__internal_tryInit:\n"
+                "    inline return run scoreboard players operation sbp vm_regs = sbp vm_static_{}\n"
+                "    ret\n"
+                "\n"
+                "__internal_ensureInit:\n"
+                "    mov sbp, 0\n"
+                "    call __internal_tryInit\n"
+                "    je sbp, 0, .init\n"
+                "    re [sbp - 1], {}\n"  // 优化: 代替jne [sbp - 1], {}, .init; ret
+                "\n"
+                ".init:\n"
+                "    mov r0, {}\n"
+                "    call malloc\n"
+                "    mov [rax], {}\n"
+                "    add rax, 1\n"
+                "    mov sbp, rax\n"
+                "    {}\n"
+                "    inline scoreboard objectives add vm_static_{} dummy\n"
+                "    inline return run scoreboard players operation sbp vm_static_{} = sbp vm_regs\n"
+                "    ret\n"
+                "#pop line\n",
+                hasMalloc ? "" : "#include <memory>",
+                id, uid, staticData.size() + 1, uid, builder.toString(), id, id
+        );
+    }
+
+    auto tmpIR = IR(logger, config, Path(), HashMap<std::string, std::string>());
+    auto preprocessor = ClPreProcess_New();
+    ClPreProcess_AddIncludeDir(preprocessor, absolute(INCLUDE_PATH).string().c_str());
+    ClPreProcess_AddTargetString(preprocessor, code.c_str());
+    ClPreProcess_Process(preprocessor);
+    Targets *targets;
+    ClPreProcess_GetTargets(preprocessor, &targets);
+    assert(targets != nullptr);
+    assert(targets->size == 1);
+    tmpIR.parse(std::string(targets->targets[0]->code));
+    ClPreProcess_FreeTargets(preprocessor, targets);
+    targets = nullptr;
+    ClPreProcess_Free(preprocessor);
+    preprocessor = nullptr;
+
+    for (u32 i = 0; i < values.size(); ++i) {
+        if (auto *ptr = INSTANCEOF(values[i], Label)) {
+            if (!ptr->getExport()) continue;
+            assert(i != values.size());
+            assert(INSTANCEOF(values[i + 1], Nop));
+
+            values[i + 1] = std::make_unique<Call>(INT_MIN, "__internal_ensureInit");
+        }
+    }
+
+    for (auto &item: tmpIR.getValues()) {
+        values.emplace_back(std::move(item));
+    }
+
+    for (const auto &op: this->values) {
         op->withIR(this);
     }
 }
@@ -309,5 +407,7 @@ static inline constexpr std::string_view DEBUG_MSG_TEMPLATE = "#\n# file: \"{}\"
 
 std::string createIRMessage(const IR &ir, const Op *op, const std::string_view &message) {
     auto source = ir.getSource(op);
-    return createIRMessage(ir.getLine(op), UNLIKELY(source == "Unknown Source") ? fmt::format("(aka) {}", op->toString()) : source, message);
+    return createIRMessage(ir.getLine(op),
+                           UNLIKELY(source == "Unknown Source") ? fmt::format("(aka) {}", op->toString()) : source,
+                           message);
 }

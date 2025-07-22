@@ -12,21 +12,9 @@
 #include "IRCommon.h"
 #include "objects/NameGenerator.h"
 #include "extern/ResourceManager.h"
-#include "ir/iops/CallLike.h"
+#include "State.h"
 
 class ParseManager;
-
-struct LineState {
-    i32 lineNumber = -1;
-    bool noWarn = false;
-    std::string_view filename = "Unknown Source";
-    const Label *lastLabel = nullptr;
-};
-
-struct LabelState {
-    HashMap<Hash, std::string> renameMap = HashMap<Hash, std::string>();
-    std::vector<CallLike *> toRename = std::vector<CallLike *>();
-};
 
 class IR {
 private:
@@ -46,8 +34,6 @@ private:
     std::string createForCall(const Label *labelOp);
 
     void initLabels(LabelMap &labelMap);
-
-    void preCompile();
 
     friend class ParseManager;
 public:
@@ -69,6 +55,8 @@ public:
     GETTER(StaticDataMap, staticDataMap);
 
     void parse(std::string &&code);
+
+    void preCompile();
 
     [[nodiscard]] McFunctions compile();
 

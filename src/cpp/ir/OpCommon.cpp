@@ -204,7 +204,7 @@ static __forceinline ValuePtr createPtr(const std::string_view &string) {
     return std::make_shared<Ptr>(data.base, data.index, data.scale, data.displacement);
 }
 
-PURE ValuePtr createValue(const std::string &string) {
+PURE ValuePtr createValue(const LineState &line, const std::string &string) {
     if (string.empty()) {
         throw ParseException(i18n("ir.op.empty_value"));
     }
@@ -231,5 +231,5 @@ PURE ValuePtr createValue(const std::string &string) {
     } catch (const ParseException &e) {
     }
 
-    return std::make_shared<Symbol>(string);
+    return std::make_shared<Symbol>(fixSymbol(line, string));
 }

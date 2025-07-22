@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 project(clang-mc C CXX)
-set(DEBUG_MODE ON)
+set(DEBUG_MODE OFF)
 set(VCPKG_DIR "C:/Users/Administrator/.vcpkg-clion/vcpkg")
 
 set(CMAKE_C_STANDARD 17)
@@ -8,10 +8,10 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-Wall -Wextra -Werror -Wunknown-pragmas)
+add_compile_options(-Werror -Wunknown-pragmas)
 
-set(CMAKE_C_FLAGS_DEBUG "-O0 -g -fopenmp")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -flto -ffunction-sections -fdata-sections -DNDEBUG -fopenmp")
+set(CMAKE_C_FLAGS_DEBUG "-g")
+set(CMAKE_C_FLAGS_RELEASE "/O2 -flto -DNDEBUG")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
@@ -116,6 +116,7 @@ add_executable(clang-mc
         src/cpp/utils/Stream.h
         src/cpp/ir/values/Symbol.h
         src/cpp/ir/values/SymbolPtr.h
+        src/cpp/ir/State.h
 )
 target_precompile_headers(clang-mc PRIVATE
         src/cpp/utils/Native.h
