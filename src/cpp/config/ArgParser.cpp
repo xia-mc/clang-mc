@@ -55,6 +55,11 @@ void ArgParser::next(const std::string &arg) {
                 // 设置include path
                 config.getIncludes().emplace_back(arg);
                 break;
+            CASE_STR("--data-dir"):
+            CASE_STR("-D"):
+                // 设置数据包目录
+                config.setDataDir(Path(arg));
+                break;
         }
         required = false;
         lastString = "";

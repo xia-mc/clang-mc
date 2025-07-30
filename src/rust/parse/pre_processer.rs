@@ -5,6 +5,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use regex::Regex;
 
 /// 目标文件 → (宏名 → (形参列表, 展开体))
 type FuncMacroMap = HashMap<PathBuf, HashMap<String, (Vec<String>, String)>>;
@@ -146,6 +147,31 @@ impl PreProcesser {
         Some(expanded)
     }
 
+    fn try_expand_obj_macros(&self, tgt: &Path, line: &str) -> String {
+        let defines = self.defines.borrow();
+        let map = match defines.get(tgt) {
+            Some(m) if !m.is_empty() => m,
+            _ => return line.to_owned(),
+        };
+
+        let mut out = line.to_owned();
+        for (k, v) in map {
+            // (^|[\s,])KEY([\s,]|$)   —— 无任何 look-around
+            let pat = format!(
+                r"(?P<pre>(^|[\s,])){}(?P<post>([\s,]|$))",
+                regex::escape(k)
+            );
+            let re = Regex::new(&pat).unwrap();
+            out = re
+                .replace_all(&out, |caps: &regex::Captures| {
+                    // 保留左右边界字符（可能为空）
+                    format!("{}{}{}", &caps["pre"], v, &caps["post"])
+                })
+                .into_owned();
+        }
+        out
+    }
+
     /* ---------- include 辅助 ---------- */
     fn get_code(&self, tgt: &Path, pb: &PathBuf) -> Result<String, i32> {
         match File::open(pb) {
@@ -198,11 +224,13 @@ impl PreProcesser {
             /* ----- 普通行：宏展开/输出 ----- */
             if !line.starts_with('#') {
                 if !ignore {
-                    if let Some(exp) = self.try_expand_func_macro(tgt, &line) {
-                        out.push_str(&exp);
+                    let mut processed = if let Some(exp) = self.try_expand_func_macro(tgt, &line) {
+                        exp
                     } else {
-                        out.push_str(&line);
-                    }
+                        line.to_owned()
+                    };
+                    processed = self.try_expand_obj_macros(tgt, &processed);
+                    out.push_str(&processed);
                     out.push('\n');
                 }
                 continue;

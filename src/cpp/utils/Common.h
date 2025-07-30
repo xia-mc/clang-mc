@@ -5,18 +5,12 @@
 #ifndef CLANG_MC_COMMON_H
 #define CLANG_MC_COMMON_H
 
-#ifndef _MSC_VER
-// 我不知道为什么，就算是spdlog-mingw-static也会用这个MSVC特有的函数导致我编译失败
-#define _fwrite_nolock fwrite
-#endif
-
 #include "filesystem"
 #include "spdlog/spdlog.h"
 #include "cstdint"
 #include "objects/include/UnorderedDense.h"
 #include <nlohmann/json.hpp>
 #include "utils/Native.h"
-#include <intrin.h>
 
 using Path = std::filesystem::path;
 using Logger = std::shared_ptr<spdlog::logger>;

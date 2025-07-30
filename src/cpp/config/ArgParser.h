@@ -16,7 +16,8 @@ static inline const HashSet<Hash> DATA_ARGS = {
         hash("--output"), hash("-o"),
         hash("--build-dir"), hash("-B"),
         hash("--namespace"), hash("-N"),
-        hash("-I")
+        hash("-I"),
+        hash("--data-dir"), hash("-D")
 };
 
 class ArgParser {

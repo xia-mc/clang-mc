@@ -18,7 +18,7 @@ void PostOptimizer::doSingleOptimize(std::string &code) {
         if (line.empty() || line.front() == '#') continue;
 
         if (!first) builder.append('\n');
-        auto fixedLine = string::trim(string::removeMcFunctionComment(line));
+        auto fixedLine = string::trim(line);
         std::string newLine;
         for (auto from = REPLACES.begin(); from < REPLACES.end(); from += 2) {
             const auto to = from + 1;

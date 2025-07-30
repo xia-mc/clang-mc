@@ -294,8 +294,17 @@ void IR::preCompile() {
         values.emplace_back(std::move(item));
     }
 
+    i32 errors = 0;
     for (const auto &op: this->values) {
-        op->withIR(this);
+        try {
+            op->withIR(this);
+        } catch (const ParseException &e) {
+            logger->error(createIRMessage(getLine(op.get()), getSource(op.get()), e.what()));
+            errors++;
+        }
+    }
+    if (errors != 0) {
+        throw ParseException(i18nFormat("ir.errors_generated", errors));
     }
 }
 
