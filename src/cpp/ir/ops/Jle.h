@@ -54,7 +54,11 @@ private:
 public:
     explicit Jle(const i32 lineNumber, ValuePtr &&left, ValuePtr &&right, std::string label) :
             Op("jle", lineNumber), CallLike(std::move(label)), CmpLike(std::move(left), std::move(right)) {
-        if (INSTANCEOF_SHARED(left, Ptr) && INSTANCEOF_SHARED(right, Ptr)) {
+    }
+
+    void withIR(IR *context) override {
+        CmpLike::withIR(context);
+        if (INSTANCEOF_SHARED(this->left, Ptr) && INSTANCEOF_SHARED(this->right, Ptr)) {
             throw ParseException(i18n("ir.op.memory_operands"));
         }
     }

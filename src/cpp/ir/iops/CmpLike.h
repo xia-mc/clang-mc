@@ -34,8 +34,8 @@ public:
     explicit CmpLike(ValuePtr &&left, ValuePtr &&right) noexcept: left(std::move(left)), right(std::move(right)) {
     }
 
-    auto withIR(IR *context) noexcept -> decltype(this) override {
-        auto *result = dynamic_cast<CmpLike *>(Op::withIR(context));
+    virtual void withIR(IR *context) override {
+        Op::withIR(context);
         auto prefixBuilder = StringBuilder();
 
         if (const auto &symbol = INSTANCEOF_SHARED(left, Symbol)) {
@@ -62,7 +62,6 @@ public:
         }
 
         prefix = prefixBuilder.toString();
-        return result;
     };
 
     [[nodiscard]] std::string compilePrefix() const override {

@@ -14,3 +14,4 @@ lto = true
 strip = true
 
 [dependencies]
+regex = "1.11.1"

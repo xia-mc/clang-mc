@@ -21,9 +21,8 @@ public:
 
     virtual ~Op() = default;
 
-    virtual auto withIR(IR *context) noexcept -> decltype(this) {
+    virtual void withIR(IR *context) {
         this->ir = context;
-        return this;
     };
 
     /**

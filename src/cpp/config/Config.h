@@ -15,6 +15,7 @@ private:
     std::vector<Path> includes = std::vector<Path>();
     Path output = Path("output");
     Path buildDir = Path("build");
+    Path dataDir = Path("");
     std::string nameSpace;
     bool compileOnly = false;
     bool preprocessOnly = false;
@@ -32,6 +33,8 @@ public:
     DATA(Output, output);
 
     DATA(BuildDir, buildDir);
+
+    DATA(DataDir, dataDir);
 
     DATA(NameSpace, nameSpace);
 

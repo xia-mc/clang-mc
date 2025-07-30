@@ -52,6 +52,23 @@ void Builder::link() const {
         }
     }
 
+    if (!config.getDataDir().empty()) {
+        for (const auto& path : std::filesystem::recursive_directory_iterator(config.getDataDir())) {
+            if (is_regular_file(path)) {
+                auto target = config.getBuildDir() / relative(path, config.getDataDir());
+                ensureParentDir(target);
+
+                auto content = readFile(path);
+
+                if (target.extension() == ".mcfunction") {
+                    PostOptimizer::doSingleOptimize(content);
+                }
+
+                writeFile(target, content);
+            }
+        }
+    }
+
     auto output = config.getOutput();
     output += ".zip";
     compressFolder(config.getBuildDir(), output);

@@ -128,22 +128,19 @@ static OpPtr createStatic(const LineState &line, const std::string_view &args) {
     }
     auto name = parts[0];
     auto dataStr = parts[1];
-    if (UNLIKELY(dataStr.length() <= 2)) {
-        throw ParseException(i18nFormat("ir.invalid_op", args));
-    }
 
     std::vector<i32> data;
-    if (dataStr.front() == '[' || dataStr.back() == ']') {
+    if (dataStr.size() > 2 && dataStr.front() == '[' && dataStr.back() == ']') {
         data = stream::map(stream::map(string::split(
                 dataStr.substr(1, dataStr.length() - 2), ','
                 ),FUNC_WITH(string::trim)
         ),FUNC_WITH(parseToNumber));
-    } else if (dataStr.front() == '"' || dataStr.back() == '"') {
+    } else if (dataStr.size() > 2 && dataStr.front() == '"' && dataStr.back() == '"') {
         assert(data.empty());
         data.insert(data.begin(), dataStr.begin() + 1, dataStr.end() - 1);
         data.emplace_back(0);  // c string
     } else {
-        throw ParseException(i18nFormat("ir.invalid_op", args));
+        data = { parseToNumber(dataStr) };
     }
 
     return std::make_unique<Static>(INT_MIN, fixSymbol(line, name), std::move(data));

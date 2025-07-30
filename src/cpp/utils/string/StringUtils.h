@@ -141,35 +141,6 @@ namespace string {
         return line;
     }
 
-    PURE static inline constexpr std::string_view removeMcFunctionComment(const std::string_view &line) noexcept {
-        bool inString = false;
-        bool isEscaped = false; // 更清晰的变量名
-        for (size_t i = 0; i < line.size(); ++i) {
-            if (isEscaped) {
-                // 当前字符被转义，视为普通字符
-                isEscaped = false; // 重置转义状态
-                continue;
-            }
-
-            switch (line[i]) {
-                case '\\':
-                    isEscaped = true; // 标记下一个字符被转义
-                    break;
-                case '"':
-                    inString = !inString; // 切换字符串状态
-                    break;
-                case '#':
-                    if (!inString) {
-                        return line.substr(0, i); // 截断注释
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-        return line;
-    }
-
     template<typename T>
     PURE static inline constexpr bool contains(const std::string_view &str, const T &substr) noexcept {
         return str.find(substr) != std::string_view::npos;

@@ -33,7 +33,11 @@ public:
         if (INSTANCEOF_SHARED(left, Immediate)) {
             throw ParseException(i18n("ir.op.immediate_left"));
         }
-        if (INSTANCEOF_SHARED(left, Ptr) && INSTANCEOF_SHARED(right, Ptr)) {
+    }
+
+    void withIR(IR *context) override {
+        CmpLike::withIR(context);
+        if (INSTANCEOF_SHARED(this->left, Ptr) && INSTANCEOF_SHARED(this->right, Ptr)) {
             throw ParseException(i18n("ir.op.memory_operands"));
         }
     }

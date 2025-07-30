@@ -410,20 +410,22 @@ export std:_internal/merge_str_to_s3text:
     ret
 
 
-// void print(const char *string)
-print:
+__internal_r0CharToStringS3Text:
     inline data modify storage std:vm s3 set value {text: "", next: ""}
 
 .loop:
     mov r1, [r0]
-    je r1, 0, .do_print
+    re r1, 0
     call __internal_c2s
     inline function std:_internal/merge_str_to_s3text with storage std:vm s3
     add r0, 1
 
     jmp .loop
 
-.do_print:
+
+// void print(const char *string)
+print:
+    call __internal_r0CharToStringS3Text
     inline return run tellraw @a {"storage": "std:vm", "nbt": "s3.text"}
     ret
 
