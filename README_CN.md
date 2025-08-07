@@ -2,6 +2,8 @@
 
 [English](./README.md) | 简体中文
 
+<img width="300" src="https://github.com/xia-mc/clang-mc/blob/master/logo.png?raw=true" alt="logo">
+
 # clang-mc
 
 ## 一个面向 Minecraft 数据包的开发工具链

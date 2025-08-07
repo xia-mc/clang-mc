@@ -2,6 +2,8 @@
 
 English | [简体中文](./README_CN.md)
 
+<img width="300" src="https://github.com/xia-mc/clang-mc/blob/master/logo.png?raw=true" alt="logo">
+
 # clang-mc
 
 ## A Development Toolchain for Minecraft Datapacks
