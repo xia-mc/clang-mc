@@ -2,7 +2,7 @@
 
 [English](./README.md) | 简体中文
 
-<img width="300" src="https://github.com/xia-mc/clang-mc/blob/master/logo.png?raw=true" alt="logo">
+<img width="300" src="https://github.com/xia-mc/clang-mc/blob/main/logo.png?raw=true" alt="logo">
 
 # clang-mc
 
@@ -36,7 +36,7 @@ Minecraft 数据包的开发一直面临 **可读性差、维护困难、功能�
 - [x] 写一个wiki文档，规定调用约定、寄存器约定、栈约定等。
 - [x] 实现一个汇编器（IR），把IR翻译成基于stdlib的mcfunction代码。
 - [x] 实现一个parser，把汇编代码翻译成IR对象。
-- [ ] 做一个showcase，展示我的项目的优势，如何避免数据包令人难绷的可读性和造轮子的问题。
+- [x] 做一个showcase，展示我的项目的优势，如何避免数据包令人难绷的可读性和造轮子的问题。
 - [ ] 进一步完善stdlib，提供更多高级抽象。
 - [ ] (长期目标) 实现一个LLVM后端，生成汇编代码（IR）。
 - [ ] (长期目标) 兼容C/C++/Rust生态，利用LLVM扩展mcfunction的能力。

@@ -2,7 +2,7 @@
 
 English | [简体中文](./README_CN.md)
 
-<img width="300" src="https://github.com/xia-mc/clang-mc/blob/master/logo.png?raw=true" alt="logo">
+<img width="300" src="https://github.com/xia-mc/clang-mc/blob/main/logo.png?raw=true" alt="logo">
 
 # clang-mc
 
@@ -38,7 +38,7 @@ Check out [Wiki](https://github.com/xia-mc/clang-mc/wiki) to learn more.
 - [x] **Write a wiki** to define calling conventions, register conventions, stack conventions, etc.
 - [x] **Implement an assembler (IR)** to translate IR into `mcfunction` code based on `stdlib`.
 - [x] **Develop a parser** to convert assembly code into IR objects.
-- [ ] **Create a showcase** to demonstrate the advantages of this project and how it improves datapack readability while reducing redundant implementations.
+- [x] **Create a showcase** to demonstrate the advantages of this project and how it improves datapack readability while reducing redundant implementations.
 - [ ] **Enhance `stdlib`** with more advanced abstractions.
 - [ ] **(Long-term goal) Implement an LLVM backend** to generate assembly code (IR).
 - [ ] **(Long-term goal) Achieve compatibility with C/C++/Rust ecosystems**, leveraging LLVM to extend the capabilities of `mcfunction`.
