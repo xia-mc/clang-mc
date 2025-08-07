@@ -57,3 +57,4 @@ bin/
 /cmake-build-release-obfuscate/
 
 Cargo.lock
+__pycache__

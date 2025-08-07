@@ -2,7 +2,6 @@
 # 扩展堆空间额外size个元素的大小，每个元素通常4字节
 # size将被向上取整到8的倍数(32字节)
 
-# 展开4次，尽量避免stack overflow
 scoreboard players add shp vm_regs 8
 scoreboard players remove r0 vm_regs 8
 
