@@ -34,7 +34,7 @@ public:
     explicit CmpLike(ValuePtr &&left, ValuePtr &&right) noexcept: left(std::move(left)), right(std::move(right)) {
     }
 
-    virtual void withIR(IR *context) override {
+    void withIR(IR *context) override {
         Op::withIR(context);
         auto prefixBuilder = StringBuilder();
 

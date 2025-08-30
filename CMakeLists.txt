@@ -8,7 +8,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-Werror -Wunknown-pragmas)
+add_compile_options(-Werror -Wunknown-pragmas -Wno-unused-command-line-argument)
 
 set(CMAKE_C_FLAGS_DEBUG "-g")
 set(CMAKE_C_FLAGS_RELEASE "/O2 -flto -DNDEBUG")
@@ -117,6 +117,7 @@ add_executable(clang-mc
         src/cpp/ir/values/Symbol.h
         src/cpp/ir/values/SymbolPtr.h
         src/cpp/ir/State.h
+        src/cpp/ir/ops/Syscall.h
 )
 target_precompile_headers(clang-mc PRIVATE
         src/cpp/utils/Native.h

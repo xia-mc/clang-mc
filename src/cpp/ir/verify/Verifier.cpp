@@ -100,9 +100,8 @@ VerifyResult Verifier::handleSingle(IR &ir) {
         }
     }
 
-    bool unreachable = false;
-    for (size_t i = 0; i < ops.size(); ++i) {
-        const auto &op = ops[i];
+    // 先扫描一遍符号
+    for (const auto &op : ops) {
         currentOp = op.get();
 
         if (const auto staticOp = INSTANCEOF(op, Static)) {
@@ -118,6 +117,12 @@ VerifyResult Verifier::handleSingle(IR &ir) {
 
             continue;
         }
+    }
+
+    bool unreachable = false;
+    for (size_t i = 0; i < ops.size(); ++i) {
+        const auto &op = ops[i];
+        currentOp = op.get();
 
         if (const auto labelOp = INSTANCEOF(op, Label)) {
             unreachable = false;

@@ -215,7 +215,7 @@ PURE ValuePtr createValue(const LineState &line, const std::string &string) {
             return createPtr(fixedStr);
         } catch (const ParseException &e) {
             if (!string::contains(fixedStr, ' ')) {  // TODO 改为白名单isValidSymbol
-                return std::make_shared<SymbolPtr>(fixedStr);
+                return std::make_shared<SymbolPtr>(fixSymbol(line, fixedStr));
             }
             throw e;
         }

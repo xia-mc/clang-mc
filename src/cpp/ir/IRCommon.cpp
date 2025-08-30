@@ -24,6 +24,7 @@
 #include "ir/ops/Jle.h"
 #include "ir/ops/Jne.h"
 #include "ir/ops/Static.h"
+#include "ir/ops/Syscall.h"
 
 template<typename T>
 static OpPtr createWith1Arg(const std::string_view &args) {
@@ -109,6 +110,19 @@ static OpPtr createConJmp(const LineState &line, const std::string_view &args) {
 }
 
 template<typename T>
+static OpPtr createConJmpZ(const LineState &line, const std::string_view &args) {
+    auto parts = string::split(args, ',');
+    if (UNLIKELY(parts.size() != 2)) {
+        throw ParseException(i18nFormat("ir.invalid_op", args));
+    }
+
+    auto leftStr = std::string(string::trim(parts[0]));
+    auto label = std::string(string::trim(parts[1]));
+
+    return std::make_unique<T>(INT_MIN, createValue(line, leftStr), std::make_shared<Immediate>(0), fixLabel(line, label));
+}
+
+template<typename T>
 static OpPtr createConRet(const LineState &line, const std::string_view &args) {
     auto parts = string::split(args, ',');
     if (UNLIKELY(parts.size() != 2)) {
@@ -119,6 +133,18 @@ static OpPtr createConRet(const LineState &line, const std::string_view &args) {
     auto rightStr = std::string(string::trim(parts[1]));
 
     return std::make_unique<T>(INT_MIN, createValue(line, leftStr), createValue(line, rightStr), LABEL_RET);
+}
+
+template<typename T>
+static OpPtr createConRetZ(const LineState &line, const std::string_view &args) {
+    auto parts = string::split(args, ',');
+    if (UNLIKELY(parts.size() != 1)) {
+        throw ParseException(i18nFormat("ir.invalid_op", args));
+    }
+
+    auto leftStr = std::string(string::trim(parts[0]));
+
+    return std::make_unique<T>(INT_MIN, createValue(line, leftStr), std::make_shared<Immediate>(0), LABEL_RET);
 }
 
 static OpPtr createStatic(const LineState &line, const std::string_view &args) {
@@ -176,11 +202,13 @@ PURE OpPtr createOp(const LineState &line, const std::string_view &string) {
         CASE_STR("call"):
             return createCallLike<Call>(line, args);
         CASE_STR("je"):
-        CASE_STR("jz"):
             return createConJmp<Je>(line, args);
+        CASE_STR("jz"):
+            return createConJmpZ<Je>(line, args);
         CASE_STR("jne"):
-        CASE_STR("jnz"):
             return createConJmp<Jne>(line, args);
+        CASE_STR("jnz"):
+            return createConJmpZ<Jne>(line, args);
         CASE_STR("jl"):
             return createConJmp<Jl>(line, args);
         CASE_STR("jg"):
@@ -190,11 +218,13 @@ PURE OpPtr createOp(const LineState &line, const std::string_view &string) {
         CASE_STR("jle"):
             return createConJmp<Jle>(line, args);
         CASE_STR("re"):
-        CASE_STR("rz"):
             return createConRet<Je>(line, args);
+        CASE_STR("rz"):
+            return createConRetZ<Je>(line, args);
         CASE_STR("rne"):
-        CASE_STR("rnz"):
             return createConRet<Jne>(line, args);
+        CASE_STR("rnz"):
+            return createConRetZ<Jne>(line, args);
         CASE_STR("rl"):
             return createConRet<Jl>(line, args);
         CASE_STR("rg"):
@@ -215,6 +245,8 @@ PURE OpPtr createOp(const LineState &line, const std::string_view &string) {
             return std::make_unique<Nop>(INT_MIN);
         CASE_STR("static"):
             return createStatic(line, args);
+        CASE_STR("syscall"):
+            return std::make_unique<Syscall>(INT_MIN);
         default: [[unlikely]]
             throw ParseException(i18nFormat("ir.unknown_op", op));
     }
