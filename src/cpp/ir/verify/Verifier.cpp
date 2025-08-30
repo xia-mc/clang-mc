@@ -124,6 +124,10 @@ VerifyResult Verifier::handleSingle(IR &ir) {
         const auto &op = ops[i];
         currentOp = op.get();
 
+        if (const auto staticOp = INSTANCEOF(op, Static)) {
+            continue;
+        }
+
         if (const auto labelOp = INSTANCEOF(op, Label)) {
             unreachable = false;
             const auto opHash = labelOp->getLabelHash();

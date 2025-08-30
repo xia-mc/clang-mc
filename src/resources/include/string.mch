@@ -19,3 +19,7 @@ String_Copy:
     add r0, 1
     add r1, 1
     jmp String_Copy
+
+
+#define strlen String_Len
+#define strcpy String_Copy
