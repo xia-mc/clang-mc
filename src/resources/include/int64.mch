@@ -17,10 +17,14 @@ Int64_Zero:
 // void Int64_FromInt(Int64 *result, int value)
 Int64_FromInt:
     mov [r0], r1
-    rge r1, 0
     add r0, 1
+    jl r1, 0, .special
+    mov [r0], 0x00000000
+    ret
+.special:
     mov [r0], 0x7FFFFFFF
     ret
+
 
 // void Int64_Copy(Int64 *result, Int64 *value)
 Int64_Copy:
@@ -35,8 +39,8 @@ Int64_Copy:
 Int64_CheckInt:
     mov rax, 1
     add r0, 1
-    rne [r0], 0x00000000
-    rne [r0], 0x7FFFFFFF
+    re [r0], 0x00000000
+    re [r0], 0x7FFFFFFF
     mov rax, 0
     ret
 
@@ -89,7 +93,6 @@ Int64_Add:
     // int t4; // valueHighVal
     Int64_ADD(t1, t2, t3, t4)
 
-.fin:
     mov [r0], t1
     mov [t0], t2
     ret
@@ -113,7 +116,6 @@ Int64_Sub:
     // int t4; // valueHighVal
     Int64_SUB(t1, t2, t3, t4, t5)
 
-.fin:
     mov [r0], t1
     mov [t0], t2
     ret
