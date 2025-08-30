@@ -14,7 +14,6 @@
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <execution>
-#include <llvm/TargetParser/Host.h>
 #include "vector"
 #include "array"
 

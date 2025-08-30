@@ -35,3 +35,4 @@ Mcfp_Check:
 Mcfp_NanoTimes:
     mov rax, SYS_nanoTimes
     syscall
+    ret
