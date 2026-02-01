@@ -37,12 +37,12 @@ void McasmMachineFunctionInfo::anchor() { }
 
 void McasmMachineFunctionInfo::setRestoreBasePointer(const MachineFunction *MF) {
   if (!RestoreBasePointerOffset) {
-    const McasmRegisterInfo *RegInfo = static_cast<const McasmRegisterInfo *>(
-      MF->getSubtarget().getRegisterInfo());
-    unsigned SlotSize = RegInfo->getSlotSize();
+    // Mcasm: slot size is always 4 bytes
+    unsigned SlotSize = 4;
     for (const MCPhysReg *CSR = MF->getRegInfo().getCalleeSavedRegs();
          unsigned Reg = *CSR; ++CSR) {
-      if (Mcasm::GR64RegClass.contains(Reg) || Mcasm::GR32RegClass.contains(Reg))
+      // Mcasm only has 32-bit registers
+      if (Mcasm::GR32RegClass.contains(Reg))
         RestoreBasePointerOffset -= SlotSize;
     }
   }
