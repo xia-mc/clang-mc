@@ -12,9 +12,8 @@
 
 #include "McasmMCTargetDesc.h"
 #include "TargetInfo/McasmTargetInfo.h"
-#include "McasmATTInstPrinter.h"
+#include "McasmInstPrinter.h"
 #include "McasmBaseInfo.h"
-#include "McasmIntelInstPrinter.h"
 #include "McasmMCAsmInfo.h"
 #include "McasmTargetStreamer.h"
 #include "llvm-c/Visibility.h"
@@ -472,11 +471,9 @@ static MCInstPrinter *createMcasmMCInstPrinter(const Triple &T,
                                              const MCAsmInfo &MAI,
                                              const MCInstrInfo &MII,
                                              const MCRegisterInfo &MRI) {
-  if (SyntaxVariant == 0)
-    return new McasmATTInstPrinter(MAI, MII, MRI);
-  if (SyntaxVariant == 1)
-    return new McasmIntelInstPrinter(MAI, MII, MRI);
-  return nullptr;
+  // Mcasm only has one syntax variant
+  (void)SyntaxVariant;
+  return new McasmInstPrinter(MAI, MII, MRI);
 }
 
 static MCRelocationInfo *createMcasmMCRelocationInfo(const Triple &TheTriple,

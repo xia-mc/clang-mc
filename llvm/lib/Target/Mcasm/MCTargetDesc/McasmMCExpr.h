@@ -14,7 +14,7 @@
 #ifndef LLVM_LIB_TARGET_Mcasm_MCTARGETDESC_McasmMCEXPR_H
 #define LLVM_LIB_TARGET_Mcasm_MCTARGETDESC_McasmMCEXPR_H
 
-#include "McasmATTInstPrinter.h"
+#include "McasmInstPrinter.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCContext.h"
 #include "llvm/MC/MCExpr.h"

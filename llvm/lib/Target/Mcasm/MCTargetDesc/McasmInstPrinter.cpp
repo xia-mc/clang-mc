@@ -1,4 +1,4 @@
-//===-- McasmATTInstPrinter.cpp - Mcasm assembly instruction printing ----===//
+//===-- McasmInstPrinter.cpp - Mcasm assembly instruction printing ----===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -19,7 +19,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "McasmATTInstPrinter.h"
+#include "McasmInstPrinter.h"
 #include "MCTargetDesc/McasmBaseInfo.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
@@ -38,12 +38,12 @@ using namespace llvm;
 #define PRINT_ALIAS_INSTR
 #include "McasmGenAsmWriter.inc"
 
-void McasmATTInstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) {
+void McasmInstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) {
   // mcasm does not use % prefix for registers
   OS << getRegisterName(Reg);
 }
 
-void McasmATTInstPrinter::printInst(const MCInst *MI, uint64_t Address,
+void McasmInstPrinter::printInst(const MCInst *MI, uint64_t Address,
                                     StringRef Annot,
                                     const MCSubtargetInfo &STI,
                                     raw_ostream &OS) {
@@ -55,7 +55,7 @@ void McasmATTInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   printAnnotation(OS, Annot);
 }
 
-void McasmATTInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
+void McasmInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
                                        raw_ostream &OS) {
   const MCOperand &Op = MI->getOperand(OpNo);
 
@@ -67,24 +67,24 @@ void McasmATTInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
     OS << Op.getImm();
   } else if (Op.isExpr()) {
     // Expression operand
-    Op.getExpr()->print(OS, &MAI);
+    OS << *Op.getExpr();
   } else {
     llvm_unreachable("Unknown operand type in printOperand");
   }
 }
 
-void McasmATTInstPrinter::printMemReference(const MCInst *MI, unsigned Op,
+void McasmInstPrinter::printMemReference(const MCInst *MI, unsigned Op,
                                             raw_ostream &OS) {
   // mcasm memory format: [base+offset]
   // Memory operand structure: BaseReg, Scale, IndexReg, Disp, SegmentReg
   // For mcasm: [BaseReg + Scale*IndexReg + Disp]
   // Typical mcasm: [rsp+N] where N is in mcasm units
 
-  const MCOperand &BaseReg = MI->getOperand(Op + McasmII::AddrBaseReg);
-  const MCOperand &IndexReg = MI->getOperand(Op + McasmII::AddrIndexReg);
-  const MCOperand &Scale = MI->getOperand(Op + McasmII::AddrScaleAmt);
-  const MCOperand &Disp = MI->getOperand(Op + McasmII::AddrDisp);
-  const MCOperand &SegmentReg = MI->getOperand(Op + McasmII::AddrSegmentReg);
+  const MCOperand &BaseReg = MI->getOperand(Op + Mcasm::AddrBaseReg);
+  const MCOperand &IndexReg = MI->getOperand(Op + Mcasm::AddrIndexReg);
+  const MCOperand &Scale = MI->getOperand(Op + Mcasm::AddrScaleAmt);
+  const MCOperand &Disp = MI->getOperand(Op + Mcasm::AddrDisp);
+  const MCOperand &SegmentReg = MI->getOperand(Op + Mcasm::AddrSegmentReg);
 
   OS << "[";
 
@@ -108,7 +108,7 @@ void McasmATTInstPrinter::printMemReference(const MCInst *MI, unsigned Op,
   // Displacement (CRITICAL: already in mcasm units, NOT bytes)
   if (Disp.isExpr()) {
     if (NeedPlus) OS << "+";
-    Disp.getExpr()->print(OS, &MAI);
+    OS << *Disp.getExpr();
   } else if (Disp.isImm()) {
     int64_t DispVal = Disp.getImm();
     if (DispVal != 0 || !NeedPlus) {

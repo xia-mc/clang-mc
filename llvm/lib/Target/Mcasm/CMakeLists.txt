@@ -21,51 +21,25 @@ tablegen(LLVM McasmGenSubtargetInfo.inc -gen-subtarget)
 add_public_tablegen_target(McasmCommonTableGen)
 
 set(sources
-  McasmArgumentStackSlotRebase.cpp
+  # Core rewritten files (minimal implementation)
   McasmAsmPrinter.cpp
-  McasmAvoidTrailingCall.cpp
-  McasmCallFrameOptimization.cpp
-  McasmCallingConv.cpp
-  McasmCmovConversion.cpp
-  McasmCodeGenPassBuilder.cpp
-  McasmExpandPseudo.cpp
-  McasmFastISel.cpp
-  McasmFixupBWInsts.cpp
-  McasmFixupLEAs.cpp
-  McasmFixupInstTuning.cpp
-  McasmFixupVectorConstants.cpp
-  McasmAvoidStoreForwardingBlocks.cpp
-  McasmDynAllocaExpander.cpp
-  McasmFixupSetCC.cpp
-  McasmFlagsCopyLowering.cpp
   McasmFrameLowering.cpp
-  McasmISelDAGToDAG.cpp
   McasmISelLowering.cpp
-  McasmISelLoweringCall.cpp
-  McasmIndirectBranchTracking.cpp
-  McasmIndirectThunks.cpp
-  McasmInstrFoldTables.cpp
   McasmInstrInfo.cpp
-  McasmLoadValueInjectionLoadHardening.cpp
-  McasmLoadValueInjectionRetHardening.cpp
-  McasmMCInstLower.cpp
-  McasmMachineFunctionInfo.cpp
-  McasmMacroFusion.cpp
-  McasmOptimizeLEAs.cpp
-  McasmPadShortFunction.cpp
   McasmRegisterInfo.cpp
-  McasmReturnThunks.cpp
+
+  # Essential infrastructure files
+  McasmCallingConv.cpp
+  McasmMachineFunctionInfo.cpp
   McasmSelectionDAGInfo.cpp
-  McasmSpeculativeLoadHardening.cpp
-  McasmSpeculativeExecutionSideEffectSuppression.cpp
   McasmSubtarget.cpp
-  McasmSuppressAPXForReloc.cpp
   McasmTargetMachine.cpp
   McasmTargetObjectFile.cpp
   McasmTargetTransformInfo.cpp
-  McasmWinEHState.cpp
-  McasmWinEHUnwindV2.cpp
-  McasmInsertWait.cpp
+
+  # Required for code generation
+  McasmISelDAGToDAG.cpp
+  McasmMCInstLower.cpp
   )
 
 add_llvm_target(McasmCodeGen ${sources}

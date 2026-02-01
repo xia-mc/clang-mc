@@ -1,28 +1,15 @@
 add_llvm_component_library(LLVMMcasmDesc
-  McasmATTInstPrinter.cpp
-  McasmIntelInstPrinter.cpp
-  McasmInstComments.cpp
-  McasmInstPrinterCommon.cpp
-  McasmEncodingOptimization.cpp
-  McasmShuffleDecode.cpp
+  McasmInstPrinter.cpp
   McasmAsmBackend.cpp
   McasmMCTargetDesc.cpp
   McasmMCAsmInfo.cpp
   McasmMCCodeEmitter.cpp
-  McasmMachObjectWriter.cpp
   McasmMnemonicTables.cpp
-  McasmELFObjectWriter.cpp
-  McasmWinCOFFObjectWriter.cpp
-  McasmWinCOFFStreamer.cpp
-  McasmWinCOFFTargetStreamer.cpp
 
   LINK_COMPONENTS
   BinaryFormat
-  CodeGenTypes
   MC
-  MCDisassembler
   Support
-  TargetParser
   McasmInfo
 
   ADD_TO_COMPONENT
