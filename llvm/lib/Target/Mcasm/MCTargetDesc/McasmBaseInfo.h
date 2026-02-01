@@ -121,136 +121,13 @@ enum class SecondMacroFusionInstKind {
 };
 
 /// \returns the type of the first instruction in macro-fusion.
-// FIXME: Zen 3 support branch fusion for OR/XOR.
+// MCASM NOTE: Mcasm is a minimal backend without macro-fusion support.
+// Always return Invalid to disable macro-fusion optimizations.
 inline FirstMacroFusionInstKind
 classifyFirstOpcodeInMacroFusion(unsigned Opcode) {
-  switch (Opcode) {
-  default:
-    return FirstMacroFusionInstKind::Invalid;
-  // TEST
-  case Mcasm::TEST16i16:
-  case Mcasm::TEST16mr:
-  case Mcasm::TEST16ri:
-  case Mcasm::TEST16rr:
-  case Mcasm::TEST32i32:
-  case Mcasm::TEST32mr:
-  case Mcasm::TEST32ri:
-  case Mcasm::TEST32rr:
-  case Mcasm::TEST64i32:
-  case Mcasm::TEST64mr:
-  case Mcasm::TEST64ri32:
-  case Mcasm::TEST64rr:
-  case Mcasm::TEST8i8:
-  case Mcasm::TEST8mr:
-  case Mcasm::TEST8ri:
-  case Mcasm::TEST8rr:
-    return FirstMacroFusionInstKind::Test;
-  case Mcasm::AND16i16:
-  case Mcasm::AND16ri:
-  case Mcasm::AND16ri8:
-  case Mcasm::AND16rm:
-  case Mcasm::AND16rr:
-  case Mcasm::AND32i32:
-  case Mcasm::AND32ri:
-  case Mcasm::AND32ri8:
-  case Mcasm::AND32rm:
-  case Mcasm::AND32rr:
-  case Mcasm::AND64i32:
-  case Mcasm::AND64ri32:
-  case Mcasm::AND64ri8:
-  case Mcasm::AND64rm:
-  case Mcasm::AND64rr:
-  case Mcasm::AND8i8:
-  case Mcasm::AND8ri:
-  case Mcasm::AND8ri8:
-  case Mcasm::AND8rm:
-  case Mcasm::AND8rr:
-    return FirstMacroFusionInstKind::And;
-  // CMP
-  case Mcasm::CMP16i16:
-  case Mcasm::CMP16mr:
-  case Mcasm::CMP16ri:
-  case Mcasm::CMP16ri8:
-  case Mcasm::CMP16rm:
-  case Mcasm::CMP16rr:
-  case Mcasm::CMP32i32:
-  case Mcasm::CMP32mr:
-  case Mcasm::CMP32ri:
-  case Mcasm::CMP32ri8:
-  case Mcasm::CMP32rm:
-  case Mcasm::CMP32rr:
-  case Mcasm::CMP64i32:
-  case Mcasm::CMP64mr:
-  case Mcasm::CMP64ri32:
-  case Mcasm::CMP64ri8:
-  case Mcasm::CMP64rm:
-  case Mcasm::CMP64rr:
-  case Mcasm::CMP8i8:
-  case Mcasm::CMP8mr:
-  case Mcasm::CMP8ri:
-  case Mcasm::CMP8ri8:
-  case Mcasm::CMP8rm:
-  case Mcasm::CMP8rr:
-    return FirstMacroFusionInstKind::Cmp;
-  // ADD
-  case Mcasm::ADD16i16:
-  case Mcasm::ADD16ri:
-  case Mcasm::ADD16ri8:
-  case Mcasm::ADD16rm:
-  case Mcasm::ADD16rr:
-  case Mcasm::ADD32i32:
-  case Mcasm::ADD32ri:
-  case Mcasm::ADD32ri8:
-  case Mcasm::ADD32rm:
-  case Mcasm::ADD32rr:
-  case Mcasm::ADD64i32:
-  case Mcasm::ADD64ri32:
-  case Mcasm::ADD64ri8:
-  case Mcasm::ADD64rm:
-  case Mcasm::ADD64rr:
-  case Mcasm::ADD8i8:
-  case Mcasm::ADD8ri:
-  case Mcasm::ADD8ri8:
-  case Mcasm::ADD8rm:
-  case Mcasm::ADD8rr:
-  // SUB
-  case Mcasm::SUB16i16:
-  case Mcasm::SUB16ri:
-  case Mcasm::SUB16ri8:
-  case Mcasm::SUB16rm:
-  case Mcasm::SUB16rr:
-  case Mcasm::SUB32i32:
-  case Mcasm::SUB32ri:
-  case Mcasm::SUB32ri8:
-  case Mcasm::SUB32rm:
-  case Mcasm::SUB32rr:
-  case Mcasm::SUB64i32:
-  case Mcasm::SUB64ri32:
-  case Mcasm::SUB64ri8:
-  case Mcasm::SUB64rm:
-  case Mcasm::SUB64rr:
-  case Mcasm::SUB8i8:
-  case Mcasm::SUB8ri:
-  case Mcasm::SUB8ri8:
-  case Mcasm::SUB8rm:
-  case Mcasm::SUB8rr:
-    return FirstMacroFusionInstKind::AddSub;
-  // INC
-  case Mcasm::INC16r:
-  case Mcasm::INC16r_alt:
-  case Mcasm::INC32r:
-  case Mcasm::INC32r_alt:
-  case Mcasm::INC64r:
-  case Mcasm::INC8r:
-  // DEC
-  case Mcasm::DEC16r:
-  case Mcasm::DEC16r_alt:
-  case Mcasm::DEC32r:
-  case Mcasm::DEC32r_alt:
-  case Mcasm::DEC64r:
-  case Mcasm::DEC8r:
-    return FirstMacroFusionInstKind::IncDec;
-  }
+  // Mcasm does not support macro fusion
+  (void)Opcode;
+  return FirstMacroFusionInstKind::Invalid;
 }
 
 /// \returns the type of the second instruction in macro-fusion.
@@ -328,24 +205,11 @@ enum EncodingOfSegmentOverridePrefix : uint8_t {
 
 /// Given a segment register, return the encoding of the segment override
 /// prefix for it.
+// MCASM NOTE: Mcasm does not support segment registers
 inline EncodingOfSegmentOverridePrefix
 getSegmentOverridePrefixForReg(MCRegister Reg) {
-  switch (Reg.id()) {
-  default:
-    llvm_unreachable("Unknown segment register!");
-  case Mcasm::CS:
-    return CS_Encoding;
-  case Mcasm::DS:
-    return DS_Encoding;
-  case Mcasm::ES:
-    return ES_Encoding;
-  case Mcasm::FS:
-    return FS_Encoding;
-  case Mcasm::GS:
-    return GS_Encoding;
-  case Mcasm::SS:
-    return SS_Encoding;
-  }
+  (void)Reg;
+  llvm_unreachable("Mcasm does not support segment registers!");
 }
 
 } // namespace Mcasm
@@ -1156,158 +1020,59 @@ inline int getMemoryOperandNo(uint64_t TSFlags) {
 }
 
 /// \returns true if the register is a XMM.
+// MCASM NOTE: Mcasm does not support vector registers
 inline bool isXMMReg(MCRegister Reg) {
-  static_assert(Mcasm::XMM15 - Mcasm::XMM0 == 15,
-                "XMM0-15 registers are not continuous");
-  static_assert(Mcasm::XMM31 - Mcasm::XMM16 == 15,
-                "XMM16-31 registers are not continuous");
-  return (Reg >= Mcasm::XMM0 && Reg <= Mcasm::XMM15) ||
-         (Reg >= Mcasm::XMM16 && Reg <= Mcasm::XMM31);
+  (void)Reg;
+  return false;
 }
 
 /// \returns true if the register is a YMM.
+// MCASM NOTE: Mcasm does not support vector registers
 inline bool isYMMReg(MCRegister Reg) {
-  static_assert(Mcasm::YMM15 - Mcasm::YMM0 == 15,
-                "YMM0-15 registers are not continuous");
-  static_assert(Mcasm::YMM31 - Mcasm::YMM16 == 15,
-                "YMM16-31 registers are not continuous");
-  return (Reg >= Mcasm::YMM0 && Reg <= Mcasm::YMM15) ||
-         (Reg >= Mcasm::YMM16 && Reg <= Mcasm::YMM31);
+  (void)Reg;
+  return false;
 }
 
 /// \returns true if the register is a ZMM.
+// MCASM NOTE: Mcasm does not support vector registers
 inline bool isZMMReg(MCRegister Reg) {
-  static_assert(Mcasm::ZMM31 - Mcasm::ZMM0 == 31,
-                "ZMM registers are not continuous");
-  return Reg >= Mcasm::ZMM0 && Reg <= Mcasm::ZMM31;
+  (void)Reg;
+  return false;
 }
 
 /// \returns true if \p Reg is an apx extended register.
+// MCASM NOTE: Mcasm does not support APX extensions
 inline bool isApxExtendedReg(MCRegister Reg) {
-  static_assert(Mcasm::R31WH - Mcasm::R16 == 95, "EGPRs are not continuous");
-  return Reg >= Mcasm::R16 && Reg <= Mcasm::R31WH;
+  (void)Reg;
+  return false;
 }
 
 /// \returns true if the MachineOperand is a x86-64 extended (r8 or
 /// higher) register,  e.g. r8, xmm8, xmm13, etc.
+// MCASM NOTE: Mcasm is 32-bit only and does not support extended registers
 inline bool isMcasm_64ExtendedReg(MCRegister Reg) {
-  if ((Reg >= Mcasm::XMM8 && Reg <= Mcasm::XMM15) ||
-      (Reg >= Mcasm::XMM16 && Reg <= Mcasm::XMM31) ||
-      (Reg >= Mcasm::YMM8 && Reg <= Mcasm::YMM15) ||
-      (Reg >= Mcasm::YMM16 && Reg <= Mcasm::YMM31) ||
-      (Reg >= Mcasm::ZMM8 && Reg <= Mcasm::ZMM31))
-    return true;
-
-  if (isApxExtendedReg(Reg))
-    return true;
-
-  switch (Reg.id()) {
-  default:
-    break;
-  case Mcasm::R8:
-  case Mcasm::R9:
-  case Mcasm::R10:
-  case Mcasm::R11:
-  case Mcasm::R12:
-  case Mcasm::R13:
-  case Mcasm::R14:
-  case Mcasm::R15:
-  case Mcasm::R8D:
-  case Mcasm::R9D:
-  case Mcasm::R10D:
-  case Mcasm::R11D:
-  case Mcasm::R12D:
-  case Mcasm::R13D:
-  case Mcasm::R14D:
-  case Mcasm::R15D:
-  case Mcasm::R8W:
-  case Mcasm::R9W:
-  case Mcasm::R10W:
-  case Mcasm::R11W:
-  case Mcasm::R12W:
-  case Mcasm::R13W:
-  case Mcasm::R14W:
-  case Mcasm::R15W:
-  case Mcasm::R8B:
-  case Mcasm::R9B:
-  case Mcasm::R10B:
-  case Mcasm::R11B:
-  case Mcasm::R12B:
-  case Mcasm::R13B:
-  case Mcasm::R14B:
-  case Mcasm::R15B:
-  case Mcasm::CR8:
-  case Mcasm::CR9:
-  case Mcasm::CR10:
-  case Mcasm::CR11:
-  case Mcasm::CR12:
-  case Mcasm::CR13:
-  case Mcasm::CR14:
-  case Mcasm::CR15:
-  case Mcasm::DR8:
-  case Mcasm::DR9:
-  case Mcasm::DR10:
-  case Mcasm::DR11:
-  case Mcasm::DR12:
-  case Mcasm::DR13:
-  case Mcasm::DR14:
-  case Mcasm::DR15:
-    return true;
-  }
+  (void)Reg;
   return false;
 }
 
+// MCASM NOTE: Mcasm does not support APX extended registers
 inline bool canUseApxExtendedReg(const MCInstrDesc &Desc) {
-  uint64_t TSFlags = Desc.TSFlags;
-  uint64_t Encoding = TSFlags & EncodingMask;
-  // EVEX can always use egpr.
-  if (Encoding == McasmII::EVEX)
-    return true;
-
-  unsigned Opcode = Desc.Opcode;
-  // MOV32r0 is always expanded to XOR32rr
-  if (Opcode == Mcasm::MOV32r0)
-    return true;
-  // To be conservative, egpr is not used for all pseudo instructions
-  // because we are not sure what instruction it will become.
-  // FIXME: Could we improve it in McasmExpandPseudo?
-  if (isPseudo(TSFlags))
-    return false;
-
-  // MAP OB/TB in legacy encoding space can always use egpr except
-  // XSAVE*/XRSTOR*.
-  switch (Opcode) {
-  default:
-    break;
-  case Mcasm::XSAVE:
-  case Mcasm::XSAVE64:
-  case Mcasm::XSAVEOPT:
-  case Mcasm::XSAVEOPT64:
-  case Mcasm::XSAVEC:
-  case Mcasm::XSAVEC64:
-  case Mcasm::XSAVES:
-  case Mcasm::XSAVES64:
-  case Mcasm::XRSTOR:
-  case Mcasm::XRSTOR64:
-  case Mcasm::XRSTORS:
-  case Mcasm::XRSTORS64:
-    return false;
-  }
-  uint64_t OpMap = TSFlags & McasmII::OpMapMask;
-  return !Encoding && (OpMap == McasmII::OB || OpMap == McasmII::TB);
+  (void)Desc;
+  return false;
 }
 
 /// \returns true if the MemoryOperand is a 32 extended (zmm16 or higher)
 /// registers, e.g. zmm21, etc.
+// MCASM NOTE: Mcasm does not support extended vector registers
 static inline bool is32ExtendedReg(MCRegister Reg) {
-  return ((Reg >= Mcasm::XMM16 && Reg <= Mcasm::XMM31) ||
-          (Reg >= Mcasm::YMM16 && Reg <= Mcasm::YMM31) ||
-          (Reg >= Mcasm::ZMM16 && Reg <= Mcasm::ZMM31));
+  (void)Reg;
+  return false;
 }
 
+// MCASM NOTE: Mcasm does not support x64 low byte registers
 inline bool isMcasm_64NonExtLowByteReg(MCRegister Reg) {
-  return (Reg == Mcasm::SPL || Reg == Mcasm::BPL || Reg == Mcasm::SIL ||
-          Reg == Mcasm::DIL);
+  (void)Reg;
+  return false;
 }
 
 /// \returns true if this is a masked instruction.
@@ -1321,29 +1086,16 @@ inline bool isKMergeMasked(uint64_t TSFlags) {
 }
 
 /// \returns true if the intruction needs a SIB.
+// MCASM NOTE: Simplified for Mcasm - only ESP needs SIB
 inline bool needSIB(MCRegister BaseReg, MCRegister IndexReg, bool In64BitMode) {
+  (void)In64BitMode;  // Mcasm is 32-bit only
+
   // The SIB byte must be used if there is an index register.
   if (IndexReg)
     return true;
 
-  // The SIB byte must be used if the base is ESP/RSP/R12/R20/R28, all of
-  // which encode to an R/M value of 4, which indicates that a SIB byte is
-  // present.
-  switch (BaseReg.id()) {
-  default:
-    // If there is no base register and we're in 64-bit mode, we need a SIB
-    // byte to emit an addr that is just 'disp32' (the non-RIP relative form).
-    return In64BitMode && !BaseReg;
-  case Mcasm::ESP:
-  case Mcasm::RSP:
-  case Mcasm::R12:
-  case Mcasm::R12D:
-  case Mcasm::R20:
-  case Mcasm::R20D:
-  case Mcasm::R28:
-  case Mcasm::R28D:
-    return true;
-  }
+  // In mcasm, only check for rsp (equivalent to x86 ESP)
+  return BaseReg == Mcasm::rsp;
 }
 
 } // namespace McasmII

@@ -6,6 +6,7 @@ tablegen(LLVM McasmGenAsmMatcher.inc -gen-asm-matcher)
 tablegen(LLVM McasmGenAsmWriter.inc -gen-asm-writer)
 # MCASM NOTE: Intel syntax (AsmWriter1) not needed for mcasm
 # tablegen(LLVM McasmGenAsmWriter1.inc -gen-asm-writer -asmwriternum=1)
+tablegen(LLVM McasmGenMnemonicTables.inc -gen-x86-mnemonic-tables)
 tablegen(LLVM McasmGenCallingConv.inc -gen-callingconv)
 tablegen(LLVM McasmGenDAGISel.inc -gen-dag-isel)
 tablegen(LLVM McasmGenDisassemblerTables.inc -gen-disassembler)
