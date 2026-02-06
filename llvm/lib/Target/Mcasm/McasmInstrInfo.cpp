@@ -24,3 +24,30 @@ using namespace llvm;
 McasmInstrInfo::McasmInstrInfo(const McasmSubtarget &STI)
     : McasmGenInstrInfo(STI, *STI.getRegisterInfo(), -1, -1, -1, -1),
       RI(*STI.getRegisterInfo()) {}
+
+void McasmInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
+                                 MachineBasicBlock::iterator MI,
+                                 const DebugLoc &DL, Register DestReg,
+                                 Register SrcReg, bool KillSrc,
+                                 bool RenamableDest, bool RenamableSrc) const {
+  report_fatal_error("copyPhysReg not implemented yet");
+}
+
+void McasmInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
+                                         MachineBasicBlock::iterator MI,
+                                         Register SrcReg, bool isKill,
+                                         int FrameIndex,
+                                         const TargetRegisterClass *RC,
+                                         Register VReg,
+                                         MachineInstr::MIFlag Flags) const {
+  report_fatal_error("storeRegToStackSlot not implemented yet");
+}
+
+void McasmInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
+                                          MachineBasicBlock::iterator MI,
+                                          Register DestReg, int FrameIndex,
+                                          const TargetRegisterClass *RC,
+                                          Register VReg, unsigned SubReg,
+                                          MachineInstr::MIFlag Flags) const {
+  report_fatal_error("loadRegFromStackSlot not implemented yet");
+}

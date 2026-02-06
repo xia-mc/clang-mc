@@ -17,22 +17,15 @@
 #include "llvm/TargetParser/Triple.h"
 using namespace llvm;
 
+// MCASM NOTE: mcasm only has one syntax (mcasm syntax, not AT&T or Intel)
+// We don't register a command line option to avoid conflicts with X86 backend
 enum AsmWriterFlavorTy {
-  // Note: This numbering has to match the GCC assembler dialects for inline
-  // asm alternatives to work right.
   ATT = 0, Intel = 1
 };
+static const AsmWriterFlavorTy McasmAsmSyntax = ATT; // Fixed to ATT style
 
-static cl::opt<AsmWriterFlavorTy> McasmAsmSyntax(
-    "x86-asm-syntax", cl::init(ATT), cl::Hidden,
-    cl::desc("Select the assembly style for input"),
-    cl::values(clEnumValN(ATT, "att", "Emit AT&T-style assembly"),
-               clEnumValN(Intel, "intel", "Emit Intel-style assembly")));
-
-static cl::opt<bool>
-MarkedJTDataRegions("mark-data-regions", cl::init(true),
-  cl::desc("Mark code section jump table data regions."),
-  cl::Hidden);
+// MCASM NOTE: Don't register mark-data-regions to avoid conflicts with X86 backend
+static const bool MarkedJTDataRegions = true;
 
 const MCAsmInfo::AtSpecifier atSpecifiers[] = {
     {Mcasm::S_ABS8, "ABS8"},

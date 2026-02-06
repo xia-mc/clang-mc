@@ -26,6 +26,9 @@
 
 using namespace llvm;
 
+#define GET_REGINFO_ENUM
+#include "McasmGenRegisterInfo.inc"
+
 #define GET_REGINFO_TARGET_DESC
 #include "McasmGenRegisterInfo.inc"
 
@@ -33,8 +36,7 @@ McasmRegisterInfo::McasmRegisterInfo(const Triple &TT)
     : McasmGenRegisterInfo(Mcasm::rax) {}
 
 const TargetRegisterClass *
-McasmRegisterInfo::getPointerRegClass(const MachineFunction &MF,
-                                      unsigned Kind) const {
+McasmRegisterInfo::getPointerRegClass(unsigned Kind) const {
   // mcasm uses 32-bit pointers (GR32)
   return &Mcasm::GR32RegClass;
 }

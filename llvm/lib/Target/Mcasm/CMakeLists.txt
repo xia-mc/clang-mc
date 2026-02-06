@@ -25,6 +25,7 @@ set(sources
   McasmTargetObjectFile.cpp
   McasmTargetMachine.cpp
   McasmSubtarget.cpp
+  McasmRegisterInfo.cpp
   McasmFrameLowering.cpp
   McasmISelLowering.cpp
   McasmInstrInfo.cpp

@@ -61,3 +61,13 @@ SDValue McasmTargetLowering::LowerReturn(
   // TODO: Implement return lowering
   report_fatal_error("LowerReturn not implemented yet");
 }
+
+const char *McasmTargetLowering::getTargetNodeName(unsigned Opcode) const {
+  // Return nullptr for now - no custom target nodes defined yet
+  return nullptr;
+}
+
+SDValue McasmTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
+  // Return empty SDValue to indicate operation is not supported
+  return SDValue();
+}
