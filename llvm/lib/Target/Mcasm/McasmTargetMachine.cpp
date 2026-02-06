@@ -28,9 +28,29 @@
 #include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/CodeGen/BasicTTIImpl.h"
 #include <optional>
 
 using namespace llvm;
+
+namespace {
+// Minimal TTI implementation for Mcasm
+class McasmTTIImpl : public BasicTTIImplBase<McasmTTIImpl> {
+  using BaseT = BasicTTIImplBase<McasmTTIImpl>;
+  friend BaseT;
+
+  const McasmSubtarget *ST;
+  const McasmTargetLowering *TLI;
+
+  const McasmSubtarget *getST() const { return ST; }
+  const McasmTargetLowering *getTLI() const { return TLI; }
+
+public:
+  explicit McasmTTIImpl(const McasmTargetMachine *TM, const Function &F)
+      : BaseT(TM, F.getDataLayout()), ST(TM->getSubtargetImpl(F)),
+        TLI(ST->getTargetLowering()) {}
+};
+} // end anonymous namespace
 
 // MCASM NOTE: Minimal target initialization - only register the target
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTarget() {
@@ -91,7 +111,7 @@ void McasmTargetMachine::reset() {
 }
 
 TargetTransformInfo McasmTargetMachine::getTargetTransformInfo(const Function &F) const {
-  report_fatal_error("getTargetTransformInfo not implemented");
+  return TargetTransformInfo(std::make_unique<McasmTTIImpl>(this, F));
 }
 
 MachineFunctionInfo *McasmTargetMachine::createMachineFunctionInfo(
