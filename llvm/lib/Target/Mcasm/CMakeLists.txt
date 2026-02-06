@@ -28,7 +28,9 @@ set(sources
   McasmRegisterInfo.cpp
   McasmFrameLowering.cpp
   McasmISelLowering.cpp
+  McasmISelDAGToDAG.cpp
   McasmInstrInfo.cpp
+  McasmMachineFunctionInfo.cpp
   McasmSelectionDAGInfo.cpp
   McasmMCInstLower.cpp
   McasmAsmPrinter.cpp
