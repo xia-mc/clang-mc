@@ -40,23 +40,23 @@ public:
 
   /// copyPhysReg - Emit instructions to copy a register.
   void copyPhysReg(MachineBasicBlock &MBB, MachineBasicBlock::iterator MI,
-                   const DebugLoc &DL, MCRegister DestReg, MCRegister SrcReg,
-                   bool KillSrc) const override;
+                   const DebugLoc &DL, Register DestReg, Register SrcReg,
+                   bool KillSrc, bool RenamableDest = false,
+                   bool RenamableSrc = false) const override;
 
   /// storeRegToStackSlot - Store the specified register to the stack slot.
   void storeRegToStackSlot(MachineBasicBlock &MBB,
                            MachineBasicBlock::iterator MI, Register SrcReg,
                            bool isKill, int FrameIndex,
-                           const TargetRegisterClass *RC,
-                           const TargetRegisterInfo *TRI,
-                           Register VReg) const override;
+                           const TargetRegisterClass *RC, Register VReg,
+                           MachineInstr::MIFlag Flags = MachineInstr::NoFlags) const override;
 
   /// loadRegFromStackSlot - Load the specified register from the stack slot.
   void loadRegFromStackSlot(MachineBasicBlock &MBB,
                             MachineBasicBlock::iterator MI, Register DestReg,
                             int FrameIndex, const TargetRegisterClass *RC,
-                            const TargetRegisterInfo *TRI,
-                            Register VReg) const override;
+                            Register VReg, unsigned SubReg = 0,
+                            MachineInstr::MIFlag Flags = MachineInstr::NoFlags) const override;
 };
 
 } // namespace llvm

@@ -148,10 +148,10 @@ public:
 #include "McasmGenSubtargetInfo.inc"
 
   /// Is this x86_64 with the ILP32 programming model (x32 ABI)?
-  bool isTarget64BitILP32() const { return Is64Bit && IsX32; }
+  bool isTarget64BitILP32() const { return In64BitMode && IsX32; }
 
   /// Is this x86_64 with the LP64 programming model (standard AMD64, no x32)?
-  bool isTarget64BitLP64() const { return Is64Bit && !IsX32; }
+  bool isTarget64BitLP64() const { return In64BitMode && !IsX32; }
 
   PICStyles::Style getPICStyle() const { return PICStyle; }
   void setPICStyle(PICStyles::Style Style)  { PICStyle = Style; }
@@ -173,18 +173,12 @@ public:
   bool hasAVX512() const { return false; }
   bool hasInt256() const { return false; }
   bool hasAnyFMA() const { return false; }
-  bool hasPrefetchW() const { return hasPRFCHW(); }
+  bool hasPrefetchW() const { return false; } // mcasm does not support PREFETCHW
   bool hasSSEPrefetch() const { return false; } // No SSE support
   bool canUseLAHFSAHF() const { return true; } // Always true in 32-bit mode
-  // These are generic getters that OR together all of the thunk types
-  // supported by the subtarget. Therefore useIndirectThunk*() will return true
-  // if any respective thunk feature is enabled.
-  bool useIndirectThunkCalls() const {
-    return useRetpolineIndirectCalls() || useLVIControlFlowIntegrity();
-  }
-  bool useIndirectThunkBranches() const {
-    return useRetpolineIndirectBranches() || useLVIControlFlowIntegrity();
-  }
+  // mcasm does not support Retpoline or LVI mitigations (X86 security features)
+  bool useIndirectThunkCalls() const { return false; }
+  bool useIndirectThunkBranches() const { return false; }
 
   // Mcasm does not support vectors
   unsigned getPreferVectorWidth() const { return 0; }
@@ -261,11 +255,11 @@ public:
 
   bool isOSWindows() const { return TargetTriple.isOSWindows(); }
 
-  bool isTargetUEFI64() const { return Is64Bit && isUEFI(); }
+  bool isTargetUEFI64() const { return In64BitMode && isUEFI(); }
 
-  bool isTargetWin64() const { return Is64Bit && isOSWindows(); }
+  bool isTargetWin64() const { return In64BitMode && isOSWindows(); }
 
-  bool isTargetWin32() const { return !Is64Bit && isOSWindows(); }
+  bool isTargetWin32() const { return !In64BitMode && isOSWindows(); }
 
   bool isPICStyleGOT() const { return PICStyle == PICStyles::Style::GOT; }
   bool isPICStyleRIPRel() const { return PICStyle == PICStyles::Style::RIPRel; }
@@ -285,17 +279,17 @@ public:
       return isTargetWin64() || isTargetUEFI64();
     case CallingConv::Swift:
     case CallingConv::SwiftTail:
-    case CallingConv::Mcasm_FastCall:
-    case CallingConv::Mcasm_StdCall:
-    case CallingConv::Mcasm_ThisCall:
-    case CallingConv::Mcasm_VectorCall:
+    case CallingConv::X86_FastCall:
+    case CallingConv::X86_StdCall:
+    case CallingConv::X86_ThisCall:
+    case CallingConv::X86_VectorCall:
     case CallingConv::Intel_OCL_BI:
       return isTargetWin64();
     // This convention allows using the Win64 convention on other targets.
     case CallingConv::Win64:
       return true;
     // This convention allows using the SysV convention on Windows targets.
-    case CallingConv::Mcasm_64_SysV:
+    case CallingConv::X86_64_SysV:
       return false;
     // Otherwise, who knows what this is.
     default:

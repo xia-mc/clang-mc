@@ -39,11 +39,16 @@ public:
 
   ~McasmAsmBackend() override = default;
 
-  void applyFixup(const MCAssembler &Asm, const MCFixup &Fixup,
-                  const MCValue &Target, MutableArrayRef<char> Data,
-                  uint64_t Value, bool IsResolved,
-                  const MCSubtargetInfo *STI) const override {
+  void applyFixup(const MCFragment &Fragment, const MCFixup &Fixup,
+                  const MCValue &Target, uint8_t *Data,
+                  uint64_t Value, bool IsResolved) override {
     // Mcasm outputs text, fixups are not used in binary sense
+    (void)Fragment;
+    (void)Fixup;
+    (void)Target;
+    (void)Data;
+    (void)Value;
+    (void)IsResolved;
   }
 
   std::unique_ptr<MCObjectTargetWriter>
@@ -57,20 +62,13 @@ public:
     return false;
   }
 
-  unsigned getNumFixupKinds() const override {
-    // No binary fixups for text output
-    return 0;
-  }
-
   std::optional<MCFixupKind> getFixupKind(StringRef Name) const override {
     return std::nullopt;
   }
 
-  const MCFixupKindInfo &getFixupKindInfo(MCFixupKind Kind) const override {
-    static const MCFixupKindInfo Infos[1] = {
-        {"INVALID", 0, 0, 0}
-    };
-    return Infos[0];
+  MCFixupKindInfo getFixupKindInfo(MCFixupKind Kind) const override {
+    // Return a default invalid fixup info for mcasm (text output only)
+    return MCFixupKindInfo{"INVALID", 0, 0, 0};
   }
 
   void relaxInstruction(MCInst &Inst,
@@ -87,9 +85,17 @@ public:
 
 } // end anonymous namespace
 
-MCAsmBackend *llvm::createMcasmAsmBackend(const Target &T,
-                                          const MCSubtargetInfo &STI,
-                                          const MCRegisterInfo &MRI,
-                                          const MCTargetOptions &Options) {
+MCAsmBackend *llvm::createMcasm_32AsmBackend(const Target &T,
+                                             const MCSubtargetInfo &STI,
+                                             const MCRegisterInfo &MRI,
+                                             const MCTargetOptions &Options) {
+  return new McasmAsmBackend(T, STI);
+}
+
+MCAsmBackend *llvm::createMcasm_64AsmBackend(const Target &T,
+                                             const MCSubtargetInfo &STI,
+                                             const MCRegisterInfo &MRI,
+                                             const MCTargetOptions &Options) {
+  // mcasm is 32-bit only, but we register both for compatibility
   return new McasmAsmBackend(T, STI);
 }

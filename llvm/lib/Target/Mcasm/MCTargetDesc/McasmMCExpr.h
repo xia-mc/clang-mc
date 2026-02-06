@@ -39,9 +39,9 @@ public:
   MCRegister getReg() const { return Reg; }
 
   void printImpl(raw_ostream &OS, const MCAsmInfo *MAI) const override {
-    if (!MAI || MAI->getAssemblerDialect() == 0)
-      OS << '%';
-    OS << McasmATTInstPrinter::getRegisterName(Reg);
+    // mcasm does not use % prefix for registers
+    (void)MAI;
+    OS << McasmInstPrinter::getRegisterName(Reg);
   }
 
   bool evaluateAsRelocatableImpl(MCValue &Res,

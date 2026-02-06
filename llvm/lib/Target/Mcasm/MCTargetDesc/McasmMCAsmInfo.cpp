@@ -68,7 +68,7 @@ const MCAsmInfo::AtSpecifier atSpecifiers[] = {
 void McasmMCAsmInfoDarwin::anchor() { }
 
 McasmMCAsmInfoDarwin::McasmMCAsmInfoDarwin(const Triple &T) {
-  bool is64Bit = T.isMcasm_64();
+  bool is64Bit = T.getArch() == Triple::x86_64;
   if (is64Bit)
     CodePointerSize = CalleeSaveStackSlotSize = 8;
 
@@ -113,7 +113,7 @@ Mcasm_64MCAsmInfoDarwin::Mcasm_64MCAsmInfoDarwin(const Triple &Triple)
 void McasmELFMCAsmInfo::anchor() { }
 
 McasmELFMCAsmInfo::McasmELFMCAsmInfo(const Triple &T) {
-  bool is64Bit = T.isMcasm_64();
+  bool is64Bit = T.getArch() == Triple::x86_64;
   bool isX32 = T.isX32();
 
   // For ELF, x86-64 pointer size depends on the ABI.
@@ -149,7 +149,7 @@ Mcasm_64MCAsmInfoDarwin::getExprForPersonalitySymbol(const MCSymbol *Sym,
 void McasmMCAsmInfoMicrosoft::anchor() { }
 
 McasmMCAsmInfoMicrosoft::McasmMCAsmInfoMicrosoft(const Triple &Triple) {
-  if (Triple.isMcasm_64()) {
+  if (Triple.getArch() == Triple::x86_64) {
     PrivateGlobalPrefix = ".L";
     PrivateLabelPrefix = ".L";
     CodePointerSize = 8;
@@ -158,7 +158,7 @@ McasmMCAsmInfoMicrosoft::McasmMCAsmInfoMicrosoft(const Triple &Triple) {
     // 32-bit Mcasm doesn't use CFI, so this isn't a real encoding type. It's just
     // a place holder that the Windows EHStreamer looks for to suppress CFI
     // output. In particular, usesWindowsCFI() returns false.
-    WinEHEncodingType = WinEH::EncodingType::Mcasm;
+    WinEHEncodingType = WinEH::EncodingType::X86;
   }
 
   ExceptionsType = ExceptionHandling::WinEH;
@@ -189,7 +189,7 @@ void McasmMCAsmInfoGNUCOFF::anchor() { }
 McasmMCAsmInfoGNUCOFF::McasmMCAsmInfoGNUCOFF(const Triple &Triple) {
   assert((Triple.isOSWindows() || Triple.isUEFI()) &&
          "Windows and UEFI are the only supported COFF targets");
-  if (Triple.isMcasm_64()) {
+  if (Triple.getArch() == Triple::x86_64) {
     PrivateGlobalPrefix = ".L";
     PrivateLabelPrefix = ".L";
     CodePointerSize = 8;

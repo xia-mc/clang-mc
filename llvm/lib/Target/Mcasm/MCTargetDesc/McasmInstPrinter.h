@@ -47,8 +47,9 @@ public:
                        const MCSubtargetInfo &STI, raw_ostream &O);
 
   // Memory size variants (all map to printMemReference for mcasm)
-  void printdwordmem(const MCInst *MI, unsigned OpNo, raw_ostream &O) {
-    printMemReference(MI, OpNo, O);
+  void printdwordmem(const MCInst *MI, unsigned OpNo,
+                     const MCSubtargetInfo &STI, raw_ostream &O) {
+    printMemReference(MI, OpNo, STI, O);
   }
 };
 

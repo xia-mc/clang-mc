@@ -32,7 +32,7 @@ public:
 
   /// getPointerRegClass - Returns a TargetRegisterClass used for pointer values.
   const TargetRegisterClass *
-  getPointerRegClass(const MachineFunction &MF, unsigned Kind = 0) const override;
+  getPointerRegClass(unsigned Kind = 0) const override;
 
   /// getCalleeSavedRegs - Return callee-saved registers (x0-x15).
   const MCPhysReg *
@@ -51,7 +51,7 @@ public:
   Register getFrameRegister(const MachineFunction &MF) const override;
 
   /// getStackRegister - Return the stack register (rsp).
-  unsigned getStackRegister() const { return Mcasm::rsp; }
+  unsigned getStackRegister() const;
 };
 
 } // namespace llvm

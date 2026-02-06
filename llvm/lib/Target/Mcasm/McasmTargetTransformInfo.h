@@ -36,78 +36,8 @@ class McasmTTIImpl final : public BasicTTIImplBase<McasmTTIImpl> {
   const McasmSubtarget *getST() const { return ST; }
   const McasmTargetLowering *getTLI() const { return TLI; }
 
-  const FeatureBitset InlineFeatureIgnoreList = {
-      // This indicates the CPU is 64 bit capable not that we are in 64-bit
-      // mode.
-      Mcasm::FeatureMcasm_64,
-
-      // These features don't have any intrinsics or ABI effect.
-      Mcasm::FeatureNOPL,
-      Mcasm::FeatureCX16,
-      Mcasm::FeatureLAHFSAHF64,
-
-      // Some older targets can be setup to fold unaligned loads.
-      Mcasm::FeatureSSEUnalignedMem,
-
-      // Codegen control options.
-      Mcasm::TuningFast11ByteNOP,
-      Mcasm::TuningFast15ByteNOP,
-      Mcasm::TuningFastBEXTR,
-      Mcasm::TuningFastHorizontalOps,
-      Mcasm::TuningFastLZCNT,
-      Mcasm::TuningFastScalarFSQRT,
-      Mcasm::TuningFastSHLDRotate,
-      Mcasm::TuningFastScalarShiftMasks,
-      Mcasm::TuningFastVectorShiftMasks,
-      Mcasm::TuningFastVariableCrossLaneShuffle,
-      Mcasm::TuningFastVariablePerLaneShuffle,
-      Mcasm::TuningFastVectorFSQRT,
-      Mcasm::TuningLEAForSP,
-      Mcasm::TuningLEAUsesAG,
-      Mcasm::TuningLZCNTFalseDeps,
-      Mcasm::TuningBranchFusion,
-      Mcasm::TuningMacroFusion,
-      Mcasm::TuningPadShortFunctions,
-      Mcasm::TuningPOPCNTFalseDeps,
-      Mcasm::TuningMULCFalseDeps,
-      Mcasm::TuningPERMFalseDeps,
-      Mcasm::TuningRANGEFalseDeps,
-      Mcasm::TuningGETMANTFalseDeps,
-      Mcasm::TuningMULLQFalseDeps,
-      Mcasm::TuningSlow3OpsLEA,
-      Mcasm::TuningSlowDivide32,
-      Mcasm::TuningSlowDivide64,
-      Mcasm::TuningSlowIncDec,
-      Mcasm::TuningSlowLEA,
-      Mcasm::TuningSlowPMADDWD,
-      Mcasm::TuningSlowPMULLD,
-      Mcasm::TuningSlowSHLD,
-      Mcasm::TuningSlowTwoMemOps,
-      Mcasm::TuningSlowUAMem16,
-      Mcasm::TuningPreferMaskRegisters,
-      Mcasm::TuningInsertVZEROUPPER,
-      Mcasm::TuningUseSLMArithCosts,
-      Mcasm::TuningUseGLMDivSqrtCosts,
-      Mcasm::TuningNoDomainDelay,
-      Mcasm::TuningNoDomainDelayMov,
-      Mcasm::TuningNoDomainDelayShuffle,
-      Mcasm::TuningNoDomainDelayBlend,
-      Mcasm::TuningPreferShiftShuffle,
-      Mcasm::TuningFastImmVectorShift,
-      Mcasm::TuningFastDPWSSD,
-
-      // Perf-tuning flags.
-      Mcasm::TuningFastGather,
-      Mcasm::TuningSlowUAMem32,
-      Mcasm::TuningAllowLight256Bit,
-
-      // Based on whether user set the -mprefer-vector-width command line.
-      Mcasm::TuningPrefer128Bit,
-      Mcasm::TuningPrefer256Bit,
-
-      // CPU name enums. These just follow CPU string.
-      Mcasm::ProcIntelAtom
-  };
+  // MCASM NOTE: Feature ignore list cleared - mcasm doesn't have X86 features
+  const FeatureBitset InlineFeatureIgnoreList = {};
 
 public:
   explicit McasmTTIImpl(const McasmTargetMachine *TM, const Function &F)

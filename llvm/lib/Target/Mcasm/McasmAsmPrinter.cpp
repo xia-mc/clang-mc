@@ -53,7 +53,7 @@ McasmAsmPrinter::McasmAsmPrinter(TargetMachine &TM,
 void McasmAsmPrinter::emitStartOfAsmFile(Module &M) {
   // mcasm requires #include "_ll_std" at the start of every file
   OutStreamer->emitRawText("#include \"_ll_std\"");
-  OutStreamer->AddBlankLine();
+  OutStreamer->emitRawText("");  // Blank line
 }
 
 void McasmAsmPrinter::emitEndOfAsmFile(Module &M) {
@@ -90,7 +90,7 @@ void McasmAsmPrinter::emitInstruction(const MachineInstr *MI) {
   // Lower MachineInstr to MCInst
   MCInst TmpInst;
   if (!MCInstLowering) {
-    MCInstLowering = std::make_unique<McasmMCInstLower>(*MF, *this);
+    MCInstLowering = std::make_unique<McasmMCInstLower>(OutContext, *MF, *this);
   }
   MCInstLowering->Lower(MI, TmpInst);
 
@@ -157,5 +157,6 @@ void McasmAsmPrinter::emitGlobalVariable(const GlobalVariable *GV) {
 
 // Register the AsmPrinter
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeMcasmAsmPrinter() {
-  RegisterAsmPrinter<McasmAsmPrinter> X(getTheMcasmTarget());
+  RegisterAsmPrinter<McasmAsmPrinter> X(getTheMcasm_32Target());
+  RegisterAsmPrinter<McasmAsmPrinter> Y(getTheMcasm_64Target());
 }
