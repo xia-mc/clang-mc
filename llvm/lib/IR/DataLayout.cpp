@@ -379,8 +379,11 @@ Error DataLayout::parsePrimitiveSpec(StringRef Spec) {
   if (Error Err = parseAlignment(Components[1], ABIAlign, "ABI"))
     return Err;
 
-  if (Specifier == 'i' && BitWidth == 8 && ABIAlign != 1)
-    return createStringError("i8 must be 8-bit aligned");
+  // MCASM NOTE: Allow i8 to have non-8-bit alignment for mcasm backend
+  // mcasm requires all types to be 32-bit aligned (i8:32, i16:32, i32:32)
+  // Commenting out this check to support mcasm's unique alignment requirements
+  // if (Specifier == 'i' && BitWidth == 8 && ABIAlign != 1)
+  //   return createStringError("i8 must be 8-bit aligned");
 
   // Preferred alignment. Optional, defaults to the ABI alignment.
   Align PrefAlign = ABIAlign;

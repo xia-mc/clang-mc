@@ -22,6 +22,7 @@
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/SelectionDAGISel.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/PassRegistry.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 
@@ -65,7 +66,20 @@ private:
   }
 };
 
+class McasmDAGToDAGISelLegacy : public SelectionDAGISelLegacy {
+public:
+  static char ID;
+  explicit McasmDAGToDAGISelLegacy(McasmTargetMachine &TM,
+                                    CodeGenOptLevel OptLevel)
+      : SelectionDAGISelLegacy(
+            ID, std::make_unique<McasmDAGToDAGISel>(TM, OptLevel)) {}
+};
+
 } // end anonymous namespace
+
+char McasmDAGToDAGISelLegacy::ID = 0;
+
+INITIALIZE_PASS(McasmDAGToDAGISelLegacy, DEBUG_TYPE, PASS_NAME, false, false)
 
 /// Select - This is the main entry point for instruction selection.
 void McasmDAGToDAGISel::Select(SDNode *N) {
@@ -98,6 +112,7 @@ bool McasmDAGToDAGISel::SelectAddr(SDNode *Parent, SDValue N, SDValue &Base,
   return true;
 }
 
-McasmISelDAGToDAGPass::McasmISelDAGToDAGPass(McasmTargetMachine &TM)
-    : SelectionDAGISelPass(
-          std::make_unique<McasmDAGToDAGISel>(TM, TM.getOptLevel())) {}
+FunctionPass *llvm::createMcasmISelDag(McasmTargetMachine &TM,
+                                        CodeGenOptLevel OptLevel) {
+  return new McasmDAGToDAGISelLegacy(TM, OptLevel);
+}

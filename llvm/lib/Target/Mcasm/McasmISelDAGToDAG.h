@@ -14,11 +14,10 @@
 namespace llvm {
 
 class McasmTargetMachine;
+class FunctionPass;
 
-class McasmISelDAGToDAGPass : public SelectionDAGISelPass {
-public:
-  McasmISelDAGToDAGPass(McasmTargetMachine &TM);
-};
+FunctionPass *createMcasmISelDag(McasmTargetMachine &TM,
+                                  CodeGenOptLevel OptLevel);
 
 } // namespace llvm
 

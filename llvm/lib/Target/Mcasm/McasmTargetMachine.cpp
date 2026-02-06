@@ -10,6 +10,7 @@
 #include "TargetInfo/McasmTargetInfo.h"
 #include "Mcasm.h"
 #include "McasmSubtarget.h"
+#include "McasmISelDAGToDAG.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Support/Error.h"
@@ -59,9 +60,30 @@ McasmTargetMachine::McasmTargetMachine(const Target &T, const Triple &TT,
 
 McasmTargetMachine::~McasmTargetMachine() = default;
 
-// Stub implementations for pure virtual functions
-const McasmSubtarget *McasmTargetMachine::getSubtargetImpl(const Function &) const {
-  report_fatal_error("McasmSubtarget not implemented yet");
+// Get or create subtarget for the given function
+const McasmSubtarget *McasmTargetMachine::getSubtargetImpl(const Function &F) const {
+  Attribute CPUAttr = F.getFnAttribute("target-cpu");
+  Attribute TuneAttr = F.getFnAttribute("tune-cpu");
+  Attribute FSAttr = F.getFnAttribute("target-features");
+
+  StringRef CPU =
+      CPUAttr.isValid() ? CPUAttr.getValueAsString() : (StringRef)getTargetCPU();
+  StringRef TuneCPU = TuneAttr.isValid() ? TuneAttr.getValueAsString() : (StringRef)CPU;
+  StringRef FS =
+      FSAttr.isValid() ? FSAttr.getValueAsString() : (StringRef)getTargetFeatureString();
+
+  SmallString<512> Key;
+  Key.reserve(CPU.size() + TuneCPU.size() + FS.size());
+  Key += CPU;
+  Key += TuneCPU;
+  Key += FS;
+
+  auto &I = SubtargetMap[Key];
+  if (!I) {
+    I = std::make_unique<McasmSubtarget>(TargetTriple, CPU, TuneCPU, FS, *this,
+                                         MaybeAlign(), 0, 0);
+  }
+  return I.get();
 }
 
 void McasmTargetMachine::reset() {
@@ -116,7 +138,11 @@ public:
     return getTM<McasmTargetMachine>();
   }
 
-  bool addInstSelector() override { return true; }
+  bool addInstSelector() override {
+    // Add the instruction selector pass
+    addPass(createMcasmISelDag(getMcasmTargetMachine(), getOptLevel()));
+    return false;  // false means we handled it
+  }
 };
 }
 
