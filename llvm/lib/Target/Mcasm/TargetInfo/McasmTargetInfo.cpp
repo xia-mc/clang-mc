@@ -22,11 +22,10 @@ Target &llvm::getTheMcasm_64Target() {
 }
 
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTargetInfo() {
-  // Register as "mcasm" to avoid conflict with X86 backend
-  RegisterTarget<Triple::x86, /*HasJIT=*/true> X(
+  // Register mcasm as its own architecture (not x86)
+  RegisterTarget<Triple::mcasm, /*HasJIT=*/true> X(
       getTheMcasm_32Target(), "mcasm", "32-bit Mcasm (Minecraft assembly)", "Mcasm");
 
-  // Note: 64-bit not supported, but keep the target object for compatibility
-  RegisterTarget<Triple::x86_64, /*HasJIT=*/false> Y(
-      getTheMcasm_64Target(), "mcasm-64", "64-bit Mcasm (NOT SUPPORTED)", "Mcasm");
+  // Note: 64-bit not supported - mcasm is 32-bit only
+  // Keep getTheMcasm_64Target for compatibility but don't register it
 }

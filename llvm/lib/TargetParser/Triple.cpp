@@ -82,6 +82,7 @@ StringRef Triple::getArchTypeName(ArchType Kind) {
   case thumb:          return "thumb";
   case thumbeb:        return "thumbeb";
   case ve:             return "ve";
+  case mcasm:          return "mcasm";
   case wasm32:         return "wasm32";
   case wasm64:         return "wasm64";
   case x86:            return "i386";
@@ -251,6 +252,7 @@ StringRef Triple::getArchTypePrefix(ArchType Kind) {
     return "riscv";
 
   case ve:          return "ve";
+  case mcasm:       return "mcasm";
   case csky:        return "csky";
 
   case loongarch32:
@@ -515,6 +517,7 @@ Triple::ArchType Triple::getArchTypeForLLVMName(StringRef Name) {
       .Case("renderscript32", renderscript32)
       .Case("renderscript64", renderscript64)
       .Case("ve", ve)
+      .Case("mcasm", mcasm)
       .Case("csky", csky)
       .Case("loongarch32", loongarch32)
       .Case("loongarch64", loongarch64)
@@ -662,6 +665,7 @@ static Triple::ArchType parseArch(StringRef ArchName) {
           .Case("renderscript64", Triple::renderscript64)
           .Case("shave", Triple::shave)
           .Case("ve", Triple::ve)
+          .Case("mcasm", Triple::mcasm)
           .Case("wasm32", Triple::wasm32)
           .Case("wasm64", Triple::wasm64)
           .Case("csky", Triple::csky)
