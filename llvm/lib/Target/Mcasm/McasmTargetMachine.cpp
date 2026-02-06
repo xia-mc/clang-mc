@@ -124,11 +124,6 @@ TargetPassConfig *McasmTargetMachine::createPassConfig(PassManagerBase &PM) {
   return new McasmPassConfig(*this, PM);
 }
 
-// Additional stubs for missing symbols
-
-// Stub for McasmSubtarget destructor
-McasmSubtarget::~McasmSubtarget() = default;
-
 // Stub for LLVMInitializeMcasmAsmPrinter
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeMcasmAsmPrinter() {
   // Minimal stub - AsmPrinter not implemented yet
@@ -147,50 +142,4 @@ Error McasmTargetMachine::buildCodeGenPipeline(
     const CGPassBuilderOption &,
     PassInstrumentationCallbacks *) {
   return Error::success();
-}
-
-// More stubs for McasmGenSubtargetInfo
-unsigned McasmGenSubtargetInfo::resolveSchedClass(unsigned, const MachineInstr *, const TargetSchedModel *) const {
-  return 0;
-}
-
-unsigned McasmGenSubtargetInfo::resolveVariantSchedClass(unsigned, const MCInst *, const MCInstrInfo *, unsigned) const {
-  return 0;
-}
-
-unsigned McasmGenSubtargetInfo::getHwModeSet() const {
-  return 0;
-}
-
-unsigned McasmGenSubtargetInfo::getHwMode(MCSubtargetInfo::HwModeType) const {
-  return 0;
-}
-
-// More stubs for McasmSubtarget
-const CallLowering *McasmSubtarget::getCallLowering() const {
-  return nullptr;
-}
-
-InstructionSelector *McasmSubtarget::getInstructionSelector() const {
-  return nullptr;
-}
-
-const LegalizerInfo *McasmSubtarget::getLegalizerInfo() const {
-  return nullptr;
-}
-
-const RegisterBankInfo *McasmSubtarget::getRegBankInfo() const {
-  return nullptr;
-}
-
-unsigned char McasmSubtarget::classifyGlobalFunctionReference(const GlobalValue *) const {
-  return 0;
-}
-
-bool McasmSubtarget::enableEarlyIfConversion() const {
-  return false;
-}
-
-void McasmSubtarget::getPostRAMutations(std::vector<std::unique_ptr<ScheduleDAGMutation>> &) const {
-  // Stub
 }

@@ -147,6 +147,9 @@ public:
   bool GETTER() const { return ATTRIBUTE; }
 #include "McasmGenSubtargetInfo.inc"
 
+  /// Is this Mcasm in 64-bit mode? (always false - Mcasm is 32-bit only)
+  bool is64Bit() const { return In64BitMode; }
+
   /// Is this x86_64 with the ILP32 programming model (x32 ABI)?
   bool isTarget64BitILP32() const { return In64BitMode && IsX32; }
 
