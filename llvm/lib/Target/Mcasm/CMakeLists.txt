@@ -21,11 +21,17 @@ tablegen(LLVM McasmGenSubtargetInfo.inc -gen-subtarget)
 add_public_tablegen_target(McasmCommonTableGen)
 
 set(sources
-  # Minimal set progressing towards full backend
+  # Core backend implementation (gradually adding files)
   McasmTargetObjectFile.cpp
   McasmTargetMachine.cpp
   McasmSubtarget.cpp
-  # TODO: McasmMCInstLower.cpp and McasmAsmPrinter.cpp next
+  McasmSelectionDAGInfo.cpp
+  McasmMCInstLower.cpp
+  McasmAsmPrinter.cpp
+  # TODO: Need to simplify these files first:
+  # McasmFrameLowering.cpp - references X86 conventions
+  # McasmISelLowering.cpp - references X86 conventions
+  # McasmInstrInfo.cpp - references X86 instructions (MOV32rr, etc.)
   )
 
 add_llvm_target(McasmCodeGen ${sources}

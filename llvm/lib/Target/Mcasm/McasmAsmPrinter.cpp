@@ -112,7 +112,6 @@ void McasmAsmPrinter::emitGlobalVariable(const GlobalVariable *GV) {
   Output += " [";
 
   const Constant *C = GV->getInitializer();
-  const DataLayout &DL = GV->getDataLayout();
 
   // Emit initializer values
   if (const ConstantDataSequential *CDS = dyn_cast<ConstantDataSequential>(C)) {

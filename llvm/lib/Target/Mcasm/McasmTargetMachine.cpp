@@ -124,11 +124,6 @@ TargetPassConfig *McasmTargetMachine::createPassConfig(PassManagerBase &PM) {
   return new McasmPassConfig(*this, PM);
 }
 
-// Stub for LLVMInitializeMcasmAsmPrinter
-extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeMcasmAsmPrinter() {
-  // Minimal stub - AsmPrinter not implemented yet
-}
-
 // Stubs for new Pass Manager functions
 void McasmTargetMachine::registerPassBuilderCallbacks(PassBuilder &) {
   // Stub
