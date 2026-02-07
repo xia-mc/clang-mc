@@ -46,6 +46,30 @@ McasmTargetLowering::McasmTargetLowering(const McasmTargetMachine &TM,
   // TODO: setStackPointerRegisterToSaveRestore(Mcasm::rsp);
   setMinFunctionAlignment(Align(4));
   setMinStackArgumentAlignment(Align(4));
+
+  // Set operation actions - tell LLVM how to handle various operations
+  // Control flow operations
+  setOperationAction(ISD::BR_JT, MVT::Other, Expand);
+  setOperationAction(ISD::BR_CC, MVT::i32, Expand);
+  setOperationAction(ISD::SELECT_CC, MVT::i32, Expand);
+  setOperationAction(ISD::BRCOND, MVT::Other, Expand);
+
+  // Global addresses and constants
+  setOperationAction(ISD::GlobalAddress, MVT::i32, Custom);
+  setOperationAction(ISD::BlockAddress, MVT::i32, Custom);
+  setOperationAction(ISD::ConstantPool, MVT::i32, Custom);
+  setOperationAction(ISD::JumpTable, MVT::i32, Custom);
+
+  // Stack operations
+  setOperationAction(ISD::DYNAMIC_STACKALLOC, MVT::i32, Expand);
+  setOperationAction(ISD::STACKSAVE, MVT::Other, Expand);
+  setOperationAction(ISD::STACKRESTORE, MVT::Other, Expand);
+
+  // Expand unsupported operations
+  setOperationAction(ISD::VASTART, MVT::Other, Custom);
+  setOperationAction(ISD::VAARG, MVT::Other, Expand);
+  setOperationAction(ISD::VACOPY, MVT::Other, Expand);
+  setOperationAction(ISD::VAEND, MVT::Other, Expand);
 }
 
 SDValue McasmTargetLowering::LowerFormalArguments(
@@ -222,6 +246,21 @@ const char *McasmTargetLowering::getTargetNodeName(unsigned Opcode) const {
 }
 
 SDValue McasmTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
-  // Return empty SDValue to indicate operation is not supported
-  return SDValue();
+  switch (Op.getOpcode()) {
+  case ISD::GlobalAddress:
+  case ISD::BlockAddress:
+  case ISD::ConstantPool:
+  case ISD::JumpTable:
+    // For now, just return the operand wrapped as-is
+    // A full implementation would handle PIC relocation models
+    return Op;
+
+  case ISD::VASTART:
+    // Minimal varargs support - expand to nothing for now
+    return SDValue();
+
+  default:
+    // Operation not supported - return unchanged
+    return Op;
+  }
 }
