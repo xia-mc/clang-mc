@@ -52,10 +52,11 @@ public:
 };
 } // end anonymous namespace
 
-// MCASM NOTE: Minimal target initialization - only register the target
+// MCASM NOTE: Minimal target initialization - only register the 32-bit target
+// Mcasm is 32-bit only, so we don't register the 64-bit target
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTarget() {
   RegisterTargetMachine<McasmTargetMachine> X(getTheMcasm_32Target());
-  RegisterTargetMachine<McasmTargetMachine> Y(getTheMcasm_64Target());
+  // Note: getTheMcasm_64Target() exists for compatibility but is NOT registered
 }
 
 static std::unique_ptr<TargetLoweringObjectFile> createTLOF(const Triple &TT) {
