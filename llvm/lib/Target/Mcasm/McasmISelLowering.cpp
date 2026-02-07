@@ -110,12 +110,6 @@ SDValue McasmTargetLowering::LowerFormalArguments(
   CCState CCInfo(CallConv, isVarArg, MF, ArgLocs, *DAG.getContext());
   CCInfo.AnalyzeFormalArguments(Ins, CC_Mcasm_32);
 
-  // DEBUG: Print argument analysis
-  errs() << "DEBUG LowerFormalArguments: Function has " << ArgLocs.size() << " arguments\n";
-  for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
-    errs() << "  Arg " << i << ": LocReg = " << ArgLocs[i].getLocReg() << "\n";
-  }
-
   for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
     CCValAssign &VA = ArgLocs[i];
 
@@ -262,20 +256,17 @@ SDValue McasmTargetLowering::LowerReturn(
     CCValAssign &VA = RVLocs[i];
     assert(VA.isRegLoc() && "Only register returns are supported");
 
-    // CRITICAL FIX: Create virtual register first, then copy to physical
-    // This allows pattern matching to work for constants
-    const TargetRegisterClass *RC = &Mcasm::GR32RegClass;
-    unsigned VReg = MF.getRegInfo().createVirtualRegister(RC);
+    // Use VA.getValNo() — RVLocs entries can be multiple for a single original value
+    SDValue Val = OutVals[VA.getValNo()];
 
-    // Copy value to virtual register (triggers pattern matching for constants)
-    Chain = DAG.getCopyToReg(Chain, dl, VReg, OutVals[i], Glue);
-    Glue = Chain.getValue(1);
+    // Type conversion if needed
+    if (Val.getValueType() != VA.getLocVT()) {
+      Val = DAG.getZExtOrTrunc(Val, dl, VA.getLocVT());
+    }
 
-    // Copy virtual register to physical register
-    Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(),
-                             DAG.getCopyFromReg(Chain, dl, VReg, VA.getValVT(), Glue),
-                             Glue);
+    Chain = DAG.getCopyToReg(Chain, dl, VA.getLocReg(), Val, Glue);
     Glue = Chain.getValue(1);
+    RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
   }
 
   RetOps[0] = Chain;  // Update chain

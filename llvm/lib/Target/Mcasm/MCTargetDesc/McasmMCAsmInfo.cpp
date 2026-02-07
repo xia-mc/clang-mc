@@ -22,7 +22,8 @@ using namespace llvm;
 enum AsmWriterFlavorTy {
   ATT = 0, Intel = 1
 };
-static const AsmWriterFlavorTy McasmAsmSyntax = ATT; // Fixed to ATT style
+// mcasm uses Intel-style syntax (destination first): mov dst, src
+static const AsmWriterFlavorTy McasmAsmSyntax = Intel;
 
 // MCASM NOTE: Don't register mark-data-regions to avoid conflicts with X86 backend
 static const bool MarkedJTDataRegions = true;

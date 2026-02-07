@@ -21,11 +21,13 @@ def MOV32rr : I<0x89, MRMDestReg, (outs GR32:$dst), (ins GR32:$src),
 
 // MOV - Immediate to Register
 // Note: Pattern uses both imm (for generic matching) and i32imm (for operand type)
+// AddedComplexity = 10 to prioritize over MOV32rr for constant operands
 def MOV32ri : Ii32<0xB8, AddRegFrm, (outs GR32:$dst), (ins i32imm:$src),
                    "mov\t{$src, $dst|$dst, $src}",
                    [(set GR32:$dst, imm:$src)]> {
   let isReMaterializable = 1;
   let isAsCheapAsAMove = 1;
+  let AddedComplexity = 10;
 }
 
 // MOV - Memory to Register (Load)

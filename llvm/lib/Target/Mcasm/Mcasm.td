@@ -75,7 +75,7 @@ include "McasmCallingConv.td"
 def McasmAsmWriter : AsmWriter {
   string AsmWriterClassName  = "InstPrinter";
   int PassSubtarget = 1;
-  int Variant = 0;
+  int Variant = 1;  // Use Intel syntax (1), not AT&T (0)
 }
 
 def McasmAsmParserVariant : AsmParserVariant {
