@@ -409,7 +409,13 @@ int main(int argc, char **argv) {
   // Register the target printer for --version.
   cl::AddExtraVersionPrinter(TargetRegistry::printRegisteredTargetsForVersion);
 
+  fprintf(stderr, "DEBUG LLC: About to parse command line options\n");
+  fflush(stderr);
+
   cl::ParseCommandLineOptions(argc, argv, "llvm system compiler\n");
+
+  fprintf(stderr, "DEBUG LLC: Command line options parsed successfully\n");
+  fflush(stderr);
 
   if (!PassPipeline.empty() && !getRunPassNames().empty()) {
     errs() << "The `llc -run-pass=...` syntax for the new pass manager is "
@@ -495,30 +501,59 @@ static bool addPass(PassManagerBase &PM, const char *argv0, StringRef PassName,
 
 static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
                          LLVMContext &Context, std::string &OutputFilename) {
+  fprintf(stderr, "DEBUG LLC: compileModule() called\n");
+  fflush(stderr);
+
   // Load the module to be compiled...
   SMDiagnostic Err;
   std::unique_ptr<Module> M;
   std::unique_ptr<MIRParser> MIR;
   Triple TheTriple;
-  std::string CPUStr = codegen::getCPUStr(),
-              FeaturesStr = codegen::getFeaturesStr();
+
+  fprintf(stderr, "DEBUG LLC: About to call getCPUStr()\n");
+  fflush(stderr);
+  std::string CPUStr = codegen::getCPUStr();
+  fprintf(stderr, "DEBUG LLC: getCPUStr() returned: '%s'\n", CPUStr.c_str());
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG LLC: About to call getFeaturesStr()\n");
+  fflush(stderr);
+  std::string FeaturesStr = codegen::getFeaturesStr();
+  fprintf(stderr, "DEBUG LLC: getFeaturesStr() returned: '%s'\n", FeaturesStr.c_str());
+  fflush(stderr);
 
   // Set attributes on functions as loaded from MIR from command line arguments.
+  fprintf(stderr, "DEBUG LLC: Setting up MIR function attributes lambda\n");
+  fflush(stderr);
   auto setMIRFunctionAttributes = [&CPUStr, &FeaturesStr](Function &F) {
     codegen::setFunctionAttributes(CPUStr, FeaturesStr, F);
   };
 
+  fprintf(stderr, "DEBUG LLC: About to call getMAttrs()\n");
+  fflush(stderr);
   auto MAttrs = codegen::getMAttrs();
+  fprintf(stderr, "DEBUG LLC: getMAttrs() returned %zu attributes\n", MAttrs.size());
+  fflush(stderr);
+
   bool SkipModule =
       CPUStr == "help" || (!MAttrs.empty() && MAttrs.front() == "help");
+  fprintf(stderr, "DEBUG LLC: SkipModule = %d\n", SkipModule);
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: About to parse optimization level\n");
+  fflush(stderr);
   CodeGenOptLevel OLvl;
   if (auto Level = CodeGenOpt::parseLevel(OptLevel)) {
     OLvl = *Level;
+    fprintf(stderr, "DEBUG LLC: Optimization level parsed successfully\n");
+    fflush(stderr);
   } else {
     WithColor::error(errs(), argv[0]) << "invalid optimization level.\n";
     return 1;
   }
+
+  fprintf(stderr, "DEBUG LLC: Checking BinutilsVersion\n");
+  fflush(stderr);
 
   // Parse 'none' or '$major.$minor'. Disallow -binutils-version=0 because we
   // use that to indicate the MC default.
@@ -533,9 +568,25 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
       return 1;
     }
   }
+  fprintf(stderr, "DEBUG LLC: BinutilsVersion check passed\n");
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG LLC: Creating TargetOptions struct\n");
+  fflush(stderr);
   TargetOptions Options;
+  fprintf(stderr, "DEBUG LLC: TargetOptions created\n");
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG LLC: Defining InitializeOptions lambda\n");
+  fflush(stderr);
   auto InitializeOptions = [&](const Triple &TheTriple) {
+    fprintf(stderr, "DEBUG LLC LAMBDA: InitializeOptions called with Triple='%s'\n", TheTriple.str().c_str());
+    fflush(stderr);
+    fprintf(stderr, "DEBUG LLC LAMBDA: About to call InitTargetOptionsFromCodeGenFlags\n");
+    fflush(stderr);
     Options = codegen::InitTargetOptionsFromCodeGenFlags(TheTriple);
+    fprintf(stderr, "DEBUG LLC LAMBDA: InitTargetOptionsFromCodeGenFlags returned\n");
+    fflush(stderr);
 
     if (Options.XCOFFReadOnlyPointers) {
       if (!TheTriple.isOSAIX())
@@ -584,50 +635,149 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
           MCTargetOptions::DefaultDwarfDirectory;
     }
   };
+  fprintf(stderr, "DEBUG LLC: InitializeOptions lambda defined\n");
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: About to get relocation model\n");
+  fflush(stderr);
   std::optional<Reloc::Model> RM = codegen::getExplicitRelocModel();
-  std::optional<CodeModel::Model> CM = codegen::getExplicitCodeModel();
+  fprintf(stderr, "DEBUG LLC: Got relocation model\n");
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: About to get code model\n");
+  fflush(stderr);
+  std::optional<CodeModel::Model> CM = codegen::getExplicitCodeModel();
+  fprintf(stderr, "DEBUG LLC: Got code model\n");
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG LLC: About to create TheTarget pointer\n");
+  fflush(stderr);
   const Target *TheTarget = nullptr;
+  fprintf(stderr, "DEBUG LLC: About to create Target unique_ptr\n");
+  fflush(stderr);
   std::unique_ptr<TargetMachine> Target;
+  fprintf(stderr, "DEBUG LLC: Checking SkipModule flag (SkipModule=%d)\n", SkipModule);
+  fflush(stderr);
 
   // If user just wants to list available options, skip module loading
   if (!SkipModule) {
+    fprintf(stderr, "DEBUG LLC: Entering !SkipModule branch\n");
+    fflush(stderr);
+    fprintf(stderr, "DEBUG LLC: About to define SetDataLayout lambda\n");
+    fflush(stderr);
     auto SetDataLayout = [&](StringRef DataLayoutTargetTriple,
                              StringRef OldDLStr) -> std::optional<std::string> {
+      fprintf(stderr, "DEBUG LLC LAMBDA: SetDataLayout called\n");
+      fflush(stderr);
       // If we are supposed to override the target triple, do so now.
+      fprintf(stderr, "DEBUG LLC LAMBDA: Converting DataLayoutTargetTriple to string\n");
+      fflush(stderr);
       std::string IRTargetTriple = DataLayoutTargetTriple.str();
-      if (!TargetTriple.empty())
+      fprintf(stderr, "DEBUG LLC LAMBDA: IRTargetTriple='%s'\n", IRTargetTriple.c_str());
+      fflush(stderr);
+
+      fprintf(stderr, "DEBUG LLC LAMBDA: Checking TargetTriple.empty()\n");
+      fflush(stderr);
+      if (!TargetTriple.empty()) {
+        fprintf(stderr, "DEBUG LLC LAMBDA: TargetTriple not empty, normalizing\n");
+        fflush(stderr);
         IRTargetTriple = Triple::normalize(TargetTriple);
+        fprintf(stderr, "DEBUG LLC LAMBDA: Normalized triple='%s'\n", IRTargetTriple.c_str());
+        fflush(stderr);
+      }
+
+      fprintf(stderr, "DEBUG LLC LAMBDA: Creating Triple object from '%s'\n", IRTargetTriple.c_str());
+      fflush(stderr);
       TheTriple = Triple(IRTargetTriple);
-      if (TheTriple.getTriple().empty())
+      fprintf(stderr, "DEBUG LLC LAMBDA: Triple created\n");
+      fflush(stderr);
+
+      fprintf(stderr, "DEBUG LLC LAMBDA: Checking TheTriple.getTriple().empty()\n");
+      fflush(stderr);
+      if (TheTriple.getTriple().empty()) {
+        fprintf(stderr, "DEBUG LLC LAMBDA: Triple empty, getting default\n");
+        fflush(stderr);
         TheTriple.setTriple(sys::getDefaultTargetTriple());
+        fprintf(stderr, "DEBUG LLC LAMBDA: Default triple set\n");
+        fflush(stderr);
+      }
 
       std::string Error;
+      fprintf(stderr, "DEBUG LLC: About to call TargetRegistry::lookupTarget (MIR path)\n");
+      fprintf(stderr, "DEBUG LLC:   MArch='%s', Triple='%s'\n",
+              codegen::getMArch().c_str(), TheTriple.str().c_str());
+      fflush(stderr);
+
       TheTarget =
           TargetRegistry::lookupTarget(codegen::getMArch(), TheTriple, Error);
+
+      fprintf(stderr, "DEBUG LLC: lookupTarget completed, TheTarget=%p\n", (void*)TheTarget);
+      fflush(stderr);
+
       if (!TheTarget) {
         WithColor::error(errs(), argv[0]) << Error << "\n";
         exit(1);
       }
 
+      fprintf(stderr, "DEBUG LLC: About to initialize options\n");
+      fflush(stderr);
+
       InitializeOptions(TheTriple);
+
+      fprintf(stderr, "DEBUG LLC: About to create TargetMachine\n");
+      fflush(stderr);
+
       Target = std::unique_ptr<TargetMachine>(TheTarget->createTargetMachine(
           TheTriple, CPUStr, FeaturesStr, Options, RM, CM, OLvl));
+
+      fprintf(stderr, "DEBUG LLC: TargetMachine created successfully\n");
+      fflush(stderr);
+
+      fprintf(stderr, "DEBUG LLC: Checking Target pointer\n");
+      fflush(stderr);
       assert(Target && "Could not allocate target machine!");
+      fprintf(stderr, "DEBUG LLC: Target pointer OK\n");
+      fflush(stderr);
 
       // Set PGO options based on command line flags
+      fprintf(stderr, "DEBUG LLC: About to call setPGOOptions\n");
+      fflush(stderr);
       setPGOOptions(*Target);
+      fprintf(stderr, "DEBUG LLC: setPGOOptions completed\n");
+      fflush(stderr);
 
-      return Target->createDataLayout().getStringRepresentation();
+      fprintf(stderr, "DEBUG LLC: About to call createDataLayout\n");
+      fflush(stderr);
+      auto DL = Target->createDataLayout();
+      fprintf(stderr, "DEBUG LLC: createDataLayout completed\n");
+      fflush(stderr);
+
+      fprintf(stderr, "DEBUG LLC: About to call getStringRepresentation\n");
+      fflush(stderr);
+      auto DLStr = DL.getStringRepresentation();
+      fprintf(stderr, "DEBUG LLC: getStringRepresentation completed: '%s'\n", DLStr.c_str());
+      fflush(stderr);
+
+      return DLStr;
     };
+    fprintf(stderr, "DEBUG LLC: SetDataLayout lambda defined and returned\n");
+    fflush(stderr);
+
+    fprintf(stderr, "DEBUG LLC: Checking input language: '%s'\n", InputLanguage.c_str());
+    fprintf(stderr, "DEBUG LLC: InputFilename: '%s'\n", InputFilename.c_str());
+    fflush(stderr);
+
     if (InputLanguage == "mir" ||
         (InputLanguage == "" && StringRef(InputFilename).ends_with(".mir"))) {
+      fprintf(stderr, "DEBUG LLC: Parsing MIR file\n");
+      fflush(stderr);
       MIR = createMIRParserFromFile(InputFilename, Err, Context,
                                     setMIRFunctionAttributes);
       if (MIR)
         M = MIR->parseIRModule(SetDataLayout);
     } else {
+      fprintf(stderr, "DEBUG LLC: Parsing IR file\n");
+      fflush(stderr);
       M = parseIRFile(InputFilename, Err, Context,
                       ParserCallbacks(SetDataLayout));
     }

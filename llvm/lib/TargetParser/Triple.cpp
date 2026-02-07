@@ -1008,6 +1008,7 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
   case Triple::loongarch32:
   case Triple::loongarch64:
   case Triple::m68k:
+  case Triple::mcasm:
   case Triple::mips64:
   case Triple::mips64el:
   case Triple::mips:
@@ -1757,6 +1758,7 @@ unsigned Triple::getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   case llvm::Triple::tcele:
   case llvm::Triple::thumb:
   case llvm::Triple::thumbeb:
+  case llvm::Triple::mcasm:
   case llvm::Triple::wasm32:
   case llvm::Triple::x86:
   case llvm::Triple::xcore:
@@ -1867,6 +1869,7 @@ Triple Triple::get32BitArchVariant() const {
   case Triple::tcele:
   case Triple::thumb:
   case Triple::thumbeb:
+  case Triple::mcasm:
   case Triple::wasm32:
   case Triple::x86:
   case Triple::xcore:
@@ -1917,6 +1920,7 @@ Triple Triple::get64BitArchVariant() const {
   case Triple::kalimba:
   case Triple::lanai:
   case Triple::m68k:
+  case Triple::mcasm:
   case Triple::msp430:
   case Triple::r600:
   case Triple::shave:
