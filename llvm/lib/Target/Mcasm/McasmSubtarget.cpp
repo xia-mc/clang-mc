@@ -107,6 +107,13 @@ McasmSubtarget::McasmSubtarget(const Triple &TT, StringRef CPU, StringRef TuneCP
       StackAlignOverride(StackAlignOverride),
       InstrInfo(initializeSubtargetDependencies(CPU, TuneCPU, FS)),
       TLInfo(TM, *this), FrameLowering(*this) {
+
+  // CRITICAL FIX: TableGen generates incorrect default values for mode flags
+  // Force correct values for mcasm (32-bit only)
+  In64BitMode = false;  // mcasm is 32-bit only, NEVER 64-bit
+  In32BitMode = true;   // mcasm is always 32-bit
+  In16BitMode = false;  // mcasm is not 16-bit
+
   // Determine the PICStyle based on the target selected
   if (!isPositionIndependent())
     setPICStyle(PICStyles::Style::None);
