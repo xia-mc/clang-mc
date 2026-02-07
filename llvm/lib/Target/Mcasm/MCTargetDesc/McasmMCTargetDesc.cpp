@@ -30,7 +30,10 @@
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/TargetRegistry.h"
+#include "llvm/MC/MCAsmBackend.h"
+#include "llvm/MC/MCCodeEmitter.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/FormattedStream.h"
 #include "llvm/TargetParser/Triple.h"
 
 using namespace llvm;
@@ -193,6 +196,20 @@ static MCInstrAnalysis *createMcasmMCInstrAnalysis(const MCInstrInfo *Info) {
   return new McasmMCInstrAnalysis(Info);
 }
 
+static MCStreamer *createMcasmAsmStreamer(
+    MCContext &Ctx, std::unique_ptr<formatted_raw_ostream> OS,
+    std::unique_ptr<MCInstPrinter> IP, std::unique_ptr<MCCodeEmitter> CE,
+    std::unique_ptr<MCAsmBackend> TAB) {
+  fprintf(stderr, "DEBUG: createMcasmAsmStreamer called\n");
+  fflush(stderr);
+  // Use LLVM's default ASM streamer
+  MCStreamer *S = llvm::createAsmStreamer(Ctx, std::move(OS), std::move(IP),
+                                          std::move(CE), std::move(TAB));
+  fprintf(stderr, "DEBUG: createMcasmAsmStreamer completed, S=%p\n", (void*)S);
+  fflush(stderr);
+  return S;
+}
+
 // Force static initialization
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTargetMC() {
   llvm::errs() << "DEBUG: LLVMInitializeMcasmTargetMC called\n";
@@ -225,6 +242,10 @@ extern "C" LLVM_C_ABI void LLVMInitializeMcasmTargetMC() {
   // Register the code emitter.
   TargetRegistry::RegisterMCCodeEmitter(*T, createMcasmMCCodeEmitter);
   llvm::errs() << "DEBUG: Registered MCCodeEmitter\n";
+
+  // Register the ASM streamer (for assembly file output).
+  TargetRegistry::RegisterAsmStreamer(*T, createMcasmAsmStreamer);
+  llvm::errs() << "DEBUG: Registered AsmStreamer\n";
 
   // Register the obj target streamer.
   TargetRegistry::RegisterObjectTargetStreamer(*T,

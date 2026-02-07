@@ -40,7 +40,10 @@ public:
   McasmDAGToDAGISel() = delete;
 
   explicit McasmDAGToDAGISel(McasmTargetMachine &TM, CodeGenOptLevel OptLevel)
-      : SelectionDAGISel(TM, OptLevel) {}
+      : SelectionDAGISel(TM, OptLevel) {
+    fprintf(stderr, "DEBUG: McasmDAGToDAGISel constructor completed\n");
+    fflush(stderr);
+  }
 
   bool runOnMachineFunction(MachineFunction &MF) override {
     Subtarget = &MF.getSubtarget<McasmSubtarget>();
@@ -72,7 +75,10 @@ public:
   explicit McasmDAGToDAGISelLegacy(McasmTargetMachine &TM,
                                     CodeGenOptLevel OptLevel)
       : SelectionDAGISelLegacy(
-            ID, std::make_unique<McasmDAGToDAGISel>(TM, OptLevel)) {}
+            ID, std::make_unique<McasmDAGToDAGISel>(TM, OptLevel)) {
+    fprintf(stderr, "DEBUG: McasmDAGToDAGISelLegacy constructor completed\n");
+    fflush(stderr);
+  }
 };
 
 } // end anonymous namespace
@@ -114,5 +120,10 @@ bool McasmDAGToDAGISel::SelectAddr(SDNode *Parent, SDValue N, SDValue &Base,
 
 FunctionPass *llvm::createMcasmISelDag(McasmTargetMachine &TM,
                                         CodeGenOptLevel OptLevel) {
-  return new McasmDAGToDAGISelLegacy(TM, OptLevel);
+  fprintf(stderr, "DEBUG: createMcasmISelDag called\n");
+  fflush(stderr);
+  auto *Pass = new McasmDAGToDAGISelLegacy(TM, OptLevel);
+  fprintf(stderr, "DEBUG: createMcasmISelDag completed, Pass=%p\n", (void*)Pass);
+  fflush(stderr);
+  return Pass;
 }

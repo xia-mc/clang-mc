@@ -64,5 +64,10 @@ public:
 
 MCCodeEmitter *llvm::createMcasmMCCodeEmitter(const MCInstrInfo &MCII,
                                               MCContext &Ctx) {
-  return new McasmMCCodeEmitter(MCII, Ctx);
+  fprintf(stderr, "DEBUG: createMcasmMCCodeEmitter called\n");
+  fflush(stderr);
+  auto *Emitter = new McasmMCCodeEmitter(MCII, Ctx);
+  fprintf(stderr, "DEBUG: createMcasmMCCodeEmitter completed, Emitter=%p\n", (void*)Emitter);
+  fflush(stderr);
+  return Emitter;
 }

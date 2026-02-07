@@ -89,5 +89,10 @@ MCAsmBackend *llvm::createMcasm_32AsmBackend(const Target &T,
                                              const MCSubtargetInfo &STI,
                                              const MCRegisterInfo &MRI,
                                              const MCTargetOptions &Options) {
-  return new McasmAsmBackend(T, STI);
+  fprintf(stderr, "DEBUG: createMcasm_32AsmBackend called\n");
+  fflush(stderr);
+  auto *Backend = new McasmAsmBackend(T, STI);
+  fprintf(stderr, "DEBUG: createMcasm_32AsmBackend completed, Backend=%p\n", (void*)Backend);
+  fflush(stderr);
+  return Backend;
 }

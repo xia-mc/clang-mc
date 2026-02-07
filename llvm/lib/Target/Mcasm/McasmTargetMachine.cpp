@@ -21,6 +21,10 @@
 #include "llvm/CodeGen/RegisterBankInfo.h"
 #include "llvm/CodeGen/MachineScheduler.h"
 #include "llvm/MC/MCSubtargetInfo.h"
+#include "llvm/MC/MCStreamer.h"
+#include "llvm/MC/MCAsmInfo.h"
+#include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCRegisterInfo.h"
 #include "McasmTargetObjectFile.h"
 #include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/MC/TargetRegistry.h"
@@ -167,22 +171,199 @@ namespace {
 class McasmPassConfig : public TargetPassConfig {
 public:
   McasmPassConfig(McasmTargetMachine &TM, PassManagerBase &PM)
-    : TargetPassConfig(TM, PM) {}
+    : TargetPassConfig(TM, PM) {
+    fprintf(stderr, "DEBUG: McasmPassConfig constructor\n");
+    fflush(stderr);
+  }
 
   McasmTargetMachine &getMcasmTargetMachine() const {
     return getTM<McasmTargetMachine>();
   }
 
   bool addInstSelector() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addInstSelector called\n");
+    fflush(stderr);
     // Add the instruction selector pass
     addPass(createMcasmISelDag(getMcasmTargetMachine(), getOptLevel()));
+    fprintf(stderr, "DEBUG: McasmPassConfig::addInstSelector completed\n");
+    fflush(stderr);
     return false;  // false means we handled it
+  }
+
+  void addIRPasses() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addIRPasses called\n");
+    fflush(stderr);
+    TargetPassConfig::addIRPasses();
+    fprintf(stderr, "DEBUG: McasmPassConfig::addIRPasses completed\n");
+    fflush(stderr);
+  }
+
+  bool addIRTranslator() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addIRTranslator called\n");
+    fflush(stderr);
+    return TargetPassConfig::addIRTranslator();
+  }
+
+  void addCodeGenPrepare() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addCodeGenPrepare called\n");
+    fflush(stderr);
+    TargetPassConfig::addCodeGenPrepare();
+    fprintf(stderr, "DEBUG: McasmPassConfig::addCodeGenPrepare completed\n");
+    fflush(stderr);
+  }
+
+  bool addLegalizeMachineIR() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addLegalizeMachineIR called\n");
+    fflush(stderr);
+    return TargetPassConfig::addLegalizeMachineIR();
+  }
+
+  bool addRegBankSelect() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addRegBankSelect called\n");
+    fflush(stderr);
+    return TargetPassConfig::addRegBankSelect();
+  }
+
+  bool addGlobalInstructionSelect() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addGlobalInstructionSelect called\n");
+    fflush(stderr);
+    return TargetPassConfig::addGlobalInstructionSelect();
+  }
+
+  void addMachineSSAOptimization() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addMachineSSAOptimization called\n");
+    fflush(stderr);
+    TargetPassConfig::addMachineSSAOptimization();
+    fprintf(stderr, "DEBUG: McasmPassConfig::addMachineSSAOptimization completed\n");
+    fflush(stderr);
+  }
+
+  void addPreRegAlloc() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addPreRegAlloc called\n");
+    fflush(stderr);
+    TargetPassConfig::addPreRegAlloc();
+    fprintf(stderr, "DEBUG: McasmPassConfig::addPreRegAlloc completed\n");
+    fflush(stderr);
+  }
+
+  void addPostRegAlloc() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addPostRegAlloc called\n");
+    fflush(stderr);
+    TargetPassConfig::addPostRegAlloc();
+    fprintf(stderr, "DEBUG: McasmPassConfig::addPostRegAlloc completed\n");
+    fflush(stderr);
+  }
+
+  void addPreSched2() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addPreSched2 called\n");
+    fflush(stderr);
+    TargetPassConfig::addPreSched2();
+    fprintf(stderr, "DEBUG: McasmPassConfig::addPreSched2 completed\n");
+    fflush(stderr);
+  }
+
+  void addPreEmitPass() override {
+    fprintf(stderr, "DEBUG: McasmPassConfig::addPreEmitPass called\n");
+    fflush(stderr);
+    TargetPassConfig::addPreEmitPass();
+    fprintf(stderr, "DEBUG: McasmPassConfig::addPreEmitPass completed\n");
+    fflush(stderr);
   }
 };
 }
 
 TargetPassConfig *McasmTargetMachine::createPassConfig(PassManagerBase &PM) {
-  return new McasmPassConfig(*this, PM);
+  fprintf(stderr, "DEBUG: McasmTargetMachine::createPassConfig called\n");
+  fflush(stderr);
+  auto *PC = new McasmPassConfig(*this, PM);
+  fprintf(stderr, "DEBUG: McasmTargetMachine::createPassConfig completed, PC=%p\n", (void*)PC);
+  fflush(stderr);
+  return PC;
+}
+
+bool McasmTargetMachine::addPassesToEmitFile(
+    PassManagerBase &PM, raw_pwrite_stream &Out, raw_pwrite_stream *DwoOut,
+    CodeGenFileType FileType, bool DisableVerify,
+    MachineModuleInfoWrapperPass *MMIWP) {
+  fprintf(stderr, "DEBUG: McasmTargetMachine::addPassesToEmitFile called\n");
+  fflush(stderr);
+  fprintf(stderr, "DEBUG:   FileType=%d, DisableVerify=%d, MMIWP=%p\n",
+          (int)FileType, (int)DisableVerify, (void*)MMIWP);
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG: About to call base class addPassesToEmitFile\n");
+  fflush(stderr);
+  bool Result = CodeGenTargetMachineImpl::addPassesToEmitFile(
+      PM, Out, DwoOut, FileType, DisableVerify, MMIWP);
+  fprintf(stderr, "DEBUG: Base class addPassesToEmitFile returned %d\n", (int)Result);
+  fflush(stderr);
+
+  return Result;
+}
+
+bool McasmTargetMachine::addAsmPrinter(PassManagerBase &PM,
+                                       raw_pwrite_stream &Out,
+                                       raw_pwrite_stream *DwoOut,
+                                       CodeGenFileType FileType,
+                                       MCContext &Context) {
+  fprintf(stderr, "DEBUG: McasmTargetMachine::addAsmPrinter called\n");
+  fflush(stderr);
+  fprintf(stderr, "DEBUG:   FileType=%d, DwoOut=%p, Context=%p\n",
+          (int)FileType, (void*)DwoOut, (void*)&Context);
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG: About to call base class addAsmPrinter\n");
+  fflush(stderr);
+  bool Result = CodeGenTargetMachineImpl::addAsmPrinter(PM, Out, DwoOut, FileType, Context);
+  fprintf(stderr, "DEBUG: Base class addAsmPrinter returned %d\n", (int)Result);
+  fflush(stderr);
+
+  return Result;
+}
+
+Expected<std::unique_ptr<MCStreamer>>
+McasmTargetMachine::createMCStreamer(raw_pwrite_stream &Out,
+                                     raw_pwrite_stream *DwoOut,
+                                     CodeGenFileType FileType,
+                                     MCContext &Context) {
+  fprintf(stderr, "DEBUG: McasmTargetMachine::createMCStreamer called\n");
+  fflush(stderr);
+  fprintf(stderr, "DEBUG:   FileType=%d\n", (int)FileType);
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG: Checking MC components\n");
+  fflush(stderr);
+  fprintf(stderr, "DEBUG: Step 1 - about to call getMCSubtargetInfo()\n");
+  fflush(stderr);
+  const MCSubtargetInfo *STIPtr = getMCSubtargetInfo();
+  fprintf(stderr, "DEBUG:   getMCSubtargetInfo() = %p\n", (void*)STIPtr);
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG: Step 2 - about to call getMCAsmInfo()\n");
+  fflush(stderr);
+  const MCAsmInfo *MAIPtr = getMCAsmInfo();
+  fprintf(stderr, "DEBUG:   getMCAsmInfo() = %p\n", (void*)MAIPtr);
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG: Step 3 - about to call getMCRegisterInfo()\n");
+  fflush(stderr);
+  const MCRegisterInfo *MRIPtr = getMCRegisterInfo();
+  fprintf(stderr, "DEBUG:   getMCRegisterInfo() = %p\n", (void*)MRIPtr);
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG: Step 4 - about to call getMCInstrInfo()\n");
+  fflush(stderr);
+  const MCInstrInfo *MIIPtr = getMCInstrInfo();
+  fprintf(stderr, "DEBUG:   getMCInstrInfo() = %p\n", (void*)MIIPtr);
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG: About to call base class createMCStreamer\n");
+  fflush(stderr);
+  auto Result = CodeGenTargetMachineImpl::createMCStreamer(Out, DwoOut, FileType, Context);
+  fprintf(stderr, "DEBUG: Base class createMCStreamer returned\n");
+  fflush(stderr);
+
+  return Result;
 }
 
 // Stubs for new Pass Manager functions

@@ -53,6 +53,20 @@ public:
   // Set up the pass pipeline.
   TargetPassConfig *createPassConfig(PassManagerBase &PM) override;
 
+  // Override to add debug output
+  bool addPassesToEmitFile(PassManagerBase &PM, raw_pwrite_stream &Out,
+                           raw_pwrite_stream *DwoOut, CodeGenFileType FileType,
+                           bool DisableVerify = true,
+                           MachineModuleInfoWrapperPass *MMIWP = nullptr) override;
+
+  bool addAsmPrinter(PassManagerBase &PM, raw_pwrite_stream &Out,
+                     raw_pwrite_stream *DwoOut, CodeGenFileType FileType,
+                     MCContext &Context) override;
+
+  Expected<std::unique_ptr<MCStreamer>>
+  createMCStreamer(raw_pwrite_stream &Out, raw_pwrite_stream *DwoOut,
+                   CodeGenFileType FileType, MCContext &Context) override;
+
   TargetLoweringObjectFile *getObjFileLowering() const override {
     return TLOF.get();
   }

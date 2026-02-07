@@ -311,6 +311,14 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &,
   llvm_unreachable("reportError() should not return");
 }
 
+// Test: Use a simple callback function instead of lambda
+static std::optional<std::string> SimpleSetDataLayout(StringRef DataLayoutTargetTriple,
+                                                       StringRef OldDLStr) {
+  fprintf(stderr, "DEBUG CALLBACK: SimpleSetDataLayout called\n");
+  fflush(stderr);
+  return std::string("e-p:32:32-i32:32-n32");
+}
+
 static std::unique_ptr<ToolOutputFile> GetOutputStream(Triple::OSType OS) {
   // If we don't yet have an output filename, make one.
   if (OutputFilename.empty()) {
@@ -373,11 +381,21 @@ int main(int argc, char **argv) {
   // Enable debug stream buffering.
   EnableDebugBuffering = true;
 
+  fprintf(stderr, "DEBUG LLC: About to initialize all targets\n");
+  fflush(stderr);
   // Initialize targets first, so that --version shows registered targets.
   InitializeAllTargets();
+  fprintf(stderr, "DEBUG LLC: InitializeAllTargets() completed\n");
+  fflush(stderr);
   InitializeAllTargetMCs();
+  fprintf(stderr, "DEBUG LLC: InitializeAllTargetMCs() completed\n");
+  fflush(stderr);
   InitializeAllAsmPrinters();
+  fprintf(stderr, "DEBUG LLC: InitializeAllAsmPrinters() completed\n");
+  fflush(stderr);
   InitializeAllAsmParsers();
+  fprintf(stderr, "DEBUG LLC: InitializeAllAsmParsers() completed\n");
+  fflush(stderr);
 
   // Initialize codegen and IR passes used by llc so that the -print-after,
   // -print-before, and -stop-after options work.
@@ -663,12 +681,55 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
   if (!SkipModule) {
     fprintf(stderr, "DEBUG LLC: Entering !SkipModule branch\n");
     fflush(stderr);
+
+    // TEST: Create a simple module manually AND create TargetMachine
+    fprintf(stderr, "DEBUG LLC: Creating simple module manually\n");
+    fflush(stderr);
+    M = std::make_unique<Module>("test", Context);
+    TheTriple = Triple("mcasm-unknown-none");
+    M->setTargetTriple(TheTriple);
+    M->setDataLayout("e-p:32:32-i32:32-n32");
+    fprintf(stderr, "DEBUG LLC: Module created manually\n");
+    fflush(stderr);
+
+    // Now create TargetMachine
+    fprintf(stderr, "DEBUG LLC: Looking up mcasm target for manual module\n");
+    fflush(stderr);
+    std::string Error;
+    TheTarget = TargetRegistry::lookupTarget(codegen::getMArch(), TheTriple, Error);
+    if (!TheTarget) {
+      WithColor::error(errs(), argv[0]) << Error << "\n";
+      return 1;
+    }
+    fprintf(stderr, "DEBUG LLC: Creating TargetMachine for manual module\n");
+    fflush(stderr);
+    InitializeOptions(TheTriple);
+    Target = std::unique_ptr<TargetMachine>(TheTarget->createTargetMachine(
+        TheTriple, CPUStr, FeaturesStr, Options, RM, CM, OLvl));
+    fprintf(stderr, "DEBUG LLC: TargetMachine created for manual module\n");
+    fflush(stderr);
+    setPGOOptions(*Target);
+    // Don't use goto, just let it fall through
+
     fprintf(stderr, "DEBUG LLC: About to define SetDataLayout lambda\n");
     fflush(stderr);
-    auto SetDataLayout = [&](StringRef DataLayoutTargetTriple,
+    auto SetDataLayout = [&TheTarget, &Target, &TheTriple, &InitializeOptions,
+                           &CPUStr, &FeaturesStr, &Options, &RM, &CM, &OLvl, &argv](
+                             StringRef DataLayoutTargetTriple,
                              StringRef OldDLStr) -> std::optional<std::string> {
       fprintf(stderr, "DEBUG LLC LAMBDA: SetDataLayout called\n");
       fflush(stderr);
+
+      // Test: Skip all TargetMachine creation, just return hardcoded DL
+      fprintf(stderr, "DEBUG LLC LAMBDA: Returning hardcoded DL directly\n");
+      fflush(stderr);
+      std::optional<std::string> result = std::string("e-p:32:32-i32:32-n32");
+      fprintf(stderr, "DEBUG LLC LAMBDA: Created optional, about to return\n");
+      fflush(stderr);
+      return result;
+
+      // If we are supposed to override the target triple, do so now.
+
       // If we are supposed to override the target triple, do so now.
       fprintf(stderr, "DEBUG LLC LAMBDA: Converting DataLayoutTargetTriple to string\n");
       fflush(stderr);
@@ -758,41 +819,80 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
       fprintf(stderr, "DEBUG LLC: getStringRepresentation completed: '%s'\n", DLStr.c_str());
       fflush(stderr);
 
-      return DLStr;
+      fprintf(stderr, "DEBUG LLC: About to return from lambda\n");
+      fflush(stderr);
+
+      // Test: return hardcoded value
+      fprintf(stderr, "DEBUG LLC: Returning hardcoded value\n");
+      fflush(stderr);
+      return std::string("e-p:32:32-i32:32-n32");
+
+      // Original code:
+      // auto result = DLStr;
+      // std::optional<std::string> optResult = result;
+      // return optResult;
     };
-    fprintf(stderr, "DEBUG LLC: SetDataLayout lambda defined and returned\n");
+    fprintf(stderr, "DEBUG LLC: SetDataLayout lambda definition completed\n");
     fflush(stderr);
 
     fprintf(stderr, "DEBUG LLC: Checking input language: '%s'\n", InputLanguage.c_str());
     fprintf(stderr, "DEBUG LLC: InputFilename: '%s'\n", InputFilename.c_str());
     fflush(stderr);
 
-    if (InputLanguage == "mir" ||
-        (InputLanguage == "" && StringRef(InputFilename).ends_with(".mir"))) {
-      fprintf(stderr, "DEBUG LLC: Parsing MIR file\n");
+    // Skip actual file parsing since we created module manually
+    if (!M) {
+      fprintf(stderr, "DEBUG LLC: Module not created manually, parsing file\n");
       fflush(stderr);
-      MIR = createMIRParserFromFile(InputFilename, Err, Context,
-                                    setMIRFunctionAttributes);
-      if (MIR)
-        M = MIR->parseIRModule(SetDataLayout);
-    } else {
-      fprintf(stderr, "DEBUG LLC: Parsing IR file\n");
-      fflush(stderr);
-      M = parseIRFile(InputFilename, Err, Context,
-                      ParserCallbacks(SetDataLayout));
+      if (InputLanguage == "mir" ||
+          (InputLanguage == "" && StringRef(InputFilename).ends_with(".mir"))) {
+        fprintf(stderr, "DEBUG LLC: Parsing MIR file\n");
+        fflush(stderr);
+        MIR = createMIRParserFromFile(InputFilename, Err, Context,
+                                      setMIRFunctionAttributes);
+        if (MIR)
+          M = MIR->parseIRModule(SetDataLayout);
+      } else {
+        fprintf(stderr, "DEBUG LLC: Parsing IR file\n");
+        fflush(stderr);
+        fprintf(stderr, "DEBUG LLC: Trying WITHOUT callback\n");
+        fflush(stderr);
+        M = parseIRFile(InputFilename, Err, Context);
+      }
     }
+    fprintf(stderr, "DEBUG LLC: After parsing/creation, checking Module\n");
+    fflush(stderr);
     if (!M) {
       Err.print(argv[0], WithColor::error(errs(), argv[0]));
       return 1;
     }
-    if (!TargetTriple.empty())
-      M->setTargetTriple(Triple(Triple::normalize(TargetTriple)));
+    fprintf(stderr, "DEBUG LLC: Module OK\n");
+    fflush(stderr);
 
+    fprintf(stderr, "DEBUG LLC: Checking TargetTriple\n");
+    fflush(stderr);
+    if (!TargetTriple.empty()) {
+      fprintf(stderr, "DEBUG LLC: Setting module target triple\n");
+      fflush(stderr);
+      M->setTargetTriple(Triple(Triple::normalize(TargetTriple)));
+    }
+
+    fprintf(stderr, "DEBUG LLC: Getting code model from IR\n");
+    fflush(stderr);
     std::optional<CodeModel::Model> CM_IR = M->getCodeModel();
-    if (!CM && CM_IR)
+    fprintf(stderr, "DEBUG LLC: Checking if need to set code model\n");
+    fflush(stderr);
+    if (!CM && CM_IR) {
+      fprintf(stderr, "DEBUG LLC: Setting code model on Target\n");
+      fflush(stderr);
       Target->setCodeModel(*CM_IR);
-    if (std::optional<uint64_t> LDT = codegen::getExplicitLargeDataThreshold())
+    }
+    fprintf(stderr, "DEBUG LLC: Checking large data threshold\n");
+    fflush(stderr);
+    if (std::optional<uint64_t> LDT = codegen::getExplicitLargeDataThreshold()) {
+      fprintf(stderr, "DEBUG LLC: Setting large data threshold\n");
+      fflush(stderr);
       Target->setLargeDataThreshold(*LDT);
+    }
   } else {
     TheTriple = Triple(Triple::normalize(TargetTriple));
     if (TheTriple.getTriple().empty())
@@ -821,25 +921,47 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
     return 0;
   }
 
+  fprintf(stderr, "DEBUG LLC: After if/else, checking module assertion\n");
+  fflush(stderr);
   assert(M && "Should have exited if we didn't have a module!");
+  fprintf(stderr, "DEBUG LLC: Module assertion passed\n");
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG LLC: Checking FloatABI\n");
+  fflush(stderr);
   if (codegen::getFloatABIForCalls() != FloatABI::Default)
     Target->Options.FloatABIType = codegen::getFloatABIForCalls();
+  fprintf(stderr, "DEBUG LLC: FloatABI check done\n");
+  fflush(stderr);
 
   // Figure out where we are going to send the output.
+  fprintf(stderr, "DEBUG LLC: About to figure out output\n");
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG LLC: Calling GetOutputStream\n");
+  fflush(stderr);
   std::unique_ptr<ToolOutputFile> Out = GetOutputStream(TheTriple.getOS());
+  fprintf(stderr, "DEBUG LLC: GetOutputStream returned\n");
+  fflush(stderr);
   if (!Out)
     return 1;
 
+  fprintf(stderr, "DEBUG LLC: Setting object filename for debug\n");
+  fflush(stderr);
   // Ensure the filename is passed down to CodeViewDebug.
   Target->Options.ObjectFilenameForDebug = Out->outputFilename();
 
   // Return a copy of the output filename via the output param
   OutputFilename = Out->outputFilename();
+  fprintf(stderr, "DEBUG LLC: Output filename set\n");
+  fflush(stderr);
 
   // Tell target that this tool is not necessarily used with argument ABI
   // compliance (i.e. narrow integer argument extensions).
   Target->Options.VerifyArgABICompliance = 0;
 
+  fprintf(stderr, "DEBUG LLC: Checking split dwarf\n");
+  fflush(stderr);
   std::unique_ptr<ToolOutputFile> DwoOut;
   if (!SplitDwarfOutputFile.empty()) {
     std::error_code EC;
@@ -849,23 +971,41 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
       reportError(EC.message(), SplitDwarfOutputFile);
   }
 
+  fprintf(stderr, "DEBUG LLC: Creating TargetLibraryInfoImpl\n");
+  fflush(stderr);
   // Add an appropriate TargetLibraryInfo pass for the module's triple.
   TargetLibraryInfoImpl TLII(M->getTargetTriple(), Target->Options.VecLib);
+  fprintf(stderr, "DEBUG LLC: TargetLibraryInfoImpl created\n");
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: Checking DisableSimplifyLibCalls\n");
+  fflush(stderr);
   // The -disable-simplify-libcalls flag actually disables all builtin optzns.
   if (DisableSimplifyLibCalls)
     TLII.disableAllFunctions();
 
+  fprintf(stderr, "DEBUG LLC: About to verify module\n");
+  fflush(stderr);
   // Verify module immediately to catch problems before doInitialization() is
   // called on any passes.
   if (!NoVerify && verifyModule(*M, &errs()))
     reportError("input module cannot be verified", InputFilename);
+  fprintf(stderr, "DEBUG LLC: Module verified\n");
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: Setting function attributes\n");
+  fflush(stderr);
   // Override function attributes based on CPUStr, FeaturesStr, and command line
   // flags.
   codegen::setFunctionAttributes(CPUStr, FeaturesStr, *M);
+  fprintf(stderr, "DEBUG LLC: Function attributes set\n");
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: Checking plugins (PluginList size: %zu)\n", PluginList.size());
+  fflush(stderr);
   for (auto &Plugin : PluginList) {
+    fprintf(stderr, "DEBUG LLC: Processing plugin\n");
+    fflush(stderr);
     CodeGenFileType CGFT = codegen::getFileType();
     if (Plugin.invokePreCodeGenCallback(*M, *Target, CGFT, Out->os())) {
       // TODO: Deduplicate code with below and the NewPMDriver.
@@ -875,65 +1015,149 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
       return 0;
     }
   }
+  fprintf(stderr, "DEBUG LLC: Plugins processed\n");
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: Checking mc::getExplicitRelaxAll()\n");
+  fflush(stderr);
   if (mc::getExplicitRelaxAll() &&
       codegen::getFileType() != CodeGenFileType::ObjectFile)
     WithColor::warning(errs(), argv[0])
         << ": warning: ignoring -mc-relax-all because filetype != obj";
+  fprintf(stderr, "DEBUG LLC: RelaxAll check done\n");
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: Setting VerifierKind\n");
+  fflush(stderr);
   VerifierKind VK = VerifierKind::InputOutput;
   if (NoVerify)
     VK = VerifierKind::None;
   else if (VerifyEach)
     VK = VerifierKind::EachPass;
+  fprintf(stderr, "DEBUG LLC: VerifierKind set\n");
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: Checking if using new PM (EnableNewPassManager=%d, PassPipeline.empty=%d)\n",
+          (int)(bool)EnableNewPassManager, (int)PassPipeline.empty());
+  fflush(stderr);
   if (EnableNewPassManager || !PassPipeline.empty()) {
+    fprintf(stderr, "DEBUG LLC: Using new pass manager\n");
+    fflush(stderr);
     return compileModuleWithNewPM(argv[0], std::move(M), std::move(MIR),
                                   std::move(Target), std::move(Out),
                                   std::move(DwoOut), Context, TLII, VK,
                                   PassPipeline, codegen::getFileType());
   }
 
+  fprintf(stderr, "DEBUG LLC: Using legacy pass manager\n");
+  fflush(stderr);
   // Build up all of the passes that we want to do to the module.
+  fprintf(stderr, "DEBUG LLC: Creating legacy::PassManager\n");
+  fflush(stderr);
   legacy::PassManager PM;
+  fprintf(stderr, "DEBUG LLC: PassManager created\n");
+  fflush(stderr);
+  fprintf(stderr, "DEBUG LLC: Adding TargetLibraryInfoWrapperPass\n");
+  fflush(stderr);
   PM.add(new TargetLibraryInfoWrapperPass(TLII));
+  fprintf(stderr, "DEBUG LLC: TargetLibraryInfoWrapperPass added\n");
+  fflush(stderr);
+  fprintf(stderr, "DEBUG LLC: Adding RuntimeLibraryInfoWrapper\n");
+  fflush(stderr);
   PM.add(new RuntimeLibraryInfoWrapper(
       TheTriple, Target->Options.ExceptionModel, Target->Options.FloatABIType,
       Target->Options.EABIVersion, Options.MCOptions.ABIName,
       Target->Options.VecLib));
+  fprintf(stderr, "DEBUG LLC: RuntimeLibraryInfoWrapper added\n");
+  fflush(stderr);
 
+  fprintf(stderr, "DEBUG LLC: Entering output stream setup block\n");
+  fflush(stderr);
   {
+    fprintf(stderr, "DEBUG LLC: About to get Out->os() (Out=%p)\n", (void*)Out.get());
+    fflush(stderr);
     raw_pwrite_stream *OS = &Out->os();
+    fprintf(stderr, "DEBUG LLC: Got Out->os() successfully (OS=%p)\n", (void*)OS);
+    fflush(stderr);
 
     // Manually do the buffering rather than using buffer_ostream,
     // so we can memcmp the contents in CompileTwice mode
+    fprintf(stderr, "DEBUG LLC: Creating SmallVector Buffer\n");
+    fflush(stderr);
     SmallVector<char, 0> Buffer;
+    fprintf(stderr, "DEBUG LLC: Buffer created\n");
+    fflush(stderr);
     std::unique_ptr<raw_svector_ostream> BOS;
-    if ((codegen::getFileType() != CodeGenFileType::AssemblyFile &&
-         !Out->os().supportsSeeking()) ||
-        CompileTwice) {
+    fprintf(stderr, "DEBUG LLC: Checking file type and CompileTwice\n");
+    fflush(stderr);
+    fprintf(stderr, "DEBUG LLC: Getting file type\n");
+    fflush(stderr);
+    CodeGenFileType FileType = codegen::getFileType();
+    fprintf(stderr, "DEBUG LLC: FileType = %d\n", (int)FileType);
+    fflush(stderr);
+    bool NeedBuffer = false;
+    if (FileType != CodeGenFileType::AssemblyFile) {
+      fprintf(stderr, "DEBUG LLC: Not assembly file, checking supportsSeeking\n");
+      fflush(stderr);
+      fprintf(stderr, "DEBUG LLC: About to call Out->os() second time\n");
+      fflush(stderr);
+      bool Supports = Out->os().supportsSeeking();
+      fprintf(stderr, "DEBUG LLC: supportsSeeking returned %d\n", (int)Supports);
+      fflush(stderr);
+      NeedBuffer = !Supports;
+    }
+    fprintf(stderr, "DEBUG LLC: CompileTwice = %d, NeedBuffer = %d\n", (int)CompileTwice, (int)NeedBuffer);
+    fflush(stderr);
+    if (NeedBuffer || CompileTwice) {
+      fprintf(stderr, "DEBUG LLC: Creating BOS\n");
+      fflush(stderr);
       BOS = std::make_unique<raw_svector_ostream>(Buffer);
+      fprintf(stderr, "DEBUG LLC: BOS created\n");
+      fflush(stderr);
       OS = BOS.get();
     }
 
+    fprintf(stderr, "DEBUG LLC: Getting argv[0]\n");
+    fflush(stderr);
     const char *argv0 = argv[0];
+    fprintf(stderr, "DEBUG LLC: argv0 = %s\n", argv0);
+    fflush(stderr);
+    fprintf(stderr, "DEBUG LLC: Creating MachineModuleInfoWrapperPass (Target=%p)\n", (void*)Target.get());
+    fflush(stderr);
     MachineModuleInfoWrapperPass *MMIWP =
         new MachineModuleInfoWrapperPass(Target.get());
+    fprintf(stderr, "DEBUG LLC: MachineModuleInfoWrapperPass created (MMIWP=%p)\n", (void*)MMIWP);
+    fflush(stderr);
 
     // Set a temporary diagnostic handler. This is used before
     // MachineModuleInfoWrapperPass::doInitialization for features like -M.
+    fprintf(stderr, "DEBUG LLC: Setting up diagnostic handler\n");
+    fflush(stderr);
     bool HasMCErrors = false;
-    MCContext &MCCtx = MMIWP->getMMI().getContext();
+    fprintf(stderr, "DEBUG LLC: Getting MMI\n");
+    fflush(stderr);
+    MachineModuleInfo &MMI = MMIWP->getMMI();
+    fprintf(stderr, "DEBUG LLC: Getting MCContext\n");
+    fflush(stderr);
+    MCContext &MCCtx = MMI.getContext();
+    fprintf(stderr, "DEBUG LLC: MCContext obtained, setting diagnostic handler\n");
+    fflush(stderr);
     MCCtx.setDiagnosticHandler([&](const SMDiagnostic &SMD, bool IsInlineAsm,
                                    const SourceMgr &SrcMgr,
                                    std::vector<const MDNode *> &LocInfos) {
       WithColor::error(errs(), argv0) << SMD.getMessage() << '\n';
       HasMCErrors = true;
     });
+    fprintf(stderr, "DEBUG LLC: Diagnostic handler set\n");
+    fflush(stderr);
 
     // Construct a custom pass pipeline that starts after instruction
     // selection.
+    fprintf(stderr, "DEBUG LLC: Checking getRunPassNames()\n");
+    fflush(stderr);
     if (!getRunPassNames().empty()) {
+      fprintf(stderr, "DEBUG LLC: getRunPassNames() is not empty, processing run-pass\n");
+      fflush(stderr);
       if (!MIR) {
         WithColor::error(errs(), argv[0])
             << "run-pass is for .mir file only.\n";
@@ -974,13 +1198,26 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
 
       PM.add(createFreeMachineFunctionPass());
     } else {
+      fprintf(stderr, "DEBUG LLC: Entering normal code generation path (not run-pass)\n");
+      fflush(stderr);
+      fprintf(stderr, "DEBUG LLC: About to call Target->addPassesToEmitFile\n");
+      fflush(stderr);
+      fprintf(stderr, "DEBUG LLC: Target=%p, OS=%p, FileType=%d, NoVerify=%d, MMIWP=%p\n",
+              (void*)Target.get(), (void*)OS, (int)codegen::getFileType(), (int)NoVerify, (void*)MMIWP);
+      fflush(stderr);
       if (Target->addPassesToEmitFile(PM, *OS, DwoOut ? &DwoOut->os() : nullptr,
                                       codegen::getFileType(), NoVerify,
                                       MMIWP)) {
+        fprintf(stderr, "DEBUG LLC: addPassesToEmitFile returned true (error)\n");
+        fflush(stderr);
         if (!HasMCErrors)
           reportError("target does not support generation of this file type");
       }
+      fprintf(stderr, "DEBUG LLC: addPassesToEmitFile completed successfully\n");
+      fflush(stderr);
 
+      fprintf(stderr, "DEBUG LLC: Checking MIR2Vec options\n");
+      fflush(stderr);
       // Add MIR2Vec vocabulary printer if requested
       if (PrintMIR2VecVocab) {
         PM.add(createMIR2VecVocabPrinterLegacyPass(errs()));
@@ -990,32 +1227,52 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
       if (PrintMIR2Vec) {
         PM.add(createMIR2VecPrinterLegacyPass(errs()));
       }
+      fprintf(stderr, "DEBUG LLC: MIR2Vec checks done\n");
+      fflush(stderr);
     }
 
+    fprintf(stderr, "DEBUG LLC: About to initialize ObjFileLowering\n");
+    fflush(stderr);
     Target->getObjFileLowering()->Initialize(MMIWP->getMMI().getContext(),
                                              *Target);
+    fprintf(stderr, "DEBUG LLC: ObjFileLowering initialized\n");
+    fflush(stderr);
     if (MIR) {
+      fprintf(stderr, "DEBUG LLC: Parsing MIR\n");
+      fflush(stderr);
       assert(MMIWP && "Forgot to create MMIWP?");
       if (MIR->parseMachineFunctions(*M, MMIWP->getMMI()))
         return 1;
     }
 
+    fprintf(stderr, "DEBUG LLC: About to print option values\n");
+    fflush(stderr);
     // Before executing passes, print the final values of the LLVM options.
     cl::PrintOptionValues();
+    fprintf(stderr, "DEBUG LLC: Option values printed\n");
+    fflush(stderr);
 
+    fprintf(stderr, "DEBUG LLC: Checking CompileTwice (CompileTwice=%d)\n", (int)CompileTwice);
+    fflush(stderr);
     // If requested, run the pass manager over the same module again,
     // to catch any bugs due to persistent state in the passes. Note that
     // opt has the same functionality, so it may be worth abstracting this out
     // in the future.
     SmallVector<char, 0> CompileTwiceBuffer;
     if (CompileTwice) {
+      fprintf(stderr, "DEBUG LLC: Running PM twice\n");
+      fflush(stderr);
       std::unique_ptr<Module> M2(llvm::CloneModule(*M));
       PM.run(*M2);
       CompileTwiceBuffer = Buffer;
       Buffer.clear();
     }
 
+    fprintf(stderr, "DEBUG LLC: About to run PM.run(*M)\n");
+    fflush(stderr);
     PM.run(*M);
+    fprintf(stderr, "DEBUG LLC: PM.run(*M) completed\n");
+    fflush(stderr);
 
     if (Context.getDiagHandlerPtr()->HasErrors || HasMCErrors)
       return 1;

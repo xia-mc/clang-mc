@@ -48,7 +48,10 @@ using namespace llvm;
 
 McasmAsmPrinter::McasmAsmPrinter(TargetMachine &TM,
                                  std::unique_ptr<MCStreamer> Streamer)
-    : AsmPrinter(TM, std::move(Streamer)), Subtarget(nullptr) {}
+    : AsmPrinter(TM, std::move(Streamer)), Subtarget(nullptr) {
+  fprintf(stderr, "DEBUG: McasmAsmPrinter constructor completed\n");
+  fflush(stderr);
+}
 
 void McasmAsmPrinter::emitStartOfAsmFile(Module &M) {
   // mcasm requires #include "_ll_std" at the start of every file
@@ -156,5 +159,9 @@ void McasmAsmPrinter::emitGlobalVariable(const GlobalVariable *GV) {
 
 // Register the AsmPrinter
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeMcasmAsmPrinter() {
+  fprintf(stderr, "DEBUG: LLVMInitializeMcasmAsmPrinter called\n");
+  fflush(stderr);
   RegisterAsmPrinter<McasmAsmPrinter> X(getTheMcasm_32Target());
+  fprintf(stderr, "DEBUG: LLVMInitializeMcasmAsmPrinter completed\n");
+  fflush(stderr);
 }
