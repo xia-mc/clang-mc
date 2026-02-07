@@ -130,3 +130,21 @@ void McasmInstPrinter::printMemReference(const MCInst *MI, unsigned Op,
   // mcasm doesn't use segment registers
   (void)SegmentReg;
 }
+
+void McasmInstPrinter::printPCRelImm(const MCInst *MI, uint64_t Address,
+                                     unsigned OpNo, const MCSubtargetInfo &STI,
+                                     raw_ostream &OS) {
+  (void)Address; // Unused for mcasm
+  (void)STI; // Unused for mcasm
+  const MCOperand &Op = MI->getOperand(OpNo);
+
+  if (Op.isImm()) {
+    // PC-relative immediate - print as-is (label will be resolved by assembler)
+    OS << Op.getImm();
+  } else if (Op.isExpr()) {
+    // Expression operand (e.g., label reference)
+    OS << "LABEL_EXPR";  // TODO: Implement proper MCExpr printing
+  } else {
+    llvm_unreachable("Unknown operand type in printPCRelImm");
+  }
+}

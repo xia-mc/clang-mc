@@ -95,6 +95,13 @@ def i32imm_pcrel : Operand<i32> {
   let PrintMethod = "printPCRelImm";
 }
 
+// Branch target operands
+def brtarget32 : Operand<OtherVT> {
+  let PrintMethod = "printPCRelImm";
+  let EncoderMethod = "getJumpTargetOpValue";
+  let OperandType = "OPERAND_PCREL";
+}
+
 //===----------------------------------------------------------------------===//
 // Address Operand
 //===----------------------------------------------------------------------===//
