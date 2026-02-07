@@ -121,11 +121,14 @@ McasmELFMCAsmInfo::McasmELFMCAsmInfo(const Triple &T) {
   AssemblerDialect = McasmAsmSyntax;
   AllowDollarAtStartOfIdentifier = false;
 
-  // Debug Information
-  SupportsDebugInformation = true;
+  // mcasm doesn't need debug information or exception handling
+  SupportsDebugInformation = false;
+  ExceptionsType = ExceptionHandling::None;
 
-  // Exceptions handling
-  ExceptionsType = ExceptionHandling::DwarfCFI;
+  // Disable ELF-specific directives that are not needed for mcasm
+  WeakDirective = nullptr;  // Disable .weak directive
+  HasIdentDirective = false;  // Disable .ident directive
+  HasDotTypeDotSizeDirective = false;  // Disable .type and .size directives
 
   initializeAtSpecifiers(atSpecifiers);
 }

@@ -67,6 +67,24 @@ void McasmAsmPrinter::emitEndOfAsmFile(Module &M) {
   // Nothing special needed at end of file for mcasm
 }
 
+bool McasmAsmPrinter::runOnMachineFunction(MachineFunction &MF) {
+  // Set subtarget
+  Subtarget = &MF.getSubtarget<McasmSubtarget>();
+
+  // Call base class implementation
+  return AsmPrinter::runOnMachineFunction(MF);
+}
+
+void McasmAsmPrinter::emitFunctionBodyStart() {
+  // mcasm doesn't need CFI directives (.cfi_startproc)
+  // Override to prevent base class from emitting them
+}
+
+void McasmAsmPrinter::emitFunctionBodyEnd() {
+  // mcasm doesn't need CFI directives (.cfi_endproc) or .size directives
+  // Override to prevent base class from emitting them
+}
+
 void McasmAsmPrinter::emitFunctionEntryLabel() {
   fprintf(stderr, "DEBUG: McasmAsmPrinter::emitFunctionEntryLabel called\n");
   fflush(stderr);

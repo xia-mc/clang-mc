@@ -39,13 +39,12 @@ public:
   void emitStartOfAsmFile(Module &M) override;
   void emitEndOfAsmFile(Module &M) override;
   void emitFunctionEntryLabel() override;
+  void emitFunctionBodyStart() override;
+  void emitFunctionBodyEnd() override;
   void emitInstruction(const MachineInstr *MI) override;
   void emitGlobalVariable(const GlobalVariable *GV) override;
 
-  bool runOnMachineFunction(MachineFunction &MF) override {
-    Subtarget = &MF.getSubtarget<McasmSubtarget>();
-    return AsmPrinter::runOnMachineFunction(MF);
-  }
+  bool runOnMachineFunction(MachineFunction &MF) override;
 };
 
 } // namespace llvm
