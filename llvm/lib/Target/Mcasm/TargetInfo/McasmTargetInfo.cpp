@@ -9,6 +9,7 @@
 #include "TargetInfo/McasmTargetInfo.h"
 #include "llvm-c/Visibility.h"
 #include "llvm/MC/TargetRegistry.h"
+#include "llvm/Support/raw_ostream.h"
 using namespace llvm;
 
 Target &llvm::getTheMcasm_32Target() {
@@ -22,9 +23,15 @@ Target &llvm::getTheMcasm_64Target() {
 }
 
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTargetInfo() {
+  llvm::outs() << "DEBUG: LLVMInitializeMcasmTargetInfo called\n";
+  llvm::outs().flush();
+
   // Register mcasm as its own architecture (not x86)
   RegisterTarget<Triple::mcasm, /*HasJIT=*/true> X(
       getTheMcasm_32Target(), "mcasm", "32-bit Mcasm (Minecraft assembly)", "Mcasm");
+
+  llvm::outs() << "DEBUG: RegisterTarget completed\n";
+  llvm::outs().flush();
 
   // Note: 64-bit not supported - mcasm is 32-bit only
   // Keep getTheMcasm_64Target for compatibility but don't register it

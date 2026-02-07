@@ -14,6 +14,7 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/CodeGen/GlobalISel/CallLowering.h"
 #include "llvm/CodeGen/GlobalISel/InstructionSelector.h"
 #include "llvm/CodeGen/GlobalISel/LegalizerInfo.h"
@@ -55,7 +56,9 @@ public:
 // MCASM NOTE: Minimal target initialization - only register the 32-bit target
 // Mcasm is 32-bit only, so we don't register the 64-bit target
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTarget() {
+  llvm::errs() << "DEBUG: LLVMInitializeMcasmTarget called\n";
   RegisterTargetMachine<McasmTargetMachine> X(getTheMcasm_32Target());
+  llvm::errs() << "DEBUG: RegisterTargetMachine completed\n";
   // Note: getTheMcasm_64Target() exists for compatibility but is NOT registered
 }
 
@@ -76,7 +79,9 @@ McasmTargetMachine::McasmTargetMachine(const Target &T, const Triple &TT,
                                RM.value_or(Reloc::Static),
                                CM.value_or(CodeModel::Small), OL),
       TLOF(createTLOF(getTargetTriple())), IsJIT(JIT) {
+  llvm::errs() << "DEBUG: McasmTargetMachine constructor called\n";
   initAsmInfo();
+  llvm::errs() << "DEBUG: initAsmInfo completed\n";
 }
 
 McasmTargetMachine::~McasmTargetMachine() = default;
