@@ -157,5 +157,4 @@ void McasmAsmPrinter::emitGlobalVariable(const GlobalVariable *GV) {
 // Register the AsmPrinter
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeMcasmAsmPrinter() {
   RegisterAsmPrinter<McasmAsmPrinter> X(getTheMcasm_32Target());
-  RegisterAsmPrinter<McasmAsmPrinter> Y(getTheMcasm_64Target());
 }

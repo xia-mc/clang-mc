@@ -164,50 +164,46 @@ static MCInstrAnalysis *createMcasmMCInstrAnalysis(const MCInstrInfo *Info) {
 
 // Force static initialization
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTargetMC() {
-  // Register for both 32-bit and 64-bit targets
-  // (mcasm only uses 32-bit but we register both for compatibility)
-  for (Target *T : {&getTheMcasm_32Target(), &getTheMcasm_64Target()}) {
-    // Register the MC asm info.
-    RegisterMCAsmInfoFn X(*T, createMcasmMCAsmInfo);
+  // Register the 32-bit mcasm target
+  Target *T = &getTheMcasm_32Target();
 
-    // Register the MC instruction info.
-    TargetRegistry::RegisterMCInstrInfo(*T, createMcasmMCInstrInfo);
+  // Register the MC asm info.
+  RegisterMCAsmInfoFn X(*T, createMcasmMCAsmInfo);
 
-    // Register the MC register info.
-    TargetRegistry::RegisterMCRegInfo(*T, createMcasmMCRegisterInfo);
+  // Register the MC instruction info.
+  TargetRegistry::RegisterMCInstrInfo(*T, createMcasmMCInstrInfo);
 
-    // Register the MC subtarget info.
-    TargetRegistry::RegisterMCSubtargetInfo(*T,
-                                            Mcasm_MC::createMcasmMCSubtargetInfo);
+  // Register the MC register info.
+  TargetRegistry::RegisterMCRegInfo(*T, createMcasmMCRegisterInfo);
 
-    // Register the MC instruction analyzer.
-    TargetRegistry::RegisterMCInstrAnalysis(*T, createMcasmMCInstrAnalysis);
+  // Register the MC subtarget info.
+  TargetRegistry::RegisterMCSubtargetInfo(*T,
+                                          Mcasm_MC::createMcasmMCSubtargetInfo);
 
-    // Register the code emitter.
-    TargetRegistry::RegisterMCCodeEmitter(*T, createMcasmMCCodeEmitter);
+  // Register the MC instruction analyzer.
+  TargetRegistry::RegisterMCInstrAnalysis(*T, createMcasmMCInstrAnalysis);
 
-    // Register the obj target streamer.
-    TargetRegistry::RegisterObjectTargetStreamer(*T,
-        [](MCStreamer &S, const MCSubtargetInfo &STI) -> MCTargetStreamer* {
-          return createMcasmObjectTargetStreamer(S, STI);
-        });
+  // Register the code emitter.
+  TargetRegistry::RegisterMCCodeEmitter(*T, createMcasmMCCodeEmitter);
 
-    // Register the asm target streamer.
-    TargetRegistry::RegisterAsmTargetStreamer(*T, createMcasmAsmTargetStreamer);
+  // Register the obj target streamer.
+  TargetRegistry::RegisterObjectTargetStreamer(*T,
+      [](MCStreamer &S, const MCSubtargetInfo &STI) -> MCTargetStreamer* {
+        return createMcasmObjectTargetStreamer(S, STI);
+      });
 
-    // Register the null streamer.
-    TargetRegistry::RegisterNullTargetStreamer(*T,
-        [](MCStreamer &S) -> MCTargetStreamer* {
-          return createMcasmNullTargetStreamer(S);
-        });
+  // Register the asm target streamer.
+  TargetRegistry::RegisterAsmTargetStreamer(*T, createMcasmAsmTargetStreamer);
 
-    // Register the MCInstPrinter.
-    TargetRegistry::RegisterMCInstPrinter(*T, createMcasmMCInstPrinter);
-  }
+  // Register the null streamer.
+  TargetRegistry::RegisterNullTargetStreamer(*T,
+      [](MCStreamer &S) -> MCTargetStreamer* {
+        return createMcasmNullTargetStreamer(S);
+      });
 
-  // Register the asm backend (separate for 32 and 64-bit)
-  TargetRegistry::RegisterMCAsmBackend(getTheMcasm_32Target(),
-                                       createMcasm_32AsmBackend);
-  TargetRegistry::RegisterMCAsmBackend(getTheMcasm_64Target(),
-                                       createMcasm_64AsmBackend);
+  // Register the MCInstPrinter.
+  TargetRegistry::RegisterMCInstPrinter(*T, createMcasmMCInstPrinter);
+
+  // Register the asm backend
+  TargetRegistry::RegisterMCAsmBackend(*T, createMcasm_32AsmBackend);
 }

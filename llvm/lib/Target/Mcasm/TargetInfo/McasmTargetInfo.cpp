@@ -17,11 +17,6 @@ Target &llvm::getTheMcasm_32Target() {
   return TheMcasm_32Target;
 }
 
-Target &llvm::getTheMcasm_64Target() {
-  static Target TheMcasm_64Target;
-  return TheMcasm_64Target;
-}
-
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTargetInfo() {
   llvm::outs() << "DEBUG: LLVMInitializeMcasmTargetInfo called\n";
   llvm::outs().flush();
@@ -32,7 +27,4 @@ extern "C" LLVM_C_ABI void LLVMInitializeMcasmTargetInfo() {
 
   llvm::outs() << "DEBUG: RegisterTarget completed\n";
   llvm::outs().flush();
-
-  // Note: 64-bit not supported - mcasm is 32-bit only
-  // Keep getTheMcasm_64Target for compatibility but don't register it
 }

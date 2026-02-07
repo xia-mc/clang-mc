@@ -14,7 +14,6 @@ namespace llvm {
 class Target;
 
 Target &getTheMcasm_32Target();
-Target &getTheMcasm_64Target();
 
 }
 

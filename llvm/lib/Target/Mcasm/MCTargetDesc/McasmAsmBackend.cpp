@@ -91,11 +91,3 @@ MCAsmBackend *llvm::createMcasm_32AsmBackend(const Target &T,
                                              const MCTargetOptions &Options) {
   return new McasmAsmBackend(T, STI);
 }
-
-MCAsmBackend *llvm::createMcasm_64AsmBackend(const Target &T,
-                                             const MCSubtargetInfo &STI,
-                                             const MCRegisterInfo &MRI,
-                                             const MCTargetOptions &Options) {
-  // mcasm is 32-bit only, but we register both for compatibility
-  return new McasmAsmBackend(T, STI);
-}

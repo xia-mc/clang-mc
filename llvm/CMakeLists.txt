@@ -524,6 +524,7 @@ set(LLVM_ALL_TARGETS
   Hexagon
   Lanai
   LoongArch
+  Mcasm
   Mips
   MSP430
   NVPTX
@@ -543,7 +544,6 @@ set(LLVM_ALL_EXPERIMENTAL_TARGETS
   CSKY
   DirectX
   M68k
-  Mcasm
   Xtensa
 )
 

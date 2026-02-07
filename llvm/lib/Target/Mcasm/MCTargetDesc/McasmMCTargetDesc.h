@@ -107,10 +107,6 @@ MCAsmBackend *createMcasm_32AsmBackend(const Target &T,
                                      const MCSubtargetInfo &STI,
                                      const MCRegisterInfo &MRI,
                                      const MCTargetOptions &Options);
-MCAsmBackend *createMcasm_64AsmBackend(const Target &T,
-                                     const MCSubtargetInfo &STI,
-                                     const MCRegisterInfo &MRI,
-                                     const MCTargetOptions &Options);
 
 /// Implements Mcasm-only directives for assembly emission.
 MCTargetStreamer *createMcasmAsmTargetStreamer(MCStreamer &S,
