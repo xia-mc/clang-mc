@@ -25,6 +25,7 @@
 #include "Targets/Lanai.h"
 #include "Targets/LoongArch.h"
 #include "Targets/M68k.h"
+#include "Targets/Mcasm.h"
 #include "Targets/MSP430.h"
 #include "Targets/Mips.h"
 #include "Targets/NVPTX.h"
@@ -663,6 +664,10 @@ std::unique_ptr<TargetInfo> AllocateTarget(const llvm::Triple &Triple,
     default:
       return std::make_unique<X86_64TargetInfo>(Triple, Opts);
     }
+
+  case llvm::Triple::mcasm:
+    // Mcasm (Minecraft assembly) - 32-bit only
+    return std::make_unique<McasmTargetInfo>(Triple, Opts);
 
   case llvm::Triple::spir: {
     if (os != llvm::Triple::UnknownOS ||
