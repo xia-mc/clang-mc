@@ -73,11 +73,44 @@ def ADD32mi : Ii32<0x81, MRM0m, (outs), (ins i32mem:$dst, i32imm:$src),
 } // Defs = [EFLAGS]
 
 //===----------------------------------------------------------------------===//
-// RET - Return instruction
+// SUB - Subtract instruction
 //===----------------------------------------------------------------------===//
 
-// RET - Pseudo instruction for return
-let isTerminator = 1, isReturn = 1, isBarrier = 1, hasCtrlDep = 1, isPseudo = 1 in {
-  def RET : I<0, Pseudo, (outs), (ins i32imm:$adj, variable_ops),
-              "#RET", [(Mcasmretglue timm:$adj)]>;
+let Defs = [EFLAGS] in {
+
+// SUB - Register from Register
+def SUB32rr : I<0x29, MRMDestReg, (outs GR32:$dst), (ins GR32:$src1, GR32:$src2),
+                "sub\t{$src2, $dst|$dst, $src2}",
+                [(set GR32:$dst, (sub GR32:$src1, GR32:$src2))]>;
+
+// SUB - Immediate from Register
+def SUB32ri : Ii32<0x81, MRM5r, (outs GR32:$dst), (ins GR32:$src1, i32imm:$src2),
+                   "sub\t{$src2, $dst|$dst, $src2}",
+                   [(set GR32:$dst, (sub GR32:$src1, imm:$src2))]>;
+
+// SUB - Memory from Register
+def SUB32rm : I<0x2B, MRMSrcMem, (outs GR32:$dst), (ins GR32:$src1, i32mem:$src2),
+                "sub\t{$src2, $dst|$dst, $src2}",
+                [(set GR32:$dst, (sub GR32:$src1, (load addr:$src2)))]>;
+
+// SUB - Register from Memory (read-modify-write)
+def SUB32mr : I<0x29, MRMDestMem, (outs), (ins i32mem:$dst, GR32:$src),
+                "sub\t{$src, $dst|$dst, $src}",
+                [(store (sub (load addr:$dst), GR32:$src), addr:$dst)]>;
+
+// SUB - Immediate from Memory (read-modify-write)
+def SUB32mi : Ii32<0x81, MRM5m, (outs), (ins i32mem:$dst, i32imm:$src),
+                   "sub\t{$src, $dst|$dst, $src}",
+                   [(store (sub (load addr:$dst), (i32 imm:$src)), addr:$dst)]>;
+
+} // Defs = [EFLAGS]
+
+//===----------------------------------------------------------------------===//
+// RET - Return instruction (mcasm native - no parameters)
+//===----------------------------------------------------------------------===//
+
+// RET - Real mcasm return instruction (not pseudo)
+// mcasm RET has NO parameters - caller cleanup is done by caller with ADD/POP
+let isTerminator = 1, isReturn = 1, isBarrier = 1, hasCtrlDep = 1 in {
+  def RET : I<0xC3, RawFrm, (outs), (ins), "ret", [(Mcasmretglue)]>;
 }

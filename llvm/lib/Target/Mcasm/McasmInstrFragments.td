@@ -77,7 +77,9 @@ def SDTLockBinaryArithWithFlags : SDTypeProfile<1, 2, [SDTCisVT<0, i32>,
 def SDTLockUnaryArithWithFlags : SDTypeProfile<1, 1, [SDTCisVT<0, i32>,
                                                       SDTCisPtrTy<1>]>;
 
-def SDTMcasmRet     : SDTypeProfile<0, -1, [SDTCisVT<0, i32>]>;
+// mcasm RET has no parameters (caller cleanup done by caller with ADD/POP)
+// Allow variadic operands for return value registers in glue chain
+def SDTMcasmRet     : SDTypeProfile<0, -1, []>;
 
 def SDT_McasmCallSeqStart : SDCallSeqStart<[SDTCisVT<0, i32>,
                                           SDTCisVT<1, i32>]>;

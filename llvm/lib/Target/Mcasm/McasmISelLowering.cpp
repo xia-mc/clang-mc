@@ -247,8 +247,9 @@ SDValue McasmTargetLowering::LowerReturn(
   SmallVector<SDValue, 4> RetOps;
   RetOps.push_back(Chain);  // Operand 0: Chain
 
-  // Operand 1: Stack adjustment (0 for mcasm - no caller cleanup needed)
-  RetOps.push_back(DAG.getTargetConstant(0, dl, MVT::i32));
+  // NOTE: mcasm RET instruction has NO parameters
+  // Caller cleanup is done by caller using ADD rsp or POP after CALL
+  // (see ZH_Calling-Convention.md: "调用者清理")
 
   // Copy return values to their assigned locations
   for (unsigned i = 0, e = RVLocs.size(); i != e; ++i) {
