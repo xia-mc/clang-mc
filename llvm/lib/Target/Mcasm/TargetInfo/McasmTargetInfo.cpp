@@ -18,13 +18,16 @@ Target &llvm::getTheMcasm_32Target() {
 }
 
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTargetInfo() {
-  llvm::outs() << "DEBUG: LLVMInitializeMcasmTargetInfo called\n";
-  llvm::outs().flush();
+  fprintf(stderr, "DEBUG: LLVMInitializeMcasmTargetInfo called\n");
+  fflush(stderr);
+
+  fprintf(stderr, "DEBUG: About to create RegisterTarget\n");
+  fflush(stderr);
 
   // Register mcasm as its own architecture (not x86)
   RegisterTarget<Triple::mcasm, /*HasJIT=*/true> X(
       getTheMcasm_32Target(), "mcasm", "32-bit Mcasm (Minecraft assembly)", "Mcasm");
 
-  llvm::outs() << "DEBUG: RegisterTarget completed\n";
-  llvm::outs().flush();
+  fprintf(stderr, "DEBUG: RegisterTarget completed\n");
+  fflush(stderr);
 }

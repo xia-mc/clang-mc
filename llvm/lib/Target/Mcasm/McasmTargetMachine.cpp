@@ -60,9 +60,18 @@ extern "C" LLVM_C_ABI void LLVMInitializeMcasmTarget() {
   llvm::errs() << "DEBUG: RegisterTargetMachine completed\n";
 }
 
+static void debugLog(const char *msg) {
+  llvm::errs() << "DEBUG: " << msg << "\n";
+  llvm::errs().flush();
+}
+
 static std::unique_ptr<TargetLoweringObjectFile> createTLOF(const Triple &TT) {
-  if (TT.isOSBinFormatCOFF())
+  debugLog("createTLOF called");
+  if (TT.isOSBinFormatCOFF()) {
+    debugLog("Creating COFF TLOF");
     return std::make_unique<TargetLoweringObjectFileCOFF>();
+  }
+  debugLog("Creating ELF TLOF");
   return std::make_unique<McasmELFTargetObjectFile>();
 }
 
@@ -72,17 +81,16 @@ McasmTargetMachine::McasmTargetMachine(const Target &T, const Triple &TT,
                                        std::optional<Reloc::Model> RM,
                                        std::optional<CodeModel::Model> CM,
                                        CodeGenOptLevel OL, bool JIT)
-    : CodeGenTargetMachineImpl(T, "e-p:32:32-i8:32-i16:32-i32:32-f32:32-a:0:32-n32",
+    : CodeGenTargetMachineImpl(([&]() { debugLog("Before base class constructor"); return T; })(),
+                               "e-p:32:32-i8:32-i16:32-i32:32-f32:32-a:0:32-n32",
                                TT, CPU, FS, Options,
                                RM.value_or(Reloc::Static),
                                CM.value_or(CodeModel::Small), OL),
       TLOF(createTLOF(getTargetTriple())), IsJIT(JIT) {
-  llvm::errs() << "DEBUG: McasmTargetMachine::McasmTargetMachine entered\n";
-  llvm::errs() << "DEBUG: About to call initAsmInfo()\n";
-  llvm::errs().flush();
+  debugLog("McasmTargetMachine constructor body entered");
+  debugLog("About to call initAsmInfo()");
   initAsmInfo();
-  llvm::errs() << "DEBUG: initAsmInfo() completed\n";
-  llvm::errs().flush();
+  debugLog("initAsmInfo() completed");
 }
 
 McasmTargetMachine::~McasmTargetMachine() = default;

@@ -98,18 +98,30 @@ MCSubtargetInfo *llvm::Mcasm_MC::createMcasmMCSubtargetInfo(
 }
 
 static MCInstrInfo *createMcasmMCInstrInfo() {
+  llvm::errs() << "DEBUG: createMcasmMCInstrInfo called\n";
+  llvm::errs().flush();
   MCInstrInfo *X = new MCInstrInfo();
+  llvm::errs() << "DEBUG: About to call InitMcasmMCInstrInfo\n";
+  llvm::errs().flush();
   InitMcasmMCInstrInfo(X);
+  llvm::errs() << "DEBUG: InitMcasmMCInstrInfo completed\n";
+  llvm::errs().flush();
   return X;
 }
 
 static MCRegisterInfo *createMcasmMCRegisterInfo(const Triple &TT) {
+  llvm::errs() << "DEBUG: createMcasmMCRegisterInfo called\n";
+  llvm::errs().flush();
   // mcasm uses rax as the return address register (placeholder)
   (void)TT;
   unsigned RA = Mcasm::rax;
 
   MCRegisterInfo *X = new MCRegisterInfo();
+  llvm::errs() << "DEBUG: About to call InitMcasmMCRegisterInfo\n";
+  llvm::errs().flush();
   InitMcasmMCRegisterInfo(X, RA, 0, 0, RA);
+  llvm::errs() << "DEBUG: InitMcasmMCRegisterInfo completed\n";
+  llvm::errs().flush();
   return X;
 }
 
