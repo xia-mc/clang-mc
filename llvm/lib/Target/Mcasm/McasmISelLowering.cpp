@@ -241,8 +241,15 @@ SDValue McasmTargetLowering::LowerReturn(
 }
 
 const char *McasmTargetLowering::getTargetNodeName(unsigned Opcode) const {
-  // Return nullptr for now - no custom target nodes defined yet
-  return nullptr;
+  switch (Opcode) {
+  default: return nullptr;
+  case McasmISD::CALL:            return "McasmISD::CALL";
+  case McasmISD::RET_GLUE:        return "McasmISD::RET_GLUE";
+  case McasmISD::CMP:             return "McasmISD::CMP";
+  case McasmISD::BRCOND:          return "McasmISD::BRCOND";
+  case McasmISD::Wrapper:         return "McasmISD::Wrapper";
+  case McasmISD::WrapperPIC:      return "McasmISD::WrapperPIC";
+  }
 }
 
 SDValue McasmTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {

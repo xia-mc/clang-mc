@@ -64,7 +64,15 @@ unsigned llvm::Mcasm_MC::getDwarfRegFlavour(const Triple &TT, bool isEH) {
 
 MCSubtargetInfo *llvm::Mcasm_MC::createMcasmMCSubtargetInfo(
     const Triple &TT, StringRef CPU, StringRef FS) {
+  llvm::errs() << "DEBUG: createMcasmMCSubtargetInfo called\n";
+  llvm::errs() << "DEBUG:   Triple = " << TT.str() << "\n";
+  llvm::errs() << "DEBUG:   Triple.getArch() = " << TT.getArchName() << "\n";
+  llvm::errs().flush();
+
   std::string ArchFS = Mcasm_MC::ParseMcasmTriple(TT);
+  llvm::errs() << "DEBUG:   ArchFS = " << ArchFS << "\n";
+  llvm::errs().flush();
+
   assert(!ArchFS.empty() && "Empty ArchFS string");
 
   if (!FS.empty()) {
@@ -77,7 +85,16 @@ MCSubtargetInfo *llvm::Mcasm_MC::createMcasmMCSubtargetInfo(
 
   std::string TuneCPU = CPUName;  // Use same CPU for tuning
 
-  return createMcasmMCSubtargetInfoImpl(TT, CPUName, TuneCPU, ArchFS);
+  llvm::errs() << "DEBUG:   CPUName = " << CPUName << "\n";
+  llvm::errs() << "DEBUG:   About to call createMcasmMCSubtargetInfoImpl\n";
+  llvm::errs().flush();
+
+  MCSubtargetInfo *STI = createMcasmMCSubtargetInfoImpl(TT, CPUName, TuneCPU, ArchFS);
+
+  llvm::errs() << "DEBUG: createMcasmMCSubtargetInfo completed\n";
+  llvm::errs().flush();
+
+  return STI;
 }
 
 static MCInstrInfo *createMcasmMCInstrInfo() {
@@ -99,7 +116,7 @@ static MCRegisterInfo *createMcasmMCRegisterInfo(const Triple &TT) {
 static MCAsmInfo *createMcasmMCAsmInfo(const MCRegisterInfo &MRI,
                                        const Triple &TheTriple,
                                        const MCTargetOptions &Options) {
-  bool is64Bit = TheTriple.getArch() == Triple::x86_64;
+  llvm::errs() << "DEBUG: createMcasmMCAsmInfo called\n";
 
   MCAsmInfo *MAI;
   if (TheTriple.isOSBinFormatMachO()) {
@@ -113,15 +130,17 @@ static MCAsmInfo *createMcasmMCAsmInfo(const MCRegisterInfo &MRI,
     MAI = new McasmELFMCAsmInfo(TheTriple);
   }
 
-  // Initialize asm info
-  // mcasm uses rsp as stack pointer (32-bit, 4 bytes)
-  (void)is64Bit;
-  unsigned SP = Mcasm::rsp;
-  MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr,
-                                                       MRI.getDwarfRegNum(SP, true),
-                                                       4);  // mcasm is 32-bit
-  MAI->addInitialFrameState(Inst);
+  llvm::errs() << "DEBUG: MAI created, initializing frame state\n";
 
+  // For now, skip CFI initialization to avoid potential Dwarf register issues
+  // TODO: Properly configure Dwarf register numbers for mcasm
+  // unsigned SP = Mcasm::rsp;
+  // MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr,
+  //                                                      MRI.getDwarfRegNum(SP, true),
+  //                                                      4);
+  // MAI->addInitialFrameState(Inst);
+
+  llvm::errs() << "DEBUG: createMcasmMCAsmInfo completed\n";
   return MAI;
 }
 
@@ -164,46 +183,62 @@ static MCInstrAnalysis *createMcasmMCInstrAnalysis(const MCInstrInfo *Info) {
 
 // Force static initialization
 extern "C" LLVM_C_ABI void LLVMInitializeMcasmTargetMC() {
+  llvm::errs() << "DEBUG: LLVMInitializeMcasmTargetMC called\n";
+
   // Register the 32-bit mcasm target
   Target *T = &getTheMcasm_32Target();
+  llvm::errs() << "DEBUG: Got Mcasm_32Target\n";
 
   // Register the MC asm info.
   RegisterMCAsmInfoFn X(*T, createMcasmMCAsmInfo);
+  llvm::errs() << "DEBUG: Registered MCAsmInfo\n";
 
   // Register the MC instruction info.
   TargetRegistry::RegisterMCInstrInfo(*T, createMcasmMCInstrInfo);
+  llvm::errs() << "DEBUG: Registered MCInstrInfo\n";
 
   // Register the MC register info.
   TargetRegistry::RegisterMCRegInfo(*T, createMcasmMCRegisterInfo);
+  llvm::errs() << "DEBUG: Registered MCRegInfo\n";
 
   // Register the MC subtarget info.
   TargetRegistry::RegisterMCSubtargetInfo(*T,
                                           Mcasm_MC::createMcasmMCSubtargetInfo);
+  llvm::errs() << "DEBUG: Registered MCSubtargetInfo\n";
 
   // Register the MC instruction analyzer.
   TargetRegistry::RegisterMCInstrAnalysis(*T, createMcasmMCInstrAnalysis);
+  llvm::errs() << "DEBUG: Registered MCInstrAnalysis\n";
 
   // Register the code emitter.
   TargetRegistry::RegisterMCCodeEmitter(*T, createMcasmMCCodeEmitter);
+  llvm::errs() << "DEBUG: Registered MCCodeEmitter\n";
 
   // Register the obj target streamer.
   TargetRegistry::RegisterObjectTargetStreamer(*T,
       [](MCStreamer &S, const MCSubtargetInfo &STI) -> MCTargetStreamer* {
         return createMcasmObjectTargetStreamer(S, STI);
       });
+  llvm::errs() << "DEBUG: Registered ObjectTargetStreamer\n";
 
   // Register the asm target streamer.
   TargetRegistry::RegisterAsmTargetStreamer(*T, createMcasmAsmTargetStreamer);
+  llvm::errs() << "DEBUG: Registered AsmTargetStreamer\n";
 
   // Register the null streamer.
   TargetRegistry::RegisterNullTargetStreamer(*T,
       [](MCStreamer &S) -> MCTargetStreamer* {
         return createMcasmNullTargetStreamer(S);
       });
+  llvm::errs() << "DEBUG: Registered NullTargetStreamer\n";
 
   // Register the MCInstPrinter.
   TargetRegistry::RegisterMCInstPrinter(*T, createMcasmMCInstPrinter);
+  llvm::errs() << "DEBUG: Registered MCInstPrinter\n";
 
   // Register the asm backend
   TargetRegistry::RegisterMCAsmBackend(*T, createMcasm_32AsmBackend);
+  llvm::errs() << "DEBUG: Registered MCAsmBackend\n";
+
+  llvm::errs() << "DEBUG: LLVMInitializeMcasmTargetMC completed\n";
 }

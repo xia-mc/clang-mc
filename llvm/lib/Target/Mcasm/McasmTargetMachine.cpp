@@ -77,9 +77,12 @@ McasmTargetMachine::McasmTargetMachine(const Target &T, const Triple &TT,
                                RM.value_or(Reloc::Static),
                                CM.value_or(CodeModel::Small), OL),
       TLOF(createTLOF(getTargetTriple())), IsJIT(JIT) {
-  llvm::errs() << "DEBUG: McasmTargetMachine constructor called\n";
+  llvm::errs() << "DEBUG: McasmTargetMachine::McasmTargetMachine entered\n";
+  llvm::errs() << "DEBUG: About to call initAsmInfo()\n";
+  llvm::errs().flush();
   initAsmInfo();
-  llvm::errs() << "DEBUG: initAsmInfo completed\n";
+  llvm::errs() << "DEBUG: initAsmInfo() completed\n";
+  llvm::errs().flush();
 }
 
 McasmTargetMachine::~McasmTargetMachine() = default;
