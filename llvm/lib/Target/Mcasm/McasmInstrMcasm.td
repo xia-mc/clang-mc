@@ -46,6 +46,18 @@ def MOV32mi : Ii32<0xC7, MRM0m, (outs), (ins i32mem:$dst, i32imm:$src),
                    [(store (i32 imm:$src), addr:$dst)]>;
 
 //===----------------------------------------------------------------------===//
+// Address Materialization Patterns
+//===----------------------------------------------------------------------===//
+
+// Pattern for loading global addresses, block addresses, constant pool entries,
+// and jump tables. These are lowered to Wrapper nodes in LowerOperation,
+// and then matched here to MOV32ri instructions.
+def : Pat<(i32 (McasmWrapper tglobaladdr:$src)), (MOV32ri tglobaladdr:$src)>;
+def : Pat<(i32 (McasmWrapper tblockaddress:$src)), (MOV32ri tblockaddress:$src)>;
+def : Pat<(i32 (McasmWrapper tconstpool:$src)), (MOV32ri tconstpool:$src)>;
+def : Pat<(i32 (McasmWrapper tjumptable:$src)), (MOV32ri tjumptable:$src)>;
+
+//===----------------------------------------------------------------------===//
 // ADD - Add instruction
 //===----------------------------------------------------------------------===//
 
@@ -139,4 +151,122 @@ let isCall = 1, Uses = [rsp] in {
 let isTerminator = 1, isReturn = 1, isBarrier = 1, hasCtrlDep = 1,
     Uses = [rax] in {
   def RET : I<0xC3, RawFrm, (outs), (ins), "ret", [(Mcasmretglue)]>;
+}
+
+//===----------------------------------------------------------------------===//
+// Dynamic Instructions - For function pointers and callbacks
+//===----------------------------------------------------------------------===//
+
+// MOVD - Move label reference (function pointer)
+// Gets a unique identifier for a label (similar to taking address of function)
+// More expensive than MOV, should be cached when possible
+
+// MOVD label, register
+def MOVD32ri : I<0xB9, AddRegFrm, (outs GR32:$dst), (ins i32imm:$src),
+                 "movd\t$dst, $src",
+                 []>;
+
+// MOVD label, memory
+def MOVD32mi : Ii32<0xC8, MRM0m, (outs), (ins i32mem:$dst, i32imm:$src),
+                    "movd\t$dst, $src",
+                    []>;
+
+// CALLD - Dynamic procedure call via label reference
+// Calls a procedure through a label reference stored in register or memory
+// More expensive than CALL, use cautiously
+
+// CALLD register
+let isCall = 1, Uses = [rsp] in {
+  def CALLD32r : I<0xFF, MRM2r, (outs), (ins GR32:$dst),
+                   "calld\t$dst",
+                   []>;
+}
+
+// CALLD memory
+let isCall = 1, Uses = [rsp] in {
+  def CALLD32m : I<0xFF, MRM2m, (outs), (ins i32mem:$dst),
+                   "calld\t$dst",
+                   []>;
+}
+
+// JMPD - Dynamic unconditional jump via label reference
+// Jumps to a label through a reference stored in register or memory
+// More expensive than JMP, use cautiously
+// Note: No dynamic conditional jumps (JccD) - combine Jcc with JMPD instead
+
+// JMPD register
+let isBarrier = 1, isBranch = 1, isTerminator = 1, isIndirectBranch = 1 in {
+  def JMPD32r : I<0xFF, MRM4r, (outs), (ins GR32:$dst),
+                  "jmpd\t$dst",
+                  [(brind GR32:$dst)]>;
+}
+
+// JMPD memory
+let isBarrier = 1, isBranch = 1, isTerminator = 1, isIndirectBranch = 1 in {
+  def JMPD32m : I<0xFF, MRM4m, (outs), (ins i32mem:$dst),
+                  "jmpd\t$dst",
+                  [(brind (load addr:$dst))]>;
+}
+
+//===----------------------------------------------------------------------===//
+// Conditional Jump Instructions - Jcc
+//===----------------------------------------------------------------------===//
+// mcasm conditional jumps directly compare operands and jump,
+// unlike x86 which uses flags from prior CMP instruction.
+// Format: Jcc src1, src2, label (or Jcc src, label for JZ/JNZ)
+
+// JE - Jump if Equal (src1 == src2)
+let isBranch = 1, isTerminator = 1, Uses = [EFLAGS] in {
+  def JE32rr : I<0x74, MRMDestReg, (outs), (ins GR32:$src1, GR32:$src2, brtarget32:$dst),
+                 "je\t$src1, $src2, $dst",
+                 []>;
+}
+
+// JZ - Jump if Zero (src == 0)
+let isBranch = 1, isTerminator = 1, Uses = [EFLAGS] in {
+  def JZ32r : I<0x74, MRMSrcReg, (outs), (ins GR32:$src, brtarget32:$dst),
+                "jz\t$src, $dst",
+                []>;
+}
+
+// JNE - Jump if Not Equal (src1 != src2)
+let isBranch = 1, isTerminator = 1, Uses = [EFLAGS] in {
+  def JNE32rr : I<0x75, MRMDestReg, (outs), (ins GR32:$src1, GR32:$src2, brtarget32:$dst),
+                  "jne\t$src1, $src2, $dst",
+                  []>;
+}
+
+// JNZ - Jump if Not Zero (src != 0)
+let isBranch = 1, isTerminator = 1, Uses = [EFLAGS] in {
+  def JNZ32r : I<0x75, MRMSrcReg, (outs), (ins GR32:$src, brtarget32:$dst),
+                 "jnz\t$src, $dst",
+                 []>;
+}
+
+// JG - Jump if Greater (src1 > src2, signed)
+let isBranch = 1, isTerminator = 1, Uses = [EFLAGS] in {
+  def JG32rr : I<0x7F, MRMDestReg, (outs), (ins GR32:$src1, GR32:$src2, brtarget32:$dst),
+                 "jg\t$src1, $src2, $dst",
+                 []>;
+}
+
+// JGE - Jump if Greater or Equal (src1 >= src2, signed)
+let isBranch = 1, isTerminator = 1, Uses = [EFLAGS] in {
+  def JGE32rr : I<0x7D, MRMDestReg, (outs), (ins GR32:$src1, GR32:$src2, brtarget32:$dst),
+                  "jge\t$src1, $src2, $dst",
+                  []>;
+}
+
+// JL - Jump if Less (src1 < src2, signed)
+let isBranch = 1, isTerminator = 1, Uses = [EFLAGS] in {
+  def JL32rr : I<0x7C, MRMDestReg, (outs), (ins GR32:$src1, GR32:$src2, brtarget32:$dst),
+                 "jl\t$src1, $src2, $dst",
+                 []>;
+}
+
+// JLE - Jump if Less or Equal (src1 <= src2, signed)
+let isBranch = 1, isTerminator = 1, Uses = [EFLAGS] in {
+  def JLE32rr : I<0x7E, MRMDestReg, (outs), (ins GR32:$src1, GR32:$src2, brtarget32:$dst),
+                  "jle\t$src1, $src2, $dst",
+                  []>;
 }

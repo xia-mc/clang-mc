@@ -21,6 +21,7 @@
 
 #include "McasmInstPrinter.h"
 #include "MCTargetDesc/McasmBaseInfo.h"
+#include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCInstrInfo.h"
@@ -68,9 +69,8 @@ void McasmInstPrinter::printOperand(const MCInst *MI, unsigned OpNo,
     // Immediate operand
     OS << Op.getImm();
   } else if (Op.isExpr()) {
-    // Expression operand - for now just print "EXPR"
-    // TODO: Implement proper MCExpr printing
-    OS << "EXPR";
+    // Expression operand (global addresses, etc.)
+    MAI.printExpr(OS, *Op.getExpr());
   } else {
     llvm_unreachable("Unknown operand type in printOperand");
   }

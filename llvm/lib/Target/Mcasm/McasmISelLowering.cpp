@@ -293,12 +293,13 @@ const char *McasmTargetLowering::getTargetNodeName(unsigned Opcode) const {
 SDValue McasmTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   switch (Op.getOpcode()) {
   case ISD::GlobalAddress:
+    return lowerGlobalAddress(Op, DAG);
   case ISD::BlockAddress:
+    return lowerBlockAddress(Op, DAG);
   case ISD::ConstantPool:
+    return lowerConstantPool(Op, DAG);
   case ISD::JumpTable:
-    // For now, just return the operand wrapped as-is
-    // A full implementation would handle PIC relocation models
-    return Op;
+    return lowerJumpTable(Op, DAG);
 
   case ISD::VASTART:
     // Minimal varargs support - expand to nothing for now
@@ -308,4 +309,56 @@ SDValue McasmTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const
     // Operation not supported - return unchanged
     return Op;
   }
+}
+
+SDValue McasmTargetLowering::lowerGlobalAddress(SDValue Op,
+                                                SelectionDAG &DAG) const {
+  SDLoc DL(Op);
+  EVT Ty = Op.getValueType();
+  GlobalAddressSDNode *N = cast<GlobalAddressSDNode>(Op);
+  const GlobalValue *GV = N->getGlobal();
+  int64_t Offset = N->getOffset();
+
+  // Create a TargetGlobalAddress node, which can be pattern-matched to MOV32ri
+  // TargetGlobalAddress will be legalized to an immediate value by the MC layer
+  SDValue TargetAddr = DAG.getTargetGlobalAddress(GV, DL, Ty, Offset);
+
+  // Wrap it in a Wrapper node for PIC/non-PIC handling
+  // The Wrapper will be pattern-matched and lowered to a MOV instruction
+  return DAG.getNode(McasmISD::Wrapper, DL, Ty, TargetAddr);
+}
+
+SDValue McasmTargetLowering::lowerBlockAddress(SDValue Op,
+                                               SelectionDAG &DAG) const {
+  SDLoc DL(Op);
+  EVT Ty = Op.getValueType();
+  BlockAddressSDNode *N = cast<BlockAddressSDNode>(Op);
+  const BlockAddress *BA = N->getBlockAddress();
+  int64_t Offset = N->getOffset();
+
+  SDValue TargetAddr = DAG.getTargetBlockAddress(BA, Ty, Offset);
+  return DAG.getNode(McasmISD::Wrapper, DL, Ty, TargetAddr);
+}
+
+SDValue McasmTargetLowering::lowerConstantPool(SDValue Op,
+                                               SelectionDAG &DAG) const {
+  SDLoc DL(Op);
+  EVT Ty = Op.getValueType();
+  ConstantPoolSDNode *N = cast<ConstantPoolSDNode>(Op);
+  const Constant *C = N->getConstVal();
+  int64_t Offset = N->getOffset();
+
+  SDValue TargetAddr = DAG.getTargetConstantPool(C, Ty, N->getAlign(), Offset);
+  return DAG.getNode(McasmISD::Wrapper, DL, Ty, TargetAddr);
+}
+
+SDValue McasmTargetLowering::lowerJumpTable(SDValue Op,
+                                            SelectionDAG &DAG) const {
+  SDLoc DL(Op);
+  EVT Ty = Op.getValueType();
+  JumpTableSDNode *N = cast<JumpTableSDNode>(Op);
+  int JTI = N->getIndex();
+
+  SDValue TargetAddr = DAG.getTargetJumpTable(JTI, Ty);
+  return DAG.getNode(McasmISD::Wrapper, DL, Ty, TargetAddr);
 }
