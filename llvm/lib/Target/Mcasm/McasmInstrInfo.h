@@ -28,7 +28,8 @@ namespace llvm {
 class McasmSubtarget;
 
 class McasmInstrInfo : public McasmGenInstrInfo {
-  const McasmRegisterInfo &RI;
+  // IMPORTANT: RI must be declared first because it's used in base class constructor
+  McasmRegisterInfo RI;
 
 public:
   explicit McasmInstrInfo(const McasmSubtarget &STI);

@@ -35,8 +35,11 @@ static MachineInstrBuilder &addFrameReference(MachineInstrBuilder &MIB,
                                                 int FI, int Offset = 0);
 
 McasmInstrInfo::McasmInstrInfo(const McasmSubtarget &STI)
-    : McasmGenInstrInfo(STI, *STI.getRegisterInfo(), -1, -1, -1, -1),
-      RI(*STI.getRegisterInfo()) {}
+    : McasmGenInstrInfo(STI, RI, -1, -1, -1, -1),
+      RI(STI.getTargetTriple()) {  // Construct RI with Triple
+  fprintf(stderr, "DEBUG: McasmInstrInfo constructor called\n");
+  fflush(stderr);
+}
 
 void McasmInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                  MachineBasicBlock::iterator MI,

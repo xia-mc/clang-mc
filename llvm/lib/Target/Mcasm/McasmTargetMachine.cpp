@@ -106,6 +106,10 @@ McasmTargetMachine::~McasmTargetMachine() = default;
 
 // Get or create subtarget for the given function
 const McasmSubtarget *McasmTargetMachine::getSubtargetImpl(const Function &F) const {
+  fprintf(stderr, "DEBUG: McasmTargetMachine::getSubtargetImpl called for function '%s'\n",
+          F.getName().str().c_str());
+  fflush(stderr);
+
   Attribute CPUAttr = F.getFnAttribute("target-cpu");
   Attribute TuneAttr = F.getFnAttribute("tune-cpu");
   Attribute FSAttr = F.getFnAttribute("target-features");
@@ -116,6 +120,10 @@ const McasmSubtarget *McasmTargetMachine::getSubtargetImpl(const Function &F) co
   StringRef FS =
       FSAttr.isValid() ? FSAttr.getValueAsString() : (StringRef)getTargetFeatureString();
 
+  fprintf(stderr, "DEBUG:   CPU = '%s', TuneCPU = '%s', FS = '%s'\n",
+          CPU.str().c_str(), TuneCPU.str().c_str(), FS.str().c_str());
+  fflush(stderr);
+
   SmallString<512> Key;
   Key.reserve(CPU.size() + TuneCPU.size() + FS.size());
   Key += CPU;
@@ -124,8 +132,15 @@ const McasmSubtarget *McasmTargetMachine::getSubtargetImpl(const Function &F) co
 
   auto &I = SubtargetMap[Key];
   if (!I) {
+    fprintf(stderr, "DEBUG:   Creating new McasmSubtarget\n");
+    fflush(stderr);
     I = std::make_unique<McasmSubtarget>(TargetTriple, CPU, TuneCPU, FS, *this,
                                          MaybeAlign(), 0, 0);
+    fprintf(stderr, "DEBUG:   McasmSubtarget created at %p\n", (void*)I.get());
+    fflush(stderr);
+  } else {
+    fprintf(stderr, "DEBUG:   Using cached McasmSubtarget at %p\n", (void*)I.get());
+    fflush(stderr);
   }
   return I.get();
 }
@@ -198,7 +213,13 @@ public:
   void addIRPasses() override {
     fprintf(stderr, "DEBUG: McasmPassConfig::addIRPasses called\n");
     fflush(stderr);
-    TargetPassConfig::addIRPasses();
+
+    // TEMPORARY: Skip TargetPassConfig::addIRPasses() to isolate the crash
+    // The "Expand IR instructions" pass is added by base class addIRPasses
+    // TargetPassConfig::addIRPasses();
+    fprintf(stderr, "DEBUG: SKIPPING base class addIRPasses (temporary workaround)\n");
+    fflush(stderr);
+
     fprintf(stderr, "DEBUG: McasmPassConfig::addIRPasses completed\n");
     fflush(stderr);
   }
@@ -212,7 +233,12 @@ public:
   void addCodeGenPrepare() override {
     fprintf(stderr, "DEBUG: McasmPassConfig::addCodeGenPrepare called\n");
     fflush(stderr);
-    TargetPassConfig::addCodeGenPrepare();
+
+    // TEMPORARY WORKAROUND: Skip CodeGenPrepare to isolate the crash
+    // TargetPassConfig::addCodeGenPrepare();
+    fprintf(stderr, "DEBUG: SKIPPING CodeGenPrepare pass (temporary workaround)\n");
+    fflush(stderr);
+
     fprintf(stderr, "DEBUG: McasmPassConfig::addCodeGenPrepare completed\n");
     fflush(stderr);
   }

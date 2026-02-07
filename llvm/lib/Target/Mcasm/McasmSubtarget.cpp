@@ -79,16 +79,31 @@ bool McasmSubtarget::isLegalToCallImmediateAddr() const {
 
 void McasmSubtarget::initSubtargetFeatures(StringRef CPU, StringRef TuneCPU,
                                           StringRef FS) {
+  fprintf(stderr, "DEBUG: McasmSubtarget::initSubtargetFeatures called\n");
+  fprintf(stderr, "DEBUG:   CPU = %s, TuneCPU = %s, FS = %s\n",
+          CPU.str().c_str(), TuneCPU.str().c_str(), FS.str().c_str());
+  fflush(stderr);
+
   // MCASM NOTE: Simplified feature initialization
   std::string CPUName = std::string(CPU);
   if (CPUName.empty())
     CPUName = "generic";
-  
+
+  fprintf(stderr, "DEBUG:   CPUName = %s\n", CPUName.c_str());
+  fflush(stderr);
+
   std::string TuneCPUName = std::string(TuneCPU);
   if (TuneCPUName.empty())
     TuneCPUName = CPUName;
-  
+
+  fprintf(stderr, "DEBUG:   TuneCPUName = %s\n", TuneCPUName.c_str());
+  fprintf(stderr, "DEBUG:   About to call ParseSubtargetFeatures...\n");
+  fflush(stderr);
+
   ParseSubtargetFeatures(CPUName, TuneCPUName, FS);
+
+  fprintf(stderr, "DEBUG:   ParseSubtargetFeatures completed\n");
+  fflush(stderr);
 }
 
 McasmSubtarget &McasmSubtarget::initializeSubtargetDependencies(StringRef CPU,
@@ -108,11 +123,22 @@ McasmSubtarget::McasmSubtarget(const Triple &TT, StringRef CPU, StringRef TuneCP
       InstrInfo(initializeSubtargetDependencies(CPU, TuneCPU, FS)),
       TLInfo(TM, *this), FrameLowering(*this) {
 
+  fprintf(stderr, "DEBUG: McasmSubtarget constructor called\n");
+  fprintf(stderr, "DEBUG:   TT = %s\n", TT.str().c_str());
+  fprintf(stderr, "DEBUG:   CPU = %s\n", CPU.str().c_str());
+  fprintf(stderr, "DEBUG:   TuneCPU = %s\n", TuneCPU.str().c_str());
+  fprintf(stderr, "DEBUG:   FS = %s\n", FS.str().c_str());
+  fflush(stderr);
+
   // CRITICAL FIX: TableGen generates incorrect default values for mode flags
   // Force correct values for mcasm (32-bit only)
   In64BitMode = false;  // mcasm is 32-bit only, NEVER 64-bit
   In32BitMode = true;   // mcasm is always 32-bit
   In16BitMode = false;  // mcasm is not 16-bit
+
+  fprintf(stderr, "DEBUG:   In64BitMode = %d, In32BitMode = %d, In16BitMode = %d\n",
+          In64BitMode, In32BitMode, In16BitMode);
+  fflush(stderr);
 
   // Determine the PICStyle based on the target selected
   if (!isPositionIndependent())
@@ -125,6 +151,12 @@ McasmSubtarget::McasmSubtarget(const Triple &TT, StringRef CPU, StringRef TuneCP
     setPICStyle(PICStyles::Style::StubPIC);
   else if (isTargetELF())
     setPICStyle(PICStyles::Style::GOT);
+
+  fprintf(stderr, "DEBUG: McasmSubtarget constructor completed successfully\n");
+  fprintf(stderr, "DEBUG:   TLInfo = %p\n", (void*)&TLInfo);
+  fprintf(stderr, "DEBUG:   InstrInfo = %p\n", (void*)&InstrInfo);
+  fprintf(stderr, "DEBUG:   FrameLowering = %p\n", (void*)&FrameLowering);
+  fflush(stderr);
 }
 
 McasmSubtarget::~McasmSubtarget() = default;

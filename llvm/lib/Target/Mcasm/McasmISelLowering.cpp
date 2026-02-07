@@ -43,16 +43,42 @@ McasmTargetLowering::McasmTargetLowering(const McasmTargetMachine &TM,
   computeRegisterProperties(STI.getRegisterInfo());
 
   // Stack configuration
-  // TODO: setStackPointerRegisterToSaveRestore(Mcasm::rsp);
+  setStackPointerRegisterToSaveRestore(Mcasm::rsp);
   setMinFunctionAlignment(Align(4));
   setMinStackArgumentAlignment(Align(4));
 
-  // Set operation actions - tell LLVM how to handle various operations
+  // Basic arithmetic operations - legal by default for i32
+  setOperationAction(ISD::ADD, MVT::i32, Legal);
+  setOperationAction(ISD::SUB, MVT::i32, Legal);
+  setOperationAction(ISD::MUL, MVT::i32, Legal);
+
+  // Division/Remainder - expand to library calls for now
+  setOperationAction(ISD::SDIV, MVT::i32, Expand);
+  setOperationAction(ISD::UDIV, MVT::i32, Expand);
+  setOperationAction(ISD::SREM, MVT::i32, Expand);
+  setOperationAction(ISD::UREM, MVT::i32, Expand);
+
+  // Shifts and rotates
+  setOperationAction(ISD::SHL, MVT::i32, Legal);
+  setOperationAction(ISD::SRA, MVT::i32, Legal);
+  setOperationAction(ISD::SRL, MVT::i32, Legal);
+  setOperationAction(ISD::ROTL, MVT::i32, Expand);
+  setOperationAction(ISD::ROTR, MVT::i32, Expand);
+
+  // Logical operations
+  setOperationAction(ISD::AND, MVT::i32, Legal);
+  setOperationAction(ISD::OR, MVT::i32, Legal);
+  setOperationAction(ISD::XOR, MVT::i32, Legal);
+
+  // Comparison operations
+  setOperationAction(ISD::SETCC, MVT::i32, Legal);
+
   // Control flow operations
   setOperationAction(ISD::BR_JT, MVT::Other, Expand);
   setOperationAction(ISD::BR_CC, MVT::i32, Expand);
   setOperationAction(ISD::SELECT_CC, MVT::i32, Expand);
-  setOperationAction(ISD::BRCOND, MVT::Other, Expand);
+  setOperationAction(ISD::SELECT, MVT::i32, Expand);
+  setOperationAction(ISD::BRCOND, MVT::Other, Custom);
 
   // Global addresses and constants
   setOperationAction(ISD::GlobalAddress, MVT::i32, Custom);
@@ -219,7 +245,10 @@ SDValue McasmTargetLowering::LowerReturn(
 
   SDValue Glue;
   SmallVector<SDValue, 4> RetOps;
-  RetOps.push_back(Chain);  // Chain
+  RetOps.push_back(Chain);  // Operand 0: Chain
+
+  // Operand 1: Stack adjustment (0 for mcasm - no caller cleanup needed)
+  RetOps.push_back(DAG.getTargetConstant(0, dl, MVT::i32));
 
   // Copy return values to their assigned locations
   for (unsigned i = 0, e = RVLocs.size(); i != e; ++i) {
