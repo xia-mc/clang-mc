@@ -54,7 +54,7 @@ include "McasmInstrMcasm.td"
 // include "McasmInstrArithmetic.td"
 // include "McasmInstrCMovSetCC.td"
 // include "McasmInstrExtension.td"
-// include "McasmInstrControl.td"
+// include "McasmInstrControl.td"  // TOO COMPLEX - RET added to McasmInstrMcasm.td instead
 // include "McasmInstrShiftRotate.td"
 
 // System instructions.

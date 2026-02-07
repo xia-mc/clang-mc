@@ -23,38 +23,38 @@
 // The Mcasmretglue return instructions are variadic because we may add ST0 and
 // ST1 arguments when returning values on the x87 stack.
 let isTerminator = 1, isReturn = 1, isBarrier = 1,
-    hasCtrlDep = 1, FPForm = SpecialFP, SchedRW = [WriteJumpLd] in {
+    hasCtrlDep = 1, FPForm = SpecialFP in {
   def RET32  : I   <0xC3, RawFrm, (outs), (ins variable_ops),
-                    "ret{l}", []>, OpSize32, Requires<[Not64BitMode]>;
+                    "ret{l}", []>, Requires<[Not64BitMode]>;
   def RET64  : I   <0xC3, RawFrm, (outs), (ins variable_ops),
-                    "ret{q}", []>, OpSize32, Requires<[In64BitMode]>;
+                    "ret{q}", []>, Requires<[In64BitMode]>;
   def RET16  : I   <0xC3, RawFrm, (outs), (ins),
-                    "ret{w}", []>, OpSize16;
+                    "ret{w}", []>;
   def RETI32 : Ii16<0xC2, RawFrm, (outs), (ins i16imm:$amt, variable_ops),
-                    "ret{l}\t$amt", []>, OpSize32, Requires<[Not64BitMode]>;
+                    "ret{l}\t$amt", []>, Requires<[Not64BitMode]>;
   def RETI64 : Ii16<0xC2, RawFrm, (outs), (ins i16imm:$amt, variable_ops),
-                    "ret{q}\t$amt", []>, OpSize32, Requires<[In64BitMode]>;
+                    "ret{q}\t$amt", []>, Requires<[In64BitMode]>;
   def RETI16 : Ii16<0xC2, RawFrm, (outs), (ins i16imm:$amt),
-                    "ret{w}\t$amt", []>, OpSize16;
+                    "ret{w}\t$amt", []>;
   def LRET32 : I   <0xCB, RawFrm, (outs), (ins),
-                    "{l}ret{l|f}", []>, OpSize32;
+                    "{l}ret{l|f}", []>;
   def LRET64 : RI  <0xCB, RawFrm, (outs), (ins),
                     "{l}ret{|f}q", []>, Requires<[In64BitMode]>;
   def LRET16 : I   <0xCB, RawFrm, (outs), (ins),
-                    "{l}ret{w|f}", []>, OpSize16;
+                    "{l}ret{w|f}", []>;
   def LRETI32 : Ii16<0xCA, RawFrm, (outs), (ins i16imm:$amt),
-                     "{l}ret{l|f}\t$amt", []>, OpSize32;
+                     "{l}ret{l|f}\t$amt", []>;
   def LRETI64 : RIi16<0xCA, RawFrm, (outs), (ins i16imm:$amt),
                       "{l}ret{|f}q\t$amt", []>, Requires<[In64BitMode]>;
   def LRETI16 : Ii16<0xCA, RawFrm, (outs), (ins i16imm:$amt),
-                     "{l}ret{w|f}\t$amt", []>, OpSize16;
+                     "{l}ret{w|f}\t$amt", []>;
 
   // The machine return from interrupt instruction, but sometimes we need to
   // perform a post-epilogue stack adjustment. Codegen emits the pseudo form
   // which expands to include an SP adjustment if necessary.
   def IRET16 : I   <0xcf, RawFrm, (outs), (ins), "iret{w}", []>,
-               OpSize16;
-  def IRET32 : I   <0xcf, RawFrm, (outs), (ins), "iret{l|d}", []>, OpSize32;
+               
+  def IRET32 : I   <0xcf, RawFrm, (outs), (ins), "iret{l|d}", []>;
   def IRET64 : RI  <0xcf, RawFrm, (outs), (ins), "iretq", []>, Requires<[In64BitMode]>;
   let isCodeGenOnly = 1 in
   def IRET : PseudoI<(outs), (ins i32imm:$adj), [(Mcasmiret timm:$adj)]>;
@@ -62,19 +62,19 @@ let isTerminator = 1, isReturn = 1, isBarrier = 1,
 }
 
 // Unconditional branches.
-let isBarrier = 1, isBranch = 1, isTerminator = 1, SchedRW = [WriteJump] in {
+let isBarrier = 1, isBranch = 1, isTerminator = 1 in {
   def JMP_1 : Ii8PCRel<0xEB, RawFrm, (outs), (ins brtarget8:$dst),
                        "jmp\t$dst", [(br bb:$dst)]>;
   let hasSideEffects = 0, isCodeGenOnly = 1, ForceDisassemble = 1 in {
     def JMP_2 : Ii16PCRel<0xE9, RawFrm, (outs), (ins brtarget16:$dst),
-                          "jmp\t$dst", []>, OpSize16;
+                          "jmp\t$dst", []>;
     def JMP_4 : Ii32PCRel<0xE9, RawFrm, (outs), (ins brtarget32:$dst),
-                          "jmp\t$dst", []>, OpSize32;
+                          "jmp\t$dst", []>;
   }
 }
 
 // Conditional Branches.
-let isBranch = 1, isTerminator = 1, Uses = [EFLAGS], SchedRW = [WriteJump],
+let isBranch = 1, isTerminator = 1, Uses = [EFLAGS],
     isCodeGenOnly = 1, ForceDisassemble = 1 in {
   def JCC_1 : Ii8PCRel <0x70, AddCCFrm, (outs),
                         (ins brtarget8:$dst, ccode:$cond),
@@ -84,16 +84,16 @@ let isBranch = 1, isTerminator = 1, Uses = [EFLAGS], SchedRW = [WriteJump],
     def JCC_2 : Ii16PCRel<0x80, AddCCFrm, (outs),
                           (ins brtarget16:$dst, ccode:$cond),
                           "j${cond}\t$dst",
-                          []>, OpSize16, TB;
+                          []>, TB;
     def JCC_4 : Ii32PCRel<0x80, AddCCFrm, (outs),
                           (ins brtarget32:$dst, ccode:$cond),
                           "j${cond}\t$dst",
-                          []>, TB, OpSize32;
+                          []>, TB;
   }
 }
 
 // jcx/jecx/jrcx instructions.
-let isBranch = 1, isTerminator = 1, hasSideEffects = 0, SchedRW = [WriteJump] in {
+let isBranch = 1, isTerminator = 1, hasSideEffects = 0 in {
   // These are the 32-bit versions of this instruction for the asmparser.  In
   // 32-bit mode, the address size prefix is jcxz and the unprefixed version is
   // jecxz.
@@ -113,17 +113,17 @@ let isBranch = 1, isTerminator = 1, hasSideEffects = 0, SchedRW = [WriteJump] in
 let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1 in {
   def JMP16r     : I<0xFF, MRM4r, (outs), (ins GR16:$dst), "jmp{w}\t{*}$dst",
                      [(brind GR16:$dst)]>, Requires<[Not64BitMode]>,
-                     OpSize16, Sched<[WriteJump]>;
+                     Sched<[WriteJump]>;
   def JMP16m     : I<0xFF, MRM4m, (outs), (ins i16mem:$dst), "jmp{w}\t{*}$dst",
                      [(brind (loadi16 addr:$dst))]>, Requires<[Not64BitMode]>,
-                     OpSize16, Sched<[WriteJumpLd]>;
+                     Sched<[WriteJumpLd]>;
 
   def JMP32r     : I<0xFF, MRM4r, (outs), (ins GR32:$dst), "jmp{l}\t{*}$dst",
                      [(brind GR32:$dst)]>, Requires<[Not64BitMode]>,
-                     OpSize32, Sched<[WriteJump]>;
+                     Sched<[WriteJump]>;
   def JMP32m     : I<0xFF, MRM4m, (outs), (ins i32mem:$dst), "jmp{l}\t{*}$dst",
                      [(brind (loadi32 addr:$dst))]>, Requires<[Not64BitMode]>,
-                     OpSize32, Sched<[WriteJumpLd]>;
+                     Sched<[WriteJumpLd]>;
 
   def JMP64r     : I<0xFF, MRM4r, (outs), (ins GR64:$dst), "jmp{q}\t{*}$dst",
                      [(brind GR64:$dst)]>, Requires<[In64BitMode]>,
@@ -147,19 +147,19 @@ let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1 in {
   let isCodeGenOnly = 1 in {
     def JMP16r_NT : I<0xFF, MRM4r, (outs), (ins GR16 : $dst), "jmp{w}\t{*}$dst",
                       [(McasmNoTrackBrind GR16 : $dst)]>, Requires<[Not64BitMode]>,
-                      OpSize16, Sched<[WriteJump]>, NOTRACK;
+                      Sched<[WriteJump]>, NOTRACK;
 
     def JMP16m_NT : I<0xFF, MRM4m, (outs), (ins i16mem : $dst), "jmp{w}\t{*}$dst",
                       [(McasmNoTrackBrind (loadi16 addr : $dst))]>,
-                      Requires<[Not64BitMode]>, OpSize16, Sched<[WriteJumpLd]>,
+                      Requires<[Not64BitMode]>, Sched<[WriteJumpLd]>,
                       NOTRACK;
 
     def JMP32r_NT : I<0xFF, MRM4r, (outs), (ins GR32 : $dst), "jmp{l}\t{*}$dst",
                       [(McasmNoTrackBrind GR32 : $dst)]>, Requires<[Not64BitMode]>,
-                      OpSize32, Sched<[WriteJump]>, NOTRACK;
+                      Sched<[WriteJump]>, NOTRACK;
     def JMP32m_NT : I<0xFF, MRM4m, (outs), (ins i32mem : $dst), "jmp{l}\t{*}$dst",
                       [(McasmNoTrackBrind (loadi32 addr : $dst))]>,
-                      Requires<[Not64BitMode]>, OpSize32, Sched<[WriteJumpLd]>,
+                      Requires<[Not64BitMode]>, Sched<[WriteJumpLd]>,
                       NOTRACK;
 
     def JMP64r_NT : I<0xFF, MRM4r, (outs), (ins GR64 : $dst), "jmp{q}\t{*}$dst",
@@ -174,21 +174,21 @@ let isBranch = 1, isTerminator = 1, isBarrier = 1, isIndirectBranch = 1 in {
     def FARJMP32i  : Iseg32<0xEA, RawFrmImm16, (outs),
                             (ins i32imm:$off, i16imm:$seg),
                             "ljmp{l}\t$seg, $off", []>,
-                            OpSize32, Sched<[WriteJump]>;
+                            Sched<[WriteJump]>;
     def FARJMP16i  : Iseg16<0xEA, RawFrmImm16, (outs),
                             (ins i16imm:$off, i16imm:$seg),
                             "ljmp{w}\t$seg, $off", []>,
-                            OpSize16, Sched<[WriteJump]>;
+                            Sched<[WriteJump]>;
   }
   let mayLoad = 1 in {
     def FARJMP64m  : RI<0xFF, MRM5m, (outs), (ins opaquemem:$dst),
                         "ljmp{q}\t{*}$dst", []>, Sched<[WriteJump]>, Requires<[In64BitMode]>;
 
     def FARJMP32m  : I<0xFF, MRM5m, (outs), (ins opaquemem:$dst),
-                       "{l}jmp{l}\t{*}$dst", []>, OpSize32, Sched<[WriteJumpLd]>;
+                       "{l}jmp{l}\t{*}$dst", []>, Sched<[WriteJumpLd]>;
     let AsmVariantName = "att" in
     def FARJMP16m  : I<0xFF, MRM5m, (outs), (ins opaquemem:$dst),
-                       "ljmp{w}\t{*}$dst", []>, OpSize16, Sched<[WriteJumpLd]>;
+                       "ljmp{w}\t{*}$dst", []>, Sched<[WriteJumpLd]>;
   }
 }
 
@@ -196,7 +196,7 @@ def JMPABS64i : Ii64<0xA1, RawFrm, (outs), (ins i64imm:$dst), "jmpabs\t$dst", []
                 ExplicitREX2Prefix, Requires<[In64BitMode]>, Sched<[WriteJumpLd]>;
 
 // Loop instructions
-let isBranch = 1, isTerminator = 1, SchedRW = [WriteJump] in {
+let isBranch = 1, isTerminator = 1 in {
   def LOOP   : Ii8PCRel<0xE2, RawFrm, (outs), (ins i8imm_brtarget:$dst),
                         "loop\t$dst", []>;
   def LOOPE  : Ii8PCRel<0xE1, RawFrm, (outs), (ins i8imm_brtarget:$dst),
@@ -216,27 +216,27 @@ let isCall = 1 in
   let Uses = [ESP, SSP] in {
     def CALLpcrel32 : Ii32PCRel<0xE8, RawFrm,
                            (outs), (ins i32imm_brtarget:$dst),
-                           "call{l}\t$dst", []>, OpSize32,
+                           "call{l}\t$dst", []>,
                       Requires<[Not64BitMode]>, Sched<[WriteJump]>;
     let hasSideEffects = 0 in
       def CALLpcrel16 : Ii16PCRel<0xE8, RawFrm,
                              (outs), (ins i16imm_brtarget:$dst),
-                             "call{w}\t$dst", []>, OpSize16,
+                             "call{w}\t$dst", []>,
                         Requires<[Not64BitMode]>, Sched<[WriteJump]>;
     def CALL16r     : I<0xFF, MRM2r, (outs), (ins GR16:$dst),
                         "call{w}\t{*}$dst", [(Mcasmcall GR16:$dst)]>,
-                      OpSize16, Requires<[Not64BitMode]>, Sched<[WriteJump]>;
+                      Requires<[Not64BitMode]>, Sched<[WriteJump]>;
     def CALL16m     : I<0xFF, MRM2m, (outs), (ins i16mem:$dst),
                         "call{w}\t{*}$dst", [(Mcasmcall (loadi16 addr:$dst))]>,
-                        OpSize16, Requires<[Not64BitMode,FavorMemIndirectCall]>,
+                        Requires<[Not64BitMode,FavorMemIndirectCall]>,
                         Sched<[WriteJumpLd]>;
     def CALL32r     : I<0xFF, MRM2r, (outs), (ins GR32:$dst),
-                        "call{l}\t{*}$dst", [(Mcasmcall GR32:$dst)]>, OpSize32,
+                        "call{l}\t{*}$dst", [(Mcasmcall GR32:$dst)]>,
                         Requires<[Not64BitMode,NotUseIndirectThunkCalls]>,
                         Sched<[WriteJump]>;
     def CALL32m     : I<0xFF, MRM2m, (outs), (ins i32mem:$dst),
                         "call{l}\t{*}$dst", [(Mcasmcall (loadi32 addr:$dst))]>,
-                        OpSize32,
+                       
                         Requires<[Not64BitMode,FavorMemIndirectCall,
                                   NotUseIndirectThunkCalls]>,
                         Sched<[WriteJumpLd]>;
@@ -245,17 +245,17 @@ let isCall = 1 in
     let isCodeGenOnly = 1 in {
       def CALL16r_NT : I<0xFF, MRM2r, (outs), (ins GR16 : $dst),
                         "call{w}\t{*}$dst",[(McasmNoTrackCall GR16 : $dst)]>,
-                        OpSize16, Requires<[Not64BitMode]>, Sched<[WriteJump]>, NOTRACK;
+                        Requires<[Not64BitMode]>, Sched<[WriteJump]>, NOTRACK;
       def CALL16m_NT : I<0xFF, MRM2m, (outs), (ins i16mem : $dst),
                         "call{w}\t{*}$dst",[(McasmNoTrackCall(loadi16 addr : $dst))]>,
-                        OpSize16, Requires<[Not64BitMode,FavorMemIndirectCall]>,
+                        Requires<[Not64BitMode,FavorMemIndirectCall]>,
                         Sched<[WriteJumpLd]>, NOTRACK;
       def CALL32r_NT : I<0xFF, MRM2r, (outs), (ins GR32 : $dst),
                         "call{l}\t{*}$dst",[(McasmNoTrackCall GR32 : $dst)]>,
-                        OpSize32, Requires<[Not64BitMode]>, Sched<[WriteJump]>, NOTRACK;
+                        Requires<[Not64BitMode]>, Sched<[WriteJump]>, NOTRACK;
       def CALL32m_NT : I<0xFF, MRM2m, (outs), (ins i32mem : $dst),
                         "call{l}\t{*}$dst",[(McasmNoTrackCall(loadi32 addr : $dst))]>,
-                        OpSize32, Requires<[Not64BitMode,FavorMemIndirectCall]>,
+                        Requires<[Not64BitMode,FavorMemIndirectCall]>,
                         Sched<[WriteJumpLd]>, NOTRACK;
     }
 
@@ -263,18 +263,18 @@ let isCall = 1 in
       def FARCALL32i  : Iseg32<0x9A, RawFrmImm16, (outs),
                                (ins i32imm:$off, i16imm:$seg),
                                "lcall{l}\t$seg, $off", []>,
-                               OpSize32, Sched<[WriteJump]>;
+                               Sched<[WriteJump]>;
       def FARCALL16i  : Iseg16<0x9A, RawFrmImm16, (outs),
                                (ins i16imm:$off, i16imm:$seg),
                                "lcall{w}\t$seg, $off", []>,
-                               OpSize16, Sched<[WriteJump]>;
+                               Sched<[WriteJump]>;
     }
 
     let mayLoad = 1 in {
       def FARCALL32m  : I<0xFF, MRM3m, (outs), (ins opaquemem:$dst),
-                          "{l}call{l}\t{*}$dst", []>, OpSize32, Sched<[WriteJumpLd]>;
+                          "{l}call{l}\t{*}$dst", []>, Sched<[WriteJumpLd]>;
       def FARCALL16m  : I<0xFF, MRM3m, (outs), (ins opaquemem:$dst),
-                          "lcall{w}\t{*}$dst", []>, OpSize16, Sched<[WriteJumpLd]>;
+                          "lcall{w}\t{*}$dst", []>, Sched<[WriteJumpLd]>;
     }
   }
 
@@ -307,7 +307,7 @@ let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1,
 // Conditional tail calls are similar to the above, but they are branches
 // rather than barriers, and they use EFLAGS.
 let isCall = 1, isTerminator = 1, isReturn = 1, isBranch = 1,
-    isCodeGenOnly = 1, SchedRW = [WriteJump] in
+    isCodeGenOnly = 1 in
   let Uses = [ESP, EFLAGS, SSP] in {
   def TCRETURNdicc : PseudoI<(outs),
                      (ins i32imm_brtarget:$dst, i32imm:$offset, i32imm:$cond),
@@ -325,13 +325,13 @@ let isCall = 1, isTerminator = 1, isReturn = 1, isBranch = 1,
 // RSP is marked as a use to prevent stack-pointer assignments that appear
 // immediately before calls from potentially appearing dead. Uses for argument
 // registers are added manually.
-let isCall = 1, Uses = [RSP, SSP], SchedRW = [WriteJump] in {
+let isCall = 1, Uses = [RSP, SSP] in {
   // NOTE: this pattern doesn't match "Mcasmcall imm", because we do not know
   // that the offset between an arbitrary immediate and the call will fit in
   // the 32-bit pcrel field that we have.
   def CALL64pcrel32 : Ii32PCRel<0xE8, RawFrm,
                         (outs), (ins i64i32imm_brtarget:$dst),
-                        "call{q}\t$dst", []>, OpSize32,
+                        "call{q}\t$dst", []>,
                       Requires<[In64BitMode]>;
   def CALL64r       : I<0xFF, MRM2r, (outs), (ins GR64:$dst),
                         "call{q}\t{*}$dst", [(Mcasmcall GR64:$dst)]>,
@@ -405,7 +405,7 @@ let isCall = 1, isTerminator = 1, isReturn = 1, isBarrier = 1,
 let isPseudo = 1, isCall = 1, isCodeGenOnly = 1,
     Uses = [RSP, SSP],
     usesCustomInserter = 1,
-    SchedRW = [WriteJump] in {
+    in {
   def INDIRECT_THUNK_CALL32 :
     PseudoI<(outs), (ins GR32:$dst), [(Mcasmcall GR32:$dst)]>,
             Requires<[Not64BitMode,UseIndirectThunkCalls]>;
@@ -425,7 +425,7 @@ let isPseudo = 1, isCall = 1, isCodeGenOnly = 1,
 
 let isPseudo = 1, isCall = 1, isCodeGenOnly = 1,
     Uses = [RSP, SSP],
-    SchedRW = [WriteJump] in {
+    in {
   def CALL64m_RVMARKER :
      PseudoI<(outs), (ins i64imm:$rvfunc, i64mem:$dst), [(Mcasmcall_rvmarker tglobaladdr:$rvfunc, (loadi64 addr:$dst))]>,
              Requires<[In64BitMode]>;
@@ -446,7 +446,7 @@ let isPseudo = 1, isCall = 1, isCodeGenOnly = 1,
 // Conditional tail calls are similar to the above, but they are branches
 // rather than barriers, and they use EFLAGS.
 let isCall = 1, isTerminator = 1, isReturn = 1, isBranch = 1,
-    isCodeGenOnly = 1, SchedRW = [WriteJump] in
+    isCodeGenOnly = 1 in
   let Uses = [RSP, EFLAGS, SSP] in {
   def TCRETURNdi64cc : PseudoI<(outs),
                            (ins i64i32imm_brtarget:$dst, i32imm:$offset,

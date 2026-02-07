@@ -71,3 +71,13 @@ def ADD32mi : Ii32<0x81, MRM0m, (outs), (ins i32mem:$dst, i32imm:$src),
                    [(store (add (load addr:$dst), (i32 imm:$src)), addr:$dst)]>;
 
 } // Defs = [EFLAGS]
+
+//===----------------------------------------------------------------------===//
+// RET - Return instruction
+//===----------------------------------------------------------------------===//
+
+// RET - Pseudo instruction for return
+let isTerminator = 1, isReturn = 1, isBarrier = 1, hasCtrlDep = 1, isPseudo = 1 in {
+  def RET : I<0, Pseudo, (outs), (ins i32imm:$adj, variable_ops),
+              "#RET", [(Mcasmretglue timm:$adj)]>;
+}
