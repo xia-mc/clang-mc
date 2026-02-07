@@ -54,9 +54,13 @@ McasmAsmPrinter::McasmAsmPrinter(TargetMachine &TM,
 }
 
 void McasmAsmPrinter::emitStartOfAsmFile(Module &M) {
+  fprintf(stderr, "DEBUG: McasmAsmPrinter::emitStartOfAsmFile called\n");
+  fflush(stderr);
   // mcasm requires #include "_ll_std" at the start of every file
   OutStreamer->emitRawText("#include \"_ll_std\"");
   OutStreamer->emitRawText("");  // Blank line
+  fprintf(stderr, "DEBUG: McasmAsmPrinter::emitStartOfAsmFile completed\n");
+  fflush(stderr);
 }
 
 void McasmAsmPrinter::emitEndOfAsmFile(Module &M) {
@@ -64,11 +68,18 @@ void McasmAsmPrinter::emitEndOfAsmFile(Module &M) {
 }
 
 void McasmAsmPrinter::emitFunctionEntryLabel() {
+  fprintf(stderr, "DEBUG: McasmAsmPrinter::emitFunctionEntryLabel called\n");
+  fflush(stderr);
+
   MCSymbol *FnSym = CurrentFnSym;
+  fprintf(stderr, "DEBUG:   FunctionName = %s\n", FnSym->getName().str().c_str());
+  fflush(stderr);
 
   // Determine linkage type
   const Function &F = MF->getFunction();
   bool IsExternal = F.hasExternalLinkage() || F.hasCommonLinkage();
+  fprintf(stderr, "DEBUG:   IsExternal = %d\n", (int)IsExternal);
+  fflush(stderr);
 
   if (IsExternal) {
     // External linkage: export _ll_shared:funcname:
@@ -77,16 +88,28 @@ void McasmAsmPrinter::emitFunctionEntryLabel() {
     std::string Label = "export _ll_shared:";
     Label += FnSym->getName();
     Label += ":";
+    fprintf(stderr, "DEBUG:   Emitting label: %s\n", Label.c_str());
+    fflush(stderr);
     OutStreamer->emitRawText(Label);
   } else {
     // Internal linkage: funcname:
+    fprintf(stderr, "DEBUG:   Emitting internal label\n");
+    fflush(stderr);
     OutStreamer->emitLabel(FnSym);
   }
+
+  fprintf(stderr, "DEBUG: McasmAsmPrinter::emitFunctionEntryLabel completed\n");
+  fflush(stderr);
 }
 
 void McasmAsmPrinter::emitInstruction(const MachineInstr *MI) {
+  fprintf(stderr, "DEBUG: McasmAsmPrinter::emitInstruction called, Opcode=%u\n", MI->getOpcode());
+  fflush(stderr);
+
   // Skip pseudo instructions
   if (MI->isPseudo()) {
+    fprintf(stderr, "DEBUG:   Skipping pseudo instruction\n");
+    fflush(stderr);
     return;
   }
 
@@ -96,6 +119,9 @@ void McasmAsmPrinter::emitInstruction(const MachineInstr *MI) {
     MCInstLowering = std::make_unique<McasmMCInstLower>(OutContext, *MF, *this);
   }
   MCInstLowering->Lower(MI, TmpInst);
+
+  fprintf(stderr, "DEBUG:   About to emit MCInst\n");
+  fflush(stderr);
 
   // Emit the MCInst
   // NOTE: Memory offsets in TmpInst are already in mcasm units.

@@ -682,34 +682,8 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
     fprintf(stderr, "DEBUG LLC: Entering !SkipModule branch\n");
     fflush(stderr);
 
-    // TEST: Create a simple module manually AND create TargetMachine
-    fprintf(stderr, "DEBUG LLC: Creating simple module manually\n");
-    fflush(stderr);
-    M = std::make_unique<Module>("test", Context);
-    TheTriple = Triple("mcasm-unknown-none");
-    M->setTargetTriple(TheTriple);
-    M->setDataLayout("e-p:32:32-i32:32-n32");
-    fprintf(stderr, "DEBUG LLC: Module created manually\n");
-    fflush(stderr);
-
-    // Now create TargetMachine
-    fprintf(stderr, "DEBUG LLC: Looking up mcasm target for manual module\n");
-    fflush(stderr);
-    std::string Error;
-    TheTarget = TargetRegistry::lookupTarget(codegen::getMArch(), TheTriple, Error);
-    if (!TheTarget) {
-      WithColor::error(errs(), argv[0]) << Error << "\n";
-      return 1;
-    }
-    fprintf(stderr, "DEBUG LLC: Creating TargetMachine for manual module\n");
-    fflush(stderr);
-    InitializeOptions(TheTriple);
-    Target = std::unique_ptr<TargetMachine>(TheTarget->createTargetMachine(
-        TheTriple, CPUStr, FeaturesStr, Options, RM, CM, OLvl));
-    fprintf(stderr, "DEBUG LLC: TargetMachine created for manual module\n");
-    fflush(stderr);
-    setPGOOptions(*Target);
-    // Don't use goto, just let it fall through
+    // REMOVED: Manual module creation (was creating empty module)
+    // Now we'll parse the actual IR file below
 
     fprintf(stderr, "DEBUG LLC: About to define SetDataLayout lambda\n");
     fflush(stderr);
@@ -874,6 +848,33 @@ static int compileModule(char **argv, SmallVectorImpl<PassPlugin> &PluginList,
       fprintf(stderr, "DEBUG LLC: Setting module target triple\n");
       fflush(stderr);
       M->setTargetTriple(Triple(Triple::normalize(TargetTriple)));
+    }
+
+    // Create TargetMachine if not already created
+    if (!Target) {
+      fprintf(stderr, "DEBUG LLC: Target not created yet, creating now\n");
+      fflush(stderr);
+
+      TheTriple = M->getTargetTriple();
+      if (TheTriple.getTriple().empty())
+        TheTriple.setTriple(sys::getDefaultTargetTriple());
+
+      // Get the target specific parser
+      std::string Error;
+      TheTarget = TargetRegistry::lookupTarget(codegen::getMArch(), TheTriple, Error);
+      if (!TheTarget) {
+        WithColor::error(errs(), argv[0]) << Error << "\n";
+        return 1;
+      }
+
+      InitializeOptions(TheTriple);
+      Target = std::unique_ptr<TargetMachine>(TheTarget->createTargetMachine(
+          TheTriple, CPUStr, FeaturesStr, Options, RM, CM, OLvl));
+      assert(Target && "Could not allocate target machine!");
+
+      setPGOOptions(*Target);
+      fprintf(stderr, "DEBUG LLC: TargetMachine created successfully\n");
+      fflush(stderr);
     }
 
     fprintf(stderr, "DEBUG LLC: Getting code model from IR\n");

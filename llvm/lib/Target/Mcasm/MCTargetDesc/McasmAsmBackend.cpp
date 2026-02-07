@@ -20,6 +20,7 @@
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAssembler.h"
 #include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCELFObjectWriter.h"
 #include "llvm/MC/MCFixup.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCObjectWriter.h"
@@ -27,10 +28,34 @@
 #include "llvm/MC/MCSubtargetInfo.h"
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/BinaryFormat/ELF.h"
 
 using namespace llvm;
 
 namespace {
+
+class McasmELFObjectWriter : public MCELFObjectTargetWriter {
+public:
+  McasmELFObjectWriter(uint8_t OSABI, bool HasRelocationAddend)
+      : MCELFObjectTargetWriter(/*Is64Bit=*/false, OSABI, ELF::EM_386,
+                                HasRelocationAddend) {}
+
+  ~McasmELFObjectWriter() override = default;
+
+protected:
+  unsigned getRelocType(const MCFixup &Fixup, const MCValue &Target,
+                        bool IsPCRel) const override {
+    // Mcasm doesn't actually generate relocations for text output
+    // Return a dummy value
+    return ELF::R_386_NONE;
+  }
+};
+
+std::unique_ptr<MCObjectTargetWriter>
+createMcasmELFObjectWriter(bool Is64Bit, uint8_t OSABI, uint16_t EMachine,
+                           bool HasRelocationAddend) {
+  return std::make_unique<McasmELFObjectWriter>(OSABI, HasRelocationAddend);
+}
 
 class McasmAsmBackend : public MCAsmBackend {
 public:
@@ -53,8 +78,12 @@ public:
 
   std::unique_ptr<MCObjectTargetWriter>
   createObjectTargetWriter() const override {
-    // Mcasm does not output binary object files
-    llvm_unreachable("Mcasm does not create object files");
+    // Mcasm primarily outputs text, but we need to provide a valid writer
+    // for the MCAsmStreamer infrastructure. Create a minimal ELF writer.
+    // OSABI = 0 (ELFOSABI_NONE), HasRelocationAddend = false
+    return createMcasmELFObjectWriter(/*Is64Bit=*/false, /*OSABI=*/0,
+                                      /*EMachine=*/ELF::EM_386,
+                                      /*HasRelocationAddend=*/false);
   }
 
   bool fixupNeedsRelaxation(const MCFixup &Fixup, uint64_t Value) const override {

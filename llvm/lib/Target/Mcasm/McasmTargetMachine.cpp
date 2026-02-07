@@ -25,6 +25,11 @@
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/MC/MCRegisterInfo.h"
+#include "llvm/MC/MCInstPrinter.h"
+#include "llvm/MC/MCCodeEmitter.h"
+#include "llvm/MC/MCAsmBackend.h"
+#include "llvm/Support/FormattedStream.h"
+#include "llvm/Support/Errc.h"
 #include "McasmTargetObjectFile.h"
 #include "llvm/CodeGen/TargetPassConfig.h"
 #include "llvm/MC/TargetRegistry.h"
@@ -85,7 +90,7 @@ McasmTargetMachine::McasmTargetMachine(const Target &T, const Triple &TT,
                                        std::optional<Reloc::Model> RM,
                                        std::optional<CodeModel::Model> CM,
                                        CodeGenOptLevel OL, bool JIT)
-    : CodeGenTargetMachineImpl(([&]() { debugLog("Before base class constructor"); return T; })(),
+    : CodeGenTargetMachineImpl(T,
                                "e-p:32:32-i8:32-i16:32-i32:32-f32:32-a:0:32-n32",
                                TT, CPU, FS, Options,
                                RM.value_or(Reloc::Static),
@@ -328,42 +333,129 @@ McasmTargetMachine::createMCStreamer(raw_pwrite_stream &Out,
                                      MCContext &Context) {
   fprintf(stderr, "DEBUG: McasmTargetMachine::createMCStreamer called\n");
   fflush(stderr);
-  fprintf(stderr, "DEBUG:   FileType=%d\n", (int)FileType);
+  fprintf(stderr, "DEBUG:   FileType=%d (0=AssemblyFile, 1=ObjectFile)\n", (int)FileType);
   fflush(stderr);
 
-  fprintf(stderr, "DEBUG: Checking MC components\n");
+  // 获取 MC 组件
+  fprintf(stderr, "DEBUG: Step 1 - getting MC components\n");
   fflush(stderr);
-  fprintf(stderr, "DEBUG: Step 1 - about to call getMCSubtargetInfo()\n");
+  const MCSubtargetInfo &STI = *getMCSubtargetInfo();
+  fprintf(stderr, "DEBUG:   STI obtained\n");
   fflush(stderr);
-  const MCSubtargetInfo *STIPtr = getMCSubtargetInfo();
-  fprintf(stderr, "DEBUG:   getMCSubtargetInfo() = %p\n", (void*)STIPtr);
+  const MCAsmInfo &MAI = *getMCAsmInfo();
+  fprintf(stderr, "DEBUG:   MAI obtained\n");
   fflush(stderr);
-
-  fprintf(stderr, "DEBUG: Step 2 - about to call getMCAsmInfo()\n");
+  const MCRegisterInfo &MRI = *getMCRegisterInfo();
+  fprintf(stderr, "DEBUG:   MRI obtained\n");
   fflush(stderr);
-  const MCAsmInfo *MAIPtr = getMCAsmInfo();
-  fprintf(stderr, "DEBUG:   getMCAsmInfo() = %p\n", (void*)MAIPtr);
-  fflush(stderr);
-
-  fprintf(stderr, "DEBUG: Step 3 - about to call getMCRegisterInfo()\n");
-  fflush(stderr);
-  const MCRegisterInfo *MRIPtr = getMCRegisterInfo();
-  fprintf(stderr, "DEBUG:   getMCRegisterInfo() = %p\n", (void*)MRIPtr);
+  const MCInstrInfo &MII = *getMCInstrInfo();
+  fprintf(stderr, "DEBUG:   MII obtained\n");
   fflush(stderr);
 
-  fprintf(stderr, "DEBUG: Step 4 - about to call getMCInstrInfo()\n");
-  fflush(stderr);
-  const MCInstrInfo *MIIPtr = getMCInstrInfo();
-  fprintf(stderr, "DEBUG:   getMCInstrInfo() = %p\n", (void*)MIIPtr);
-  fflush(stderr);
+  std::unique_ptr<MCStreamer> AsmStreamer;
 
-  fprintf(stderr, "DEBUG: About to call base class createMCStreamer\n");
-  fflush(stderr);
-  auto Result = CodeGenTargetMachineImpl::createMCStreamer(Out, DwoOut, FileType, Context);
-  fprintf(stderr, "DEBUG: Base class createMCStreamer returned\n");
-  fflush(stderr);
+  switch (FileType) {
+  case CodeGenFileType::AssemblyFile: {
+    fprintf(stderr, "DEBUG: Step 2 - creating MCInstPrinter\n");
+    fflush(stderr);
+    fprintf(stderr, "DEBUG:   Triple = %s\n", getTargetTriple().str().c_str());
+    fflush(stderr);
+    fprintf(stderr, "DEBUG:   Target name = %s\n", getTarget().getName());
+    fflush(stderr);
+    fprintf(stderr, "DEBUG:   Assembler dialect = %u\n", MAI.getAssemblerDialect());
+    fflush(stderr);
 
-  return Result;
+    fprintf(stderr, "DEBUG:   About to call getTarget().createMCInstPrinter()\n");
+    fflush(stderr);
+    std::unique_ptr<MCInstPrinter> InstPrinter(getTarget().createMCInstPrinter(
+        getTargetTriple(),
+        Options.MCOptions.OutputAsmVariant.value_or(MAI.getAssemblerDialect()),
+        MAI, MII, MRI));
+    fprintf(stderr, "DEBUG:   createMCInstPrinter returned, InstPrinter=%p\n", (void*)InstPrinter.get());
+    fflush(stderr);
+
+    if (!InstPrinter) {
+      fprintf(stderr, "ERROR: createMCInstPrinter returned nullptr\n");
+      fflush(stderr);
+      return createStringError("Failed to create MCInstPrinter for mcasm");
+    }
+
+    fprintf(stderr, "DEBUG: Step 3 - applying InstPrinter options\n");
+    fflush(stderr);
+    for (StringRef Opt : Options.MCOptions.InstPrinterOptions) {
+      fprintf(stderr, "DEBUG:   Applying option: %s\n", Opt.str().c_str());
+      fflush(stderr);
+      if (!InstPrinter->applyTargetSpecificCLOption(Opt))
+        return createStringError("invalid InstPrinter option '" + Opt + "'");
+    }
+    fprintf(stderr, "DEBUG:   All InstPrinter options applied\n");
+    fflush(stderr);
+
+    // 创建 code emitter (如果需要显示编码)
+    std::unique_ptr<MCCodeEmitter> MCE;
+    if (Options.MCOptions.ShowMCEncoding) {
+      fprintf(stderr, "DEBUG: Step 4 - creating MCCodeEmitter\n");
+      fflush(stderr);
+      MCE.reset(getTarget().createMCCodeEmitter(MII, Context));
+      fprintf(stderr, "DEBUG:   createMCCodeEmitter returned, MCE=%p\n", (void*)MCE.get());
+      fflush(stderr);
+    } else {
+      fprintf(stderr, "DEBUG: Step 4 - skipping MCCodeEmitter (ShowMCEncoding=false)\n");
+      fflush(stderr);
+    }
+
+    fprintf(stderr, "DEBUG: Step 5 - creating MCAsmBackend\n");
+    fflush(stderr);
+    std::unique_ptr<MCAsmBackend> MAB(
+        getTarget().createMCAsmBackend(STI, MRI, Options.MCOptions));
+    fprintf(stderr, "DEBUG:   createMCAsmBackend returned, MAB=%p\n", (void*)MAB.get());
+    fflush(stderr);
+
+    if (!MAB) {
+      fprintf(stderr, "ERROR: createMCAsmBackend returned nullptr\n");
+      fflush(stderr);
+      return createStringError("Failed to create MCAsmBackend for mcasm");
+    }
+
+    fprintf(stderr, "DEBUG: Step 6 - creating formatted_raw_ostream\n");
+    fflush(stderr);
+    auto FOut = std::make_unique<formatted_raw_ostream>(Out);
+    fprintf(stderr, "DEBUG:   formatted_raw_ostream created\n");
+    fflush(stderr);
+
+    fprintf(stderr, "DEBUG: Step 7 - calling getTarget().createAsmStreamer()\n");
+    fflush(stderr);
+    MCStreamer *S = getTarget().createAsmStreamer(
+        Context, std::move(FOut), std::move(InstPrinter), std::move(MCE),
+        std::move(MAB));
+    fprintf(stderr, "DEBUG:   createAsmStreamer returned, S=%p\n", (void*)S);
+    fflush(stderr);
+
+    if (!S) {
+      fprintf(stderr, "ERROR: createAsmStreamer returned nullptr\n");
+      fflush(stderr);
+      return createStringError("Failed to create AsmStreamer for mcasm");
+    }
+
+    AsmStreamer.reset(S);
+    fprintf(stderr, "DEBUG: Step 8 - AsmStreamer reset completed\n");
+    fflush(stderr);
+    break;
+  }
+  case CodeGenFileType::ObjectFile: {
+    fprintf(stderr, "ERROR: ObjectFile generation not supported for mcasm\n");
+    fflush(stderr);
+    return createStringError("mcasm does not support object file generation");
+  }
+  default:
+    fprintf(stderr, "ERROR: Unknown FileType=%d\n", (int)FileType);
+    fflush(stderr);
+    return createStringError("Unknown CodeGenFileType");
+  }
+
+  fprintf(stderr, "DEBUG: createMCStreamer completed successfully\n");
+  fflush(stderr);
+  return std::move(AsmStreamer);
 }
 
 // Stubs for new Pass Manager functions
