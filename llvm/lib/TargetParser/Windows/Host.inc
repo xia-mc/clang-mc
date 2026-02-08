@@ -22,7 +22,9 @@ using namespace llvm;
 static std::string updateTripleOSVersion(std::string Triple) { return Triple; }
 
 std::string sys::getDefaultTargetTriple() {
-  const char *Triple = LLVM_DEFAULT_TARGET_TRIPLE;
+  // For this LLVM build, mcasm is the default target
+  // Users can still override with -target flag
+  const char *Triple = "mcasm";
 
   // Override the default target with an environment variable named by
   // LLVM_TARGET_TRIPLE_ENV.
