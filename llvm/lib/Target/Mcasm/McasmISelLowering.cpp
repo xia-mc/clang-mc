@@ -52,23 +52,35 @@ McasmTargetLowering::McasmTargetLowering(const McasmTargetMachine &TM,
   setOperationAction(ISD::SUB, MVT::i32, Legal);
   setOperationAction(ISD::MUL, MVT::i32, Legal);
 
-  // Division/Remainder - expand to library calls for now
-  setOperationAction(ISD::SDIV, MVT::i32, Expand);
+  // High multiplication results - not supported, forces LLVM to use native DIV
+  setOperationAction(ISD::MULHS, MVT::i32, Expand);
+  setOperationAction(ISD::MULHU, MVT::i32, Expand);
+  setOperationAction(ISD::SMUL_LOHI, MVT::i32, Expand);
+  setOperationAction(ISD::UMUL_LOHI, MVT::i32, Expand);
+
+  // Division - mcasm has native signed division
+  setOperationAction(ISD::SDIV, MVT::i32, Legal);
+
+  // Unsigned division and remainder - expand to library calls
   setOperationAction(ISD::UDIV, MVT::i32, Expand);
   setOperationAction(ISD::SREM, MVT::i32, Expand);
   setOperationAction(ISD::UREM, MVT::i32, Expand);
 
-  // Shifts and rotates
-  setOperationAction(ISD::SHL, MVT::i32, Legal);
-  setOperationAction(ISD::SRA, MVT::i32, Legal);
-  setOperationAction(ISD::SRL, MVT::i32, Legal);
+  // Shifts and rotates - mcasm does not support bit operations
+  // Expand to library calls or scalar code
+  setOperationAction(ISD::SHL, MVT::i32, Expand);
+  setOperationAction(ISD::SRA, MVT::i32, Expand);
+  setOperationAction(ISD::SRL, MVT::i32, Expand);
   setOperationAction(ISD::ROTL, MVT::i32, Expand);
   setOperationAction(ISD::ROTR, MVT::i32, Expand);
 
-  // Logical operations
-  setOperationAction(ISD::AND, MVT::i32, Legal);
-  setOperationAction(ISD::OR, MVT::i32, Legal);
-  setOperationAction(ISD::XOR, MVT::i32, Legal);
+  // Logical operations - mcasm does not support bit operations, expand to library calls
+  setOperationAction(ISD::AND, MVT::i32, Expand);
+  setOperationAction(ISD::OR, MVT::i32, Expand);
+  setOperationAction(ISD::XOR, MVT::i32, Expand);
+  setOperationAction(ISD::CTPOP, MVT::i32, Expand);
+  setOperationAction(ISD::CTLZ, MVT::i32, Expand);
+  setOperationAction(ISD::CTTZ, MVT::i32, Expand);
 
   // Comparison operations
   setOperationAction(ISD::SETCC, MVT::i32, Legal);
@@ -96,6 +108,50 @@ McasmTargetLowering::McasmTargetLowering(const McasmTargetMachine &TM,
   setOperationAction(ISD::VAARG, MVT::Other, Expand);
   setOperationAction(ISD::VACOPY, MVT::Other, Expand);
   setOperationAction(ISD::VAEND, MVT::Other, Expand);
+
+  // Vector operations - mcasm does not support SIMD/vector operations
+  // Expand all vector operations to scalar operations
+  setOperationAction(ISD::BUILD_VECTOR, MVT::Other, Custom);
+  setOperationAction(ISD::EXTRACT_VECTOR_ELT, MVT::Other, Expand);
+  setOperationAction(ISD::INSERT_VECTOR_ELT, MVT::Other, Expand);
+  setOperationAction(ISD::SCALAR_TO_VECTOR, MVT::Other, Expand);
+  setOperationAction(ISD::VECTOR_SHUFFLE, MVT::Other, Expand);
+  setOperationAction(ISD::CONCAT_VECTORS, MVT::Other, Expand);
+
+  // Explicitly mark that we don't support any vector types
+  for (MVT VT : MVT::fixedlen_vector_valuetypes()) {
+    setOperationAction(ISD::BUILD_VECTOR, VT, Expand);
+    setOperationAction(ISD::EXTRACT_VECTOR_ELT, VT, Expand);
+    setOperationAction(ISD::INSERT_VECTOR_ELT, VT, Expand);
+    setOperationAction(ISD::SCALAR_TO_VECTOR, VT, Expand);
+    setOperationAction(ISD::VECTOR_SHUFFLE, VT, Expand);
+    setOperationAction(ISD::CONCAT_VECTORS, VT, Expand);
+    setOperationAction(ISD::EXTRACT_SUBVECTOR, VT, Expand);
+    setOperationAction(ISD::SELECT, VT, Expand);
+
+    // Arithmetic operations on vectors
+    setOperationAction(ISD::ADD, VT, Expand);
+    setOperationAction(ISD::SUB, VT, Expand);
+    setOperationAction(ISD::MUL, VT, Expand);
+    setOperationAction(ISD::SDIV, VT, Expand);
+    setOperationAction(ISD::UDIV, VT, Expand);
+    setOperationAction(ISD::SREM, VT, Expand);
+    setOperationAction(ISD::UREM, VT, Expand);
+
+    // Bitwise operations on vectors
+    setOperationAction(ISD::AND, VT, Expand);
+    setOperationAction(ISD::OR, VT, Expand);
+    setOperationAction(ISD::XOR, VT, Expand);
+
+    // Shift operations on vectors
+    setOperationAction(ISD::SHL, VT, Expand);
+    setOperationAction(ISD::SRA, VT, Expand);
+    setOperationAction(ISD::SRL, VT, Expand);
+
+    // Load/store operations on vectors
+    setOperationAction(ISD::LOAD, VT, Expand);
+    setOperationAction(ISD::STORE, VT, Expand);
+  }
 }
 
 SDValue McasmTargetLowering::LowerFormalArguments(
@@ -145,6 +201,7 @@ SDValue McasmTargetLowering::LowerCall(
   SDValue Callee = CLI.Callee;
   CallingConv::ID CallConv = CLI.CallConv;
   bool isVarArg = CLI.IsVarArg;
+  bool &IsTailCall = CLI.IsTailCall;
   MachineFunction &MF = DAG.getMachineFunction();
 
   // Analyze outgoing arguments
@@ -154,6 +211,12 @@ SDValue McasmTargetLowering::LowerCall(
 
   // Get the size of the outgoing arguments stack space
   unsigned NumBytes = CCInfo.getStackSize();
+
+  // Check if tail call is possible
+  // For now, only allow tail calls with no stack arguments
+  if (IsTailCall && NumBytes > 0) {
+    IsTailCall = false;  // Cannot tail call with stack arguments
+  }
 
   // Adjust stack if needed
   if (NumBytes > 0) {
@@ -194,7 +257,18 @@ SDValue McasmTargetLowering::LowerCall(
     Glue = Chain.getValue(1);
   }
 
-  // Emit call instruction
+  // Convert GlobalAddress/ExternalSymbol to TargetGlobalAddress/TargetExternalSymbol
+  // Direct calls will use CALL instruction, indirect calls will use CALLD
+  if (GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee)) {
+    Callee = DAG.getTargetGlobalAddress(G->getGlobal(), dl, MVT::i32,
+                                         G->getOffset());
+  } else if (ExternalSymbolSDNode *E = dyn_cast<ExternalSymbolSDNode>(Callee)) {
+    Callee = DAG.getTargetExternalSymbol(E->getSymbol(), MVT::i32);
+  }
+  // If Callee is already a register (indirect call via function pointer),
+  // it will be matched by CALLD pattern
+
+  // Emit call or tail call instruction
   SmallVector<SDValue, 8> Ops;
   Ops.push_back(Chain);
   Ops.push_back(Callee);
@@ -207,6 +281,12 @@ SDValue McasmTargetLowering::LowerCall(
   if (Glue.getNode())
     Ops.push_back(Glue);
 
+  if (IsTailCall) {
+    // Tail call: JMP directly to the callee, no return value handling needed
+    return DAG.getNode(McasmISD::TC_RETURN, dl, MVT::Other, Ops);
+  }
+
+  // Regular call
   Chain = DAG.getNode(McasmISD::CALL, dl, DAG.getVTList(MVT::Other, MVT::Glue),
                       Ops);
   Glue = Chain.getValue(1);
@@ -282,11 +362,14 @@ const char *McasmTargetLowering::getTargetNodeName(unsigned Opcode) const {
   switch (Opcode) {
   default: return nullptr;
   case McasmISD::CALL:            return "McasmISD::CALL";
+  case McasmISD::TC_RETURN:       return "McasmISD::TC_RETURN";
   case McasmISD::RET_GLUE:        return "McasmISD::RET_GLUE";
   case McasmISD::CMP:             return "McasmISD::CMP";
   case McasmISD::BRCOND:          return "McasmISD::BRCOND";
+  case McasmISD::BR_CC:           return "McasmISD::BR_CC";
   case McasmISD::Wrapper:         return "McasmISD::Wrapper";
   case McasmISD::WrapperPIC:      return "McasmISD::WrapperPIC";
+  case McasmISD::FunctionWrapper: return "McasmISD::FunctionWrapper";
   }
 }
 
@@ -300,6 +383,12 @@ SDValue McasmTargetLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const
     return lowerConstantPool(Op, DAG);
   case ISD::JumpTable:
     return lowerJumpTable(Op, DAG);
+  case ISD::BRCOND:
+    return lowerBRCOND(Op, DAG);
+
+  case ISD::BUILD_VECTOR:
+    // mcasm does not support vector operations - return SDValue() to let LLVM expand
+    return SDValue();
 
   case ISD::VASTART:
     // Minimal varargs support - expand to nothing for now
@@ -319,13 +408,28 @@ SDValue McasmTargetLowering::lowerGlobalAddress(SDValue Op,
   const GlobalValue *GV = N->getGlobal();
   int64_t Offset = N->getOffset();
 
-  // Create a TargetGlobalAddress node, which can be pattern-matched to MOV32ri
-  // TargetGlobalAddress will be legalized to an immediate value by the MC layer
+  // Create a TargetGlobalAddress node
   SDValue TargetAddr = DAG.getTargetGlobalAddress(GV, DL, Ty, Offset);
 
-  // Wrap it in a Wrapper node for PIC/non-PIC handling
-  // The Wrapper will be pattern-matched and lowered to a MOV instruction
-  return DAG.getNode(McasmISD::Wrapper, DL, Ty, TargetAddr);
+  // Check if this is a function address
+  // Functions require MOVD (more expensive, should be cached)
+  // Data addresses use regular MOV
+  bool isFunction = isa<Function>(GV);
+  fprintf(stderr, "DEBUG lowerGlobalAddress: GV=%s, isFunction=%d\n",
+          GV->getName().str().c_str(), isFunction);
+  fflush(stderr);
+
+  if (isFunction) {
+    // Function address - use FunctionWrapper -> will match MOVD32ri
+    fprintf(stderr, "DEBUG: Using FunctionWrapper for %s\n", GV->getName().str().c_str());
+    fflush(stderr);
+    return DAG.getNode(McasmISD::FunctionWrapper, DL, Ty, TargetAddr);
+  } else {
+    // Data address - use regular Wrapper -> will match MOV32ri
+    fprintf(stderr, "DEBUG: Using Wrapper for %s\n", GV->getName().str().c_str());
+    fflush(stderr);
+    return DAG.getNode(McasmISD::Wrapper, DL, Ty, TargetAddr);
+  }
 }
 
 SDValue McasmTargetLowering::lowerBlockAddress(SDValue Op,
@@ -361,4 +465,25 @@ SDValue McasmTargetLowering::lowerJumpTable(SDValue Op,
 
   SDValue TargetAddr = DAG.getTargetJumpTable(JTI, Ty);
   return DAG.getNode(McasmISD::Wrapper, DL, Ty, TargetAddr);
+}
+
+SDValue McasmTargetLowering::lowerBRCOND(SDValue Op, SelectionDAG &DAG) const {
+  SDLoc DL(Op);
+  SDValue Chain = Op.getOperand(0);
+  SDValue Cond = Op.getOperand(1);
+  SDValue Dest = Op.getOperand(2);
+
+  // If the condition is a setcc node, we can directly use its operands
+  if (Cond.getOpcode() == ISD::SETCC) {
+    SDValue LHS = Cond.getOperand(0);
+    SDValue RHS = Cond.getOperand(1);
+    ISD::CondCode CC = cast<CondCodeSDNode>(Cond.getOperand(2))->get();
+
+    // Create BR_CC node: chain, lhs, rhs, cc, dest
+    return DAG.getNode(McasmISD::BR_CC, DL, MVT::Other, Chain, LHS, RHS,
+                       DAG.getCondCode(CC), Dest);
+  }
+
+  // Otherwise, fall back to default expansion
+  return SDValue();
 }

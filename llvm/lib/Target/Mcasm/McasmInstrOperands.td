@@ -117,3 +117,7 @@ def brtarget32 : Operand<OtherVT> {
 def i32timm : Operand<i32> {
   let PrintMethod = "printImmediate";
 }
+
+// Bare symbol operand for direct calls (no wrapping)
+// Used by PseudoCALL to match direct function calls
+def bare_symbol : Operand<i32>;

@@ -143,7 +143,8 @@ void McasmInstPrinter::printPCRelImm(const MCInst *MI, uint64_t Address,
     OS << Op.getImm();
   } else if (Op.isExpr()) {
     // Expression operand (e.g., label reference)
-    OS << "LABEL_EXPR";  // TODO: Implement proper MCExpr printing
+    // Use MCAsmInfo's public API to print the expression
+    MAI.printExpr(OS, *Op.getExpr());
   } else {
     llvm_unreachable("Unknown operand type in printPCRelImm");
   }

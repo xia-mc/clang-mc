@@ -7,6 +7,7 @@
 
 #include "McasmTargetMachine.h"
 #include "MCTargetDesc/McasmMCTargetDesc.h"
+#include "MCTargetDesc/McasmFilteredStream.h"
 #include "TargetInfo/McasmTargetInfo.h"
 #include "Mcasm.h"
 #include "McasmSubtarget.h"
@@ -76,12 +77,8 @@ static void debugLog(const char *msg) {
 
 static std::unique_ptr<TargetLoweringObjectFile> createTLOF(const Triple &TT) {
   debugLog("createTLOF called");
-  if (TT.isOSBinFormatCOFF()) {
-    debugLog("Creating COFF TLOF");
-    return std::make_unique<TargetLoweringObjectFileCOFF>();
-  }
-  debugLog("Creating ELF TLOF");
-  return std::make_unique<McasmELFTargetObjectFile>();
+  // Use custom McasmTargetObjectFile for symbol name formatting
+  return std::make_unique<McasmTargetObjectFile>();
 }
 
 McasmTargetMachine::McasmTargetMachine(const Target &T, const Triple &TT,
@@ -97,6 +94,10 @@ McasmTargetMachine::McasmTargetMachine(const Target &T, const Triple &TT,
                                CM.value_or(CodeModel::Small), OL),
       TLOF(createTLOF(getTargetTriple())), IsJIT(JIT) {
   debugLog("McasmTargetMachine constructor body entered");
+
+  // mcasm doesn't need .addrsig or .file directives
+  this->Options.EmitAddrsig = false;
+
   debugLog("About to call initAsmInfo()");
   initAsmInfo();
   debugLog("initAsmInfo() completed");
@@ -214,11 +215,8 @@ public:
     fprintf(stderr, "DEBUG: McasmPassConfig::addIRPasses called\n");
     fflush(stderr);
 
-    // TEMPORARY: Skip TargetPassConfig::addIRPasses() to isolate the crash
-    // The "Expand IR instructions" pass is added by base class addIRPasses
-    // TargetPassConfig::addIRPasses();
-    fprintf(stderr, "DEBUG: SKIPPING base class addIRPasses (temporary workaround)\n");
-    fflush(stderr);
+    // Call base class to add standard IR passes
+    TargetPassConfig::addIRPasses();
 
     fprintf(stderr, "DEBUG: McasmPassConfig::addIRPasses completed\n");
     fflush(stderr);
@@ -234,10 +232,8 @@ public:
     fprintf(stderr, "DEBUG: McasmPassConfig::addCodeGenPrepare called\n");
     fflush(stderr);
 
-    // TEMPORARY WORKAROUND: Skip CodeGenPrepare to isolate the crash
-    // TargetPassConfig::addCodeGenPrepare();
-    fprintf(stderr, "DEBUG: SKIPPING CodeGenPrepare pass (temporary workaround)\n");
-    fflush(stderr);
+    // Call base class to add CodeGenPrepare pass
+    TargetPassConfig::addCodeGenPrepare();
 
     fprintf(stderr, "DEBUG: McasmPassConfig::addCodeGenPrepare completed\n");
     fflush(stderr);
@@ -443,19 +439,32 @@ McasmTargetMachine::createMCStreamer(raw_pwrite_stream &Out,
       return createStringError("Failed to create MCAsmBackend for mcasm");
     }
 
-    fprintf(stderr, "DEBUG: Step 6 - creating formatted_raw_ostream\n");
+    fprintf(stderr, "DEBUG: Step 6 - creating McasmFilteredStream\n");
     fflush(stderr);
-    auto FOut = std::make_unique<formatted_raw_ostream>(Out);
+    // Create filtered stream to remove ELF directives
+    auto FilteredOut = std::make_unique<McasmFilteredStream>(Out);
+    fprintf(stderr, "DEBUG:   McasmFilteredStream created\n");
+    fflush(stderr);
+
+    fprintf(stderr, "DEBUG: Step 7 - creating formatted_raw_ostream\n");
+    fflush(stderr);
+    auto FOut = std::make_unique<formatted_raw_ostream>(*FilteredOut);
     fprintf(stderr, "DEBUG:   formatted_raw_ostream created\n");
     fflush(stderr);
 
-    fprintf(stderr, "DEBUG: Step 7 - calling getTarget().createAsmStreamer()\n");
+    fprintf(stderr, "DEBUG: Step 8 - calling getTarget().createAsmStreamer()\n");
     fflush(stderr);
     MCStreamer *S = getTarget().createAsmStreamer(
         Context, std::move(FOut), std::move(InstPrinter), std::move(MCE),
         std::move(MAB));
     fprintf(stderr, "DEBUG:   createAsmStreamer returned, S=%p\n", (void*)S);
     fflush(stderr);
+
+    // Keep FilteredOut alive by storing it in AsmStreamer's context
+    // (it will be destroyed when AsmStreamer is destroyed)
+    // IMPORTANT: FilteredOut must outlive FOut, so we need to keep it alive
+    // For now, we leak it intentionally - TODO: find a better way
+    (void)FilteredOut.release();
 
     if (!S) {
       fprintf(stderr, "ERROR: createAsmStreamer returned nullptr\n");
@@ -464,7 +473,7 @@ McasmTargetMachine::createMCStreamer(raw_pwrite_stream &Out,
     }
 
     AsmStreamer.reset(S);
-    fprintf(stderr, "DEBUG: Step 8 - AsmStreamer reset completed\n");
+    fprintf(stderr, "DEBUG: Step 9 - AsmStreamer reset completed\n");
     fflush(stderr);
     break;
   }

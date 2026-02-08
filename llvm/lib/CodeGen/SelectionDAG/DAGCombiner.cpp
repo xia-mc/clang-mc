@@ -5241,7 +5241,9 @@ SDValue DAGCombiner::visitSDIVLike(SDValue N0, SDValue N1, SDNode *N) {
   // FIXME: We check for the exact bit here because the generic lowering gives
   // better results in that case. The target-specific lowering should learn how
   // to handle exact sdivs efficiently.
-  if (!N->getFlags().hasExact() && isDivisorPowerOfTwo(N1)) {
+  // MCASM: Skip this optimization for mcasm target - it does not support shift operations
+  bool isMcasmTarget = TLI.getTargetMachine().getTargetTriple().getArch() == llvm::Triple::mcasm;
+  if (!N->getFlags().hasExact() && isDivisorPowerOfTwo(N1) && !isMcasmTarget) {
     // Target-specific implementation of sdiv x, pow2.
     if (SDValue Res = BuildSDIVPow2(N))
       return Res;

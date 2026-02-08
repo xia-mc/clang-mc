@@ -38,6 +38,7 @@ public:
 
   void emitStartOfAsmFile(Module &M) override;
   void emitEndOfAsmFile(Module &M) override;
+  void emitLinkage(const GlobalValue *GV, MCSymbol *Sym) const override;
   void emitFunctionEntryLabel() override;
   void emitFunctionBodyStart() override;
   void emitFunctionBodyEnd() override;

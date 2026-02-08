@@ -41,6 +41,15 @@ class McasmELFMCAsmInfo : public MCAsmInfoELF {
 
 public:
   explicit McasmELFMCAsmInfo(const Triple &Triple);
+
+  // mcasm doesn't use section directives - override to suppress them
+  bool shouldOmitSectionDirective(StringRef SectionName) const override {
+    // Return true to omit ALL section directives (.text, .data, .section, etc.)
+    return true;
+  }
+
+  // Override to accept colon (:) in symbol names (e.g., _ll_shared:funcname)
+  bool isAcceptableChar(char C) const override;
 };
 
 class McasmMCAsmInfoMicrosoft : public MCAsmInfoMicrosoft {

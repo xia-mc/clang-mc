@@ -75,6 +75,13 @@ bool McasmAsmPrinter::runOnMachineFunction(MachineFunction &MF) {
   return AsmPrinter::runOnMachineFunction(MF);
 }
 
+void McasmAsmPrinter::emitLinkage(const GlobalValue *GV, MCSymbol *Sym) const {
+  // mcasm uses "export _ll_shared:name:" syntax for external linkage
+  // Don't emit .globl or other ELF-style linkage directives
+  // The actual export label is emitted in emitFunctionEntryLabel()
+  // So this function is intentionally empty
+}
+
 void McasmAsmPrinter::emitFunctionBodyStart() {
   // mcasm doesn't need CFI directives (.cfi_startproc)
   // Override to prevent base class from emitting them
@@ -100,10 +107,9 @@ void McasmAsmPrinter::emitFunctionEntryLabel() {
   fflush(stderr);
 
   if (IsExternal) {
-    // External linkage: export _ll_shared:funcname:
-    // NOTE: User has reservations about "_ll_shared" naming.
-    // Consider changing to "llvm" or module-based namespace in the future.
-    std::string Label = "export _ll_shared:";
+    // External linkage: export funcname:
+    // NOTE: The symbol name already includes _ll_shared: prefix (added by getTargetSymbol)
+    std::string Label = "export ";
     Label += FnSym->getName();
     Label += ":";
     fprintf(stderr, "DEBUG:   Emitting label: %s\n", Label.c_str());
@@ -155,7 +161,23 @@ void McasmAsmPrinter::emitGlobalVariable(const GlobalVariable *GV) {
 
   // mcasm syntax: static varname [val1, val2, ...]
   std::string Output = "static ";
-  Output += GV->getName();
+
+  // Get the variable name and sanitize it for mcasm
+  std::string VarName = GV->getName().str();
+
+  // Remove leading dot if present (e.g., .str -> str)
+  if (!VarName.empty() && VarName[0] == '.') {
+    VarName = VarName.substr(1);
+  }
+
+  // Replace remaining dots with underscores (e.g., str.1 -> str_1)
+  for (char &C : VarName) {
+    if (C == '.') {
+      C = '_';
+    }
+  }
+
+  Output += VarName;
   Output += " [";
 
   const Constant *C = GV->getInitializer();

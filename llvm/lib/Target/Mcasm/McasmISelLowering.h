@@ -34,6 +34,9 @@ enum NodeType : unsigned {
   /// Mcasm call instruction.
   CALL,
 
+  /// Mcasm tail call (optimized as JMP).
+  TC_RETURN,
+
   /// Return with a glue operand. Operand 0 is the chain operand.
   RET_GLUE,
 
@@ -46,11 +49,19 @@ enum NodeType : unsigned {
   /// instruction.
   BRCOND,
 
+  /// Mcasm conditional branch with condition code. Operands: chain, lhs, rhs,
+  /// condition code, destination block.
+  /// This is used for mcasm's direct comparison conditional jumps.
+  BR_CC,
+
   /// Wrapper for a global address.
   Wrapper,
 
   /// Wrapper for a global address - used for PIC.
-  WrapperPIC
+  WrapperPIC,
+
+  /// Wrapper for a function address - requires MOVD instead of MOV.
+  FunctionWrapper
 };
 } // namespace McasmISD
 
@@ -89,6 +100,12 @@ public:
                       const SmallVectorImpl<SDValue> &OutVals, const SDLoc &dl,
                       SelectionDAG &DAG) const override;
 
+  /// Prevent LLVM from transforming division to shift
+  /// mcasm does not support shift operations
+  bool shouldAvoidTransformToShift(EVT VT, unsigned Amount) const override {
+    return true;
+  }
+
 private:
   const McasmSubtarget &Subtarget;
 
@@ -96,6 +113,7 @@ private:
   SDValue lowerBlockAddress(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerConstantPool(SDValue Op, SelectionDAG &DAG) const;
   SDValue lowerJumpTable(SDValue Op, SelectionDAG &DAG) const;
+  SDValue lowerBRCOND(SDValue Op, SelectionDAG &DAG) const;
 };
 
 } // namespace llvm

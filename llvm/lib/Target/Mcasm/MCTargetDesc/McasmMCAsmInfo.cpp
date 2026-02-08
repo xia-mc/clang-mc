@@ -121,6 +121,9 @@ McasmELFMCAsmInfo::McasmELFMCAsmInfo(const Triple &T) {
   AssemblerDialect = McasmAsmSyntax;
   AllowDollarAtStartOfIdentifier = false;
 
+  // mcasm uses // for comments (# is reserved for preprocessor directives)
+  CommentString = "//";
+
   // mcasm doesn't need debug information or exception handling
   SupportsDebugInformation = false;
   ExceptionsType = ExceptionHandling::None;
@@ -129,8 +132,19 @@ McasmELFMCAsmInfo::McasmELFMCAsmInfo(const Triple &T) {
   WeakDirective = nullptr;  // Disable .weak directive
   HasIdentDirective = false;  // Disable .ident directive
   HasDotTypeDotSizeDirective = false;  // Disable .type and .size directives
+  GlobalDirective = nullptr;  // Disable .globl directive (mcasm uses "export" syntax)
+
+  // Note: .file, .text, .p2align, .section are filtered by McasmFilteredStream
 
   initializeAtSpecifiers(atSpecifiers);
+}
+
+bool McasmELFMCAsmInfo::isAcceptableChar(char C) const {
+  // mcasm allows colon (:) in symbol names (e.g., _ll_shared:funcname)
+  if (C == ':')
+    return true;
+  // Call base class for other characters
+  return MCAsmInfoELF::isAcceptableChar(C);
 }
 
 const MCExpr *

@@ -50,6 +50,10 @@ def SDTMcasmBrCond  : SDTypeProfile<0, 3,
                                   [SDTCisVT<0, OtherVT>,
                                    SDTCisVT<1, i8>, SDTCisVT<2, i32>]>;
 
+def SDTMcasmBrCC    : SDTypeProfile<0, 4,
+                                  [SDTCisInt<0>, SDTCisInt<1>,
+                                   SDTCisVT<2, OtherVT>, SDTCisVT<3, OtherVT>]>;
+
 def SDTMcasmSetCC   : SDTypeProfile<1, 2,
                                   [SDTCisVT<0, i8>,
                                    SDTCisVT<1, i8>, SDTCisVT<2, i32>]>;
@@ -157,6 +161,8 @@ def Mcasmcstore   : SDNode<"McasmISD::CSTORE",  SDTMcasmCstore, [SDNPHasChain, S
 def Mcasmcmov    : SDNode<"McasmISD::CMOV",     SDTMcasmCmov>;
 def Mcasmbrcond  : SDNode<"McasmISD::BRCOND",   SDTMcasmBrCond,
                         [SDNPHasChain]>;
+def Mcasmbrcc    : SDNode<"McasmISD::BR_CC",    SDTMcasmBrCC,
+                        [SDNPHasChain]>;
 def Mcasmsetcc   : SDNode<"McasmISD::SETCC",    SDTMcasmSetCC>;
 def Mcasmsetcc_c : SDNode<"McasmISD::SETCC_CARRY", SDTMcasmSetCC_C>;
 
@@ -210,6 +216,9 @@ def Mcasmcall    : SDNode<"McasmISD::CALL",     SDT_McasmCall,
                         [SDNPHasChain, SDNPOutGlue, SDNPOptInGlue,
                          SDNPVariadic]>;
 
+def Mcasmtc_return : SDNode<"McasmISD::TC_RETURN", SDT_McasmCall,
+                        [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
+
 def Mcasmcall_rvmarker  : SDNode<"McasmISD::CALL_RVMARKER",     SDT_McasmCall,
                         [SDNPHasChain, SDNPOutGlue, SDNPOptInGlue,
                          SDNPVariadic]>;
@@ -236,6 +245,7 @@ def Mcasmrep_movs: SDNode<"McasmISD::REP_MOVS", SDTMcasmRepStr,
 
 def McasmWrapper    : SDNode<"McasmISD::Wrapper",     SDTMcasmWrapper>;
 def McasmWrapperRIP : SDNode<"McasmISD::WrapperRIP",  SDTMcasmWrapper>;
+def McasmFunctionWrapper : SDNode<"McasmISD::FunctionWrapper", SDTMcasmWrapper>;
 
 def McasmRecoverFrameAlloc : SDNode<"ISD::LOCAL_RECOVER",
                                   SDTypeProfile<1, 1, [SDTCisSameAs<0, 1>,

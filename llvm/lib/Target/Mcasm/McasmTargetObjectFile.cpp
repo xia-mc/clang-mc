@@ -1,73 +1,61 @@
-//===-- McasmTargetObjectFile.cpp - Mcasm Object Info -------------------------===//
+//===-- McasmTargetObjectFile.cpp - Mcasm Object Files --------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+//
+// This file implements custom object file handling for the Mcasm target.
+// It provides symbol name customization to match mcasm assembly format.
+//
+//===----------------------------------------------------------------------===//
 
 #include "McasmTargetObjectFile.h"
-#include "MCTargetDesc/McasmMCAsmInfo.h"
-#include "llvm/BinaryFormat/Dwarf.h"
-#include "llvm/MC/MCExpr.h"
-#include "llvm/MC/MCValue.h"
-#include "llvm/Target/TargetMachine.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/GlobalValue.h"
+#include "llvm/IR/Mangler.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCSymbol.h"
 
 using namespace llvm;
-using namespace dwarf;
 
-const MCExpr *Mcasm_64MachoTargetObjectFile::getTTypeGlobalReference(
-    const GlobalValue *GV, unsigned Encoding, const TargetMachine &TM,
-    MachineModuleInfo *MMI, MCStreamer &Streamer) const {
+MCSymbol *McasmTargetObjectFile::getTargetSymbol(const GlobalValue *GV,
+                                                  const TargetMachine &TM) const {
+  SmallString<128> NameStr;
 
-  // On Darwin/Mcasm-64, we can reference dwarf symbols with foo@GOTPCREL+4, which
-  // is an indirect pc-relative reference.
-  if ((Encoding & DW_EH_PE_indirect) && (Encoding & DW_EH_PE_pcrel)) {
-    const MCSymbol *Sym = TM.getSymbol(GV);
-    const MCExpr *Res =
-        MCSymbolRefExpr::create(Sym, Mcasm::S_GOTPCREL, getContext());
-    const MCExpr *Four = MCConstantExpr::create(4, getContext());
-    return MCBinaryExpr::createAdd(Res, Four, getContext());
+  // Check if this is an externally-linked function
+  if (GV->hasExternalLinkage() || GV->hasCommonLinkage()) {
+    if (const auto *F = dyn_cast<Function>(GV)) {
+      // For external functions, add _ll_shared: prefix for mcasm format
+      NameStr = "_ll_shared:";
+      NameStr += F->getName();
+      return getContext().getOrCreateSymbol(NameStr);
+    }
   }
 
-  return TargetLoweringObjectFileMachO::getTTypeGlobalReference(
-      GV, Encoding, TM, MMI, Streamer);
-}
+  // For global variables (including string literals), sanitize the name
+  // Remove leading dot and replace remaining dots with underscores
+  StringRef RawName = GV->getName();
+  if (!RawName.empty() && RawName[0] == '.') {
+    // Remove leading dot (e.g., .str -> str)
+    NameStr = RawName.substr(1);
+  } else {
+    NameStr = RawName;
+  }
 
-MCSymbol *Mcasm_64MachoTargetObjectFile::getCFIPersonalitySymbol(
-    const GlobalValue *GV, const TargetMachine &TM,
-    MachineModuleInfo *MMI) const {
-  return TM.getSymbol(GV);
-}
+  // Replace remaining dots with underscores (e.g., str.1 -> str_1)
+  for (char &C : NameStr) {
+    if (C == '.') {
+      C = '_';
+    }
+  }
 
-const MCExpr *Mcasm_64MachoTargetObjectFile::getIndirectSymViaGOTPCRel(
-    const GlobalValue *GV, const MCSymbol *Sym, const MCValue &MV,
-    int64_t Offset, MachineModuleInfo *MMI, MCStreamer &Streamer) const {
-  // On Darwin/Mcasm-64, we need to use foo@GOTPCREL+4 to access the got entry
-  // from a data section. In case there's an additional offset, then use
-  // foo@GOTPCREL+4+<offset>.
-  unsigned FinalOff = Offset+MV.getConstant()+4;
-  const MCExpr *Res =
-      MCSymbolRefExpr::create(Sym, Mcasm::S_GOTPCREL, getContext());
-  const MCExpr *Off = MCConstantExpr::create(FinalOff, getContext());
-  return MCBinaryExpr::createAdd(Res, Off, getContext());
-}
+  // If we modified the name, return the sanitized symbol
+  if (NameStr != RawName) {
+    return getContext().getOrCreateSymbol(NameStr);
+  }
 
-McasmELFTargetObjectFile::McasmELFTargetObjectFile() {
-  PLTRelativeSpecifier = Mcasm::S_PLT;
-}
-
-const MCExpr *McasmELFTargetObjectFile::getDebugThreadLocalSymbol(
-    const MCSymbol *Sym) const {
-  return MCSymbolRefExpr::create(Sym, Mcasm::S_DTPOFF, getContext());
-}
-
-const MCExpr *Mcasm_64ELFTargetObjectFile::getIndirectSymViaGOTPCRel(
-    const GlobalValue *GV, const MCSymbol *Sym, const MCValue &MV,
-    int64_t Offset, MachineModuleInfo *MMI, MCStreamer &Streamer) const {
-  int64_t FinalOffset = Offset + MV.getConstant();
-  const MCExpr *Res =
-      MCSymbolRefExpr::create(Sym, Mcasm::S_GOTPCREL, getContext());
-  const MCExpr *Off = MCConstantExpr::create(FinalOffset, getContext());
-  return MCBinaryExpr::createAdd(Res, Off, getContext());
+  // For other cases, return nullptr to use default behavior
+  return nullptr;
 }

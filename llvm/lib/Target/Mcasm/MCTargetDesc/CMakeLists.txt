@@ -4,6 +4,7 @@ add_llvm_component_library(LLVMMcasmDesc
   McasmMCTargetDesc.cpp
   McasmMCAsmInfo.cpp
   McasmMCCodeEmitter.cpp
+  McasmFilteredStream.cpp
   McasmMnemonicTables.cpp
 
   LINK_COMPONENTS

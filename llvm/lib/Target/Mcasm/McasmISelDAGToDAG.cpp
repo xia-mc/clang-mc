@@ -89,6 +89,8 @@ INITIALIZE_PASS(McasmDAGToDAGISelLegacy, DEBUG_TYPE, PASS_NAME, false, false)
 
 /// Select - This is the main entry point for instruction selection.
 void McasmDAGToDAGISel::Select(SDNode *N) {
+  SDLoc dl(N);
+
   // If we have a custom node, we already have selected!
   if (N->isMachineOpcode()) {
     LLVM_DEBUG(dbgs() << "== "; N->dump(CurDAG); dbgs() << '\n');
@@ -96,7 +98,23 @@ void McasmDAGToDAGISel::Select(SDNode *N) {
     return;
   }
 
+  // Handle FrameIndex nodes specially
+  // FrameIndex represents stack allocation and should be materialized as
+  // a base address (rsp + offset), not selected as a regular instruction
+  if (N->getOpcode() == ISD::FrameIndex) {
+    // FrameIndex will be replaced during register allocation
+    // by eliminateFrameIndex in McasmRegisterInfo.cpp
+    // Just convert it to a TargetFrameIndex for now
+    auto FI = cast<FrameIndexSDNode>(N);
+    SDValue TFI = CurDAG->getTargetFrameIndex(
+        FI->getIndex(), MVT::i32);
+    ReplaceNode(N, TFI.getNode());
+    return;
+  }
+
   // Use the default select (which includes TableGen-generated matching)
+  // Direct calls will be matched by CALL32 patterns
+  // Indirect calls will be matched by CALLD patterns
   SelectCode(N);
 }
 
