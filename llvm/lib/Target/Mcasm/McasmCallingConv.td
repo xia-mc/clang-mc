@@ -38,6 +38,12 @@ def CC_Mcasm_32 : CallingConv<[
   // mcasm only supports 32-bit operations
   CCIfType<[i1, i8, i16], CCPromoteToType<i32>>,
 
+  // Floating point types - soft float mode
+  // f32 is treated as i32 (passed in integer registers)
+  CCIfType<[f32], CCBitConvertToType<i32>>,
+  // f64 is treated as 8-byte value (passed on stack with 4-byte alignment)
+  CCIfType<[f64], CCAssignToStack<8, 4>>,
+
   // First 8 integer arguments are passed in r0-r7
   CCIfType<[i32], CCAssignToReg<[r0, r1, r2, r3, r4, r5, r6, r7]>>,
 
@@ -54,6 +60,12 @@ def CC_Mcasm_32 : CallingConv<[
 def RetCC_Mcasm_32 : CallingConv<[
   // Promote i1 to i8 for return values
   CCIfType<[i1], CCPromoteToType<i8>>,
+
+  // Floating point return values - soft float mode
+  // f32 is returned as i32 in rax
+  CCIfType<[f32], CCBitConvertToType<i32>>,
+  // f64 is returned via hidden sret parameter (handled by frontend)
+  CCIfType<[f64], CCAssignToStack<8, 4>>,
 
   // All integer return values (i8, i16, i32) are returned in rax
   CCIfType<[i8, i16, i32], CCAssignToReg<[rax]>>

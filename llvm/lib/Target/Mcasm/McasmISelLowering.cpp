@@ -39,6 +39,11 @@ McasmTargetLowering::McasmTargetLowering(const McasmTargetMachine &TM,
   // Set up the register classes
   addRegisterClass(MVT::i32, &Mcasm::GR32RegClass);
 
+  // Floating point - mcasm does not have FP hardware, use soft float
+  // Floating point values are passed in general purpose registers
+  addRegisterClass(MVT::f32, &Mcasm::GR32RegClass);
+  addRegisterClass(MVT::f64, &Mcasm::GR32RegClass);
+
   // Compute derived properties
   computeRegisterProperties(STI.getRegisterInfo());
 
@@ -66,15 +71,90 @@ McasmTargetLowering::McasmTargetLowering(const McasmTargetMachine &TM,
   setOperationAction(ISD::SREM, MVT::i32, Expand);
   setOperationAction(ISD::UREM, MVT::i32, Expand);
 
+  // Floating point operations - use soft float library calls via Expand
+  // LLVM will automatically generate library calls for soft float
+  // f32 operations
+  setOperationAction(ISD::FADD, MVT::f32, Expand);
+  setOperationAction(ISD::FSUB, MVT::f32, Expand);
+  setOperationAction(ISD::FMUL, MVT::f32, Expand);
+  setOperationAction(ISD::FDIV, MVT::f32, Expand);
+  setOperationAction(ISD::FREM, MVT::f32, Expand);
+  setOperationAction(ISD::FNEG, MVT::f32, Expand);
+  setOperationAction(ISD::FABS, MVT::f32, Expand);
+  setOperationAction(ISD::FSQRT, MVT::f32, Expand);
+  setOperationAction(ISD::FSIN, MVT::f32, Expand);
+  setOperationAction(ISD::FCOS, MVT::f32, Expand);
+  setOperationAction(ISD::FPOW, MVT::f32, Expand);
+  setOperationAction(ISD::FLOG, MVT::f32, Expand);
+  setOperationAction(ISD::FLOG2, MVT::f32, Expand);
+  setOperationAction(ISD::FLOG10, MVT::f32, Expand);
+  setOperationAction(ISD::FEXP, MVT::f32, Expand);
+  setOperationAction(ISD::FEXP2, MVT::f32, Expand);
+  setOperationAction(ISD::FCEIL, MVT::f32, Expand);
+  setOperationAction(ISD::FFLOOR, MVT::f32, Expand);
+  setOperationAction(ISD::FTRUNC, MVT::f32, Expand);
+  setOperationAction(ISD::FRINT, MVT::f32, Expand);
+  setOperationAction(ISD::FNEARBYINT, MVT::f32, Expand);
+  setOperationAction(ISD::FROUND, MVT::f32, Expand);
+  setOperationAction(ISD::FMA, MVT::f32, Expand);
+  setOperationAction(ISD::FMINNUM, MVT::f32, Expand);
+  setOperationAction(ISD::FMAXNUM, MVT::f32, Expand);
+
+  // f64 operations
+  setOperationAction(ISD::FADD, MVT::f64, Expand);
+  setOperationAction(ISD::FSUB, MVT::f64, Expand);
+  setOperationAction(ISD::FMUL, MVT::f64, Expand);
+  setOperationAction(ISD::FDIV, MVT::f64, Expand);
+  setOperationAction(ISD::FREM, MVT::f64, Expand);
+  setOperationAction(ISD::FNEG, MVT::f64, Expand);
+  setOperationAction(ISD::FABS, MVT::f64, Expand);
+  setOperationAction(ISD::FSQRT, MVT::f64, Expand);
+  setOperationAction(ISD::FSIN, MVT::f64, Expand);
+  setOperationAction(ISD::FCOS, MVT::f64, Expand);
+  setOperationAction(ISD::FPOW, MVT::f64, Expand);
+  setOperationAction(ISD::FLOG, MVT::f64, Expand);
+  setOperationAction(ISD::FLOG2, MVT::f64, Expand);
+  setOperationAction(ISD::FLOG10, MVT::f64, Expand);
+  setOperationAction(ISD::FEXP, MVT::f64, Expand);
+  setOperationAction(ISD::FEXP2, MVT::f64, Expand);
+  setOperationAction(ISD::FCEIL, MVT::f64, Expand);
+  setOperationAction(ISD::FFLOOR, MVT::f64, Expand);
+  setOperationAction(ISD::FTRUNC, MVT::f64, Expand);
+  setOperationAction(ISD::FRINT, MVT::f64, Expand);
+  setOperationAction(ISD::FNEARBYINT, MVT::f64, Expand);
+  setOperationAction(ISD::FROUND, MVT::f64, Expand);
+  setOperationAction(ISD::FMA, MVT::f64, Expand);
+  setOperationAction(ISD::FMINNUM, MVT::f64, Expand);
+  setOperationAction(ISD::FMAXNUM, MVT::f64, Expand);
+
+  // Floating point comparisons
+  setOperationAction(ISD::SETCC, MVT::f32, Expand);
+  setOperationAction(ISD::SETCC, MVT::f64, Expand);
+
+  // Floating point conversions
+  setOperationAction(ISD::FP_TO_SINT, MVT::i32, Expand);
+  setOperationAction(ISD::FP_TO_UINT, MVT::i32, Expand);
+  setOperationAction(ISD::SINT_TO_FP, MVT::f32, Expand);
+  setOperationAction(ISD::SINT_TO_FP, MVT::f64, Expand);
+  setOperationAction(ISD::UINT_TO_FP, MVT::f32, Expand);
+  setOperationAction(ISD::UINT_TO_FP, MVT::f64, Expand);
+  setOperationAction(ISD::FP_EXTEND, MVT::f64, Expand);
+  setOperationAction(ISD::FP_ROUND, MVT::f32, Expand);
+
   // Shifts and rotates - mcasm does not support bit operations
-  // Expand to library calls or scalar code
+  // LLVM has no automatic expansion for these fundamental operations
+  // Would require custom implementation using integer arithmetic
+  // For now, these remain unsupported
   setOperationAction(ISD::SHL, MVT::i32, Expand);
   setOperationAction(ISD::SRA, MVT::i32, Expand);
   setOperationAction(ISD::SRL, MVT::i32, Expand);
   setOperationAction(ISD::ROTL, MVT::i32, Expand);
   setOperationAction(ISD::ROTR, MVT::i32, Expand);
 
-  // Logical operations - mcasm does not support bit operations, expand to library calls
+  // Logical operations - mcasm does not support bit operations
+  // LLVM has no automatic expansion for these fundamental operations
+  // Would require custom implementation using integer arithmetic
+  // For now, these remain unsupported
   setOperationAction(ISD::AND, MVT::i32, Expand);
   setOperationAction(ISD::OR, MVT::i32, Expand);
   setOperationAction(ISD::XOR, MVT::i32, Expand);
