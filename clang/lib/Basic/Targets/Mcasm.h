@@ -90,6 +90,9 @@ public:
   std::string_view getClobbers() const override { return ""; }
 
   bool hasBitIntType() const override { return true; }
+
+  /// Mcasm supports dllimport/dllexport attributes
+  bool shouldDLLImportComdatSymbols() const override { return true; }
 };
 } // namespace targets
 } // namespace clang

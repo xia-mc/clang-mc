@@ -59,6 +59,26 @@ void McasmAsmPrinter::emitStartOfAsmFile(Module &M) {
   // mcasm requires #include "_ll_std" at the start of every file
   OutStreamer->emitRawText("#include \"_ll_std\"");
   OutStreamer->emitRawText("");  // Blank line
+
+  // Emit extern declarations for dllimport functions
+  for (const Function &F : M) {
+    if (F.isDeclaration() && F.hasDLLImportStorageClass()) {
+      // Generate: extern _ll_shared:funcname:
+      std::string ExternDecl = "extern _ll_shared:";
+      ExternDecl += F.getName();
+      ExternDecl += ":";
+      fprintf(stderr, "DEBUG:   Emitting extern declaration: %s\n", ExternDecl.c_str());
+      fflush(stderr);
+      OutStreamer->emitRawText(ExternDecl);
+    }
+  }
+
+  if (std::any_of(M.begin(), M.end(), [](const Function &F) {
+        return F.isDeclaration() && F.hasDLLImportStorageClass();
+      })) {
+    OutStreamer->emitRawText("");  // Blank line after extern declarations
+  }
+
   fprintf(stderr, "DEBUG: McasmAsmPrinter::emitStartOfAsmFile completed\n");
   fflush(stderr);
 }
@@ -100,24 +120,35 @@ void McasmAsmPrinter::emitFunctionEntryLabel() {
   fprintf(stderr, "DEBUG:   FunctionName = %s\n", FnSym->getName().str().c_str());
   fflush(stderr);
 
-  // Determine linkage type
+  // Determine DLL storage class
   const Function &F = MF->getFunction();
-  bool IsExternal = F.hasExternalLinkage() || F.hasCommonLinkage();
-  fprintf(stderr, "DEBUG:   IsExternal = %d\n", (int)IsExternal);
+  bool IsDLLExport = F.hasDLLExportStorageClass();
+  bool IsDLLImport = F.hasDLLImportStorageClass();
+  fprintf(stderr, "DEBUG:   IsDLLExport = %d, IsDLLImport = %d\n",
+          (int)IsDLLExport, (int)IsDLLImport);
   fflush(stderr);
 
-  if (IsExternal) {
-    // External linkage: export funcname:
+  if (IsDLLExport) {
+    // __declspec(dllexport): export _ll_shared:funcname:
     // NOTE: The symbol name already includes _ll_shared: prefix (added by getTargetSymbol)
     std::string Label = "export ";
     Label += FnSym->getName();
     Label += ":";
-    fprintf(stderr, "DEBUG:   Emitting label: %s\n", Label.c_str());
+    fprintf(stderr, "DEBUG:   Emitting export label: %s\n", Label.c_str());
+    fflush(stderr);
+    OutStreamer->emitRawText(Label);
+  } else if (IsDLLImport) {
+    // __declspec(dllimport): extern _ll_shared:funcname:
+    // NOTE: The symbol name already includes _ll_shared: prefix (added by getTargetSymbol)
+    std::string Label = "extern ";
+    Label += FnSym->getName();
+    Label += ":";
+    fprintf(stderr, "DEBUG:   Emitting extern label: %s\n", Label.c_str());
     fflush(stderr);
     OutStreamer->emitRawText(Label);
   } else {
-    // Internal linkage: funcname:
-    fprintf(stderr, "DEBUG:   Emitting internal label\n");
+    // Regular function: funcname:
+    fprintf(stderr, "DEBUG:   Emitting regular label\n");
     fflush(stderr);
     OutStreamer->emitLabel(FnSym);
   }

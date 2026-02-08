@@ -24,14 +24,16 @@ MCSymbol *McasmTargetObjectFile::getTargetSymbol(const GlobalValue *GV,
                                                   const TargetMachine &TM) const {
   SmallString<128> NameStr;
 
-  // Check if this is an externally-linked function
-  if (GV->hasExternalLinkage() || GV->hasCommonLinkage()) {
-    if (const auto *F = dyn_cast<Function>(GV)) {
-      // For external functions, add _ll_shared: prefix for mcasm format
+  // Check if this is a function with DLL storage class
+  if (const auto *F = dyn_cast<Function>(GV)) {
+    // For functions with dllexport or dllimport, add _ll_shared: prefix
+    if (GV->hasDLLExportStorageClass() || GV->hasDLLImportStorageClass()) {
       NameStr = "_ll_shared:";
       NameStr += F->getName();
       return getContext().getOrCreateSymbol(NameStr);
     }
+    // For regular functions without DLL storage class, use plain name
+    return getContext().getOrCreateSymbol(F->getName());
   }
 
   // For global variables (including string literals), sanitize the name
