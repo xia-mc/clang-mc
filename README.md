@@ -38,9 +38,8 @@ Check out [Wiki](https://github.com/xia-mc/clang-mc/wiki) to learn more.
 - [x] **Write a wiki** to define calling conventions, register conventions, stack conventions, etc.
 - [x] **Implement an assembler (IR)** to translate IR into `mcfunction` code based on `stdlib`.
 - [x] **Develop a parser** to convert assembly code into IR objects.
-- [x] **Create a showcase** to demonstrate the advantages of this project and how it improves datapack readability while reducing redundant implementations.
-- [ ] **Enhance `stdlib`** with more advanced abstractions.
-- [ ] **(Long-term goal) Implement an LLVM backend** to generate assembly code (IR).
+- [x] **Create a showcase** to demonstrate the advantages of this project.
+- [x] **(Long-term goal) Implement an LLVM backend** to generate assembly code (IR).
 - [ ] **(Long-term goal) Achieve compatibility with C/C++/Rust ecosystems**, leveraging LLVM to extend the capabilities of `mcfunction`.
 
 ---
@@ -62,5 +61,6 @@ Without these projects, `clang-mc` would not exist:
 - [fmt](https://fmt.dev/) - A fast and safe formatting library for C++, licensed under the [MIT License](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst).
 - [spdlog](https://github.com/gabime/spdlog) - A fast C++ logging library, licensed under the [MIT License](https://github.com/gabime/spdlog/blob/v1.x/LICENSE).
 - [yaml-cpp](https://github.com/jbeder/yaml-cpp) - A YAML parser and emitter for C++, licensed under the [MIT License](https://github.com/jbeder/yaml-cpp/blob/master/LICENSE).
+- [Claude Code](https://claude.com/product/claude-code) — Special thanks to Claude Code for the crucial assistance in developing the LLVM backend prototype within just three days; without it I would not have been able to complete that urgent prototype work.
 
 Special thanks to all contributors in the open-source community!
