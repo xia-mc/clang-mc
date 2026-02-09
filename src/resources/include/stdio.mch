@@ -1,5 +1,4 @@
 #once
-#include "int"
 
 __internal_c2s:
     je r1, 9, .c_9
@@ -427,19 +426,4 @@ __internal_r0CharToStringS3Text:
 print:
     call __internal_r0CharToStringS3Text
     inline return run tellraw @a {"storage": "std:vm", "nbt": "s3.text"}
-    ret
-
-
-// void printInt(int value)
-printInt:
-    sub rsp, 12
-
-    mov r1, r0
-    mov r0, rsp
-    call Int_ToString
-
-    mov r0, rsp
-    call print
-
-    add rsp, 12
     ret

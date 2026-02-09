@@ -203,24 +203,24 @@ include_directories(${CMAKE_SOURCE_DIR}/src/cpp/patches)
 
 
 # Libraries
-#set(CMC_CLANG_LIBS libclang clangDriver clangFrontend clangFrontendTool clangCodeGen clangParse
-#        clangSema clangAST clangLex clangBasic)
-#set(CMC_IR_COMPONENTS core support bitreader bitwriter irreader analysis transformutils)
-#set(CMC_OPTIMIZE_COMPONENTS passes scalaropts vectorize ipo lto)
-#set(CMC_TARGET_COMPONENTS target mc mcparser codegen selectiondag globalisel asmprinter
-#        asmparser mirparser runtimedyld)
-#set(CMC_LLVM_COMPONENTS "")
-#list(APPEND CMC_LLVM_COMPONENTS ${CMC_IR_COMPONENTS})
-#list(APPEND CMC_LLVM_COMPONENTS ${CMC_OPTIMIZE_COMPONENTS})
-#list(APPEND CMC_LLVM_COMPONENTS ${CMC_TARGET_COMPONENTS})
-#
-#find_package(LLVM CONFIG REQUIRED)
-#include_directories(${LLVM_INCLUDE_DIRS})
-#add_definitions(${LLVM_DEFINITIONS})
-#add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
-#llvm_map_components_to_libnames(LLVM_LIBS ${CMC_LLVM_COMPONENTS})
-#list(APPEND LLVM_LIBS ${CLANG_LIBS})
-#target_link_libraries(clang-mc PRIVATE ${LLVM_LIBS})
+set(CMC_CLANG_LIBS libclang clangDriver clangFrontend clangFrontendTool clangCodeGen clangParse
+       clangSema clangAST clangLex clangBasic)
+set(CMC_IR_COMPONENTS core support bitreader bitwriter irreader analysis transformutils)
+set(CMC_OPTIMIZE_COMPONENTS passes scalaropts vectorize ipo lto)
+set(CMC_TARGET_COMPONENTS target mc mcparser codegen selectiondag globalisel asmprinter
+       asmparser mirparser runtimedyld)
+set(CMC_LLVM_COMPONENTS "")
+list(APPEND CMC_LLVM_COMPONENTS ${CMC_IR_COMPONENTS})
+list(APPEND CMC_LLVM_COMPONENTS ${CMC_OPTIMIZE_COMPONENTS})
+list(APPEND CMC_LLVM_COMPONENTS ${CMC_TARGET_COMPONENTS})
+
+find_package(LLVM CONFIG REQUIRED)
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
+llvm_map_components_to_libnames(LLVM_LIBS ${CMC_LLVM_COMPONENTS})
+list(APPEND LLVM_LIBS ${CLANG_LIBS})
+target_link_libraries(clang-mc PRIVATE ${LLVM_LIBS})
 
 find_package(fmt CONFIG REQUIRED)
 add_compile_definitions(FMT_HEADER_ONLY)

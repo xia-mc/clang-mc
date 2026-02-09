@@ -5,6 +5,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use crate::objects::source_line_builder::SourceLineBuilder;
 use regex::Regex;
 
 /// 目标文件 → (宏名 → (形参列表, 展开体))
@@ -218,7 +219,7 @@ impl PreProcesser {
 
         let mut ignore = false;
         let mut ignore_stack = MatrixStack::new();
-        let mut out = String::new();
+        let mut out = SourceLineBuilder::new();
 
         for line in self.logical_lines(code) {
             /* ----- 普通行：宏展开/输出 ----- */
@@ -385,7 +386,8 @@ impl PreProcesser {
             return Err(0x1001);
         }
         self.processing.borrow_mut().remove(cur);
-        Ok(out)
+
+        Ok(out.build())
     }
 
     /* ---------- 公开 API：处理 / 获取 ---------- */
@@ -402,7 +404,7 @@ impl PreProcesser {
     pub fn get_targets(&self) -> Ref<Vec<(PathBuf, String)>> {
         self.targets.borrow()
     }
-    /// 仍 **只** 返回对象宏，保持旧 API
+
     pub fn get_defines(&self) -> Ref<HashMap<PathBuf, HashMap<String, String>>> {
         self.defines.borrow()
     }
