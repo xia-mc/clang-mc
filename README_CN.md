@@ -36,9 +36,8 @@ Minecraft 数据包的开发一直面临 **可读性差、维护困难、功能�
 - [x] 写一个wiki文档，规定调用约定、寄存器约定、栈约定等。
 - [x] 实现一个汇编器（IR），把IR翻译成基于stdlib的mcfunction代码。
 - [x] 实现一个parser，把汇编代码翻译成IR对象。
-- [x] 做一个showcase，展示我的项目的优势，如何避免数据包令人难绷的可读性和造轮子的问题。
-- [ ] 进一步完善stdlib，提供更多高级抽象。
-- [ ] (长期目标) 实现一个LLVM后端，生成汇编代码（IR）。
+- [x] 做一个showcase，展示项目的优势。
+- [x] (长期目标) 实现一个LLVM后端，生成汇编代码（IR）。
 - [ ] (长期目标) 兼容C/C++/Rust生态，利用LLVM扩展mcfunction的能力。
 
 ## 贡献
@@ -49,11 +48,12 @@ Minecraft 数据包的开发一直面临 **可读性差、维护困难、功能�
 
 没有这些项目，就没有 `clang-mc`:
 
-- [Minecraft](https://www.minecraft.net): Mojang Studios 开发的 Minecraft 游戏`clang-mc` 遵循 [Minecraft EULA](https://www.minecraft.net/en-us/eula) 及相关使用条款。
+- [Minecraft](https://www.minecraft.net): Mojang Studios 开发的 Minecraft 游戏，`clang-mc` 遵循 [Minecraft EULA](https://www.minecraft.net/en-us/eula) 及相关使用条款。
 - [LLVM](https://llvm.org): 先进的编译器基础设施，遵循 Apache License 2.0 开源协议。
 - [ankerl::unordered_dense](https://github.com/martinus/unordered_dense): 一个现代 C++ 的高性能、低内存占用的哈希表实现，遵循 [MIT License](https://github.com/martinus/unordered_dense/blob/main/LICENSE)。
 - [fmt](https://fmt.dev/): 一个快速、安全的 C++ 格式化库，遵循 [MIT License](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst)。
 - [spdlog](https://github.com/gabime/spdlog): 一个高性能的 C++ 日志库，遵循 [MIT License](https://github.com/gabime/spdlog/blob/v1.x/LICENSE)。
 - [yaml-cpp](https://github.com/jbeder/yaml-cpp): 一个 C++ 的 YAML 解析和生成库，遵循 [MIT License](https://github.com/jbeder/yaml-cpp/blob/master/LICENSE)。
+- [Claude Code](https://claude.com/product/claude-code)：特别感谢 Claude Code 在短短三天内对 LLVM 后端原型开发提供的重要帮助，没有它我无法完成这段紧迫的开发工作。
 
 感谢所有开源社区的贡献者们！
