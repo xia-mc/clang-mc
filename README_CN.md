@@ -10,7 +10,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Issues](https://img.shields.io/github/issues/xia-mc/clang-mc)](https://github.com/xia-mc/clang-mc/issues)
-![Total lines](https://tokei.rs/b1/github/xia-mc/clang-mc?style=flat)
+![Total lines](https://img.shields.io/endpoint?url=https://tokei.kojix2.net/badge/github/xia-mc/clang-mc/lines)
 ![Version](https://img.shields.io/badge/Minecraft-1.21_and_later-blue)
 
 </div>
