@@ -64,3 +64,16 @@ general.invalid_input: 无效的输入文件，预期为 '.mcasm' 文件
 general.failed_init_build: 无法初始化构建文件夹
 general.unable_to_build: 无法构建输入文件
 general.environment_error: "无法验证运行时环境: 缺少必要的资源。请确保所有必需文件存在，或重新安装程序。"
+preprocess.load_error: "无法读取源文件: '{}'"
+preprocess.include_read_error: "无法读取包含文件: '{}'"
+preprocess.include_not_found: "找不到包含文件: '{}'"
+preprocess.circular_include: "检测到循环包含: '{}'"
+preprocess.include_syntax: "#include 指令语法错误"
+preprocess.include_quote_mismatch: "#include 定界符不匹配，应使用双引号或尖括号包裹文件名"
+preprocess.ifdef_extra_token: "#ifdef 后不能有多余的标记"
+preprocess.ifndef_extra_token: "#ifndef 后不能有多余的标记"
+preprocess.endif_extra_token: "#endif 后不能有多余的标记"
+preprocess.endif_without_if: "#endif 没有匹配的 #ifdef 或 #ifndef"
+preprocess.define_multiword_value: "对象宏的值必须是单个标记"
+preprocess.undef_missing_name: "#undef 需要一个宏名"
+preprocess.unterminated_if: "#ifdef 或 #ifndef 没有对应的 #endif"

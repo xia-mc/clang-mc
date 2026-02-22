@@ -10,7 +10,6 @@
 #include "builder/PostOptimizer.h"
 #include "extern/ResourceManager.h"
 #include "parse/ParseManager.h"
-#include "extern/ClRustAPI.h"
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <execution>
@@ -42,7 +41,6 @@ ClangMc::~ClangMc() {
 void ClangMc::start() {
     try {
         // initializing
-        ClRust_Init();
         ensureEnvironment();
         ensureValidConfig();
         ensureBuildDir();

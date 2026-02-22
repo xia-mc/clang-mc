@@ -14,7 +14,7 @@
 #include "ir/iops/Special.h"
 #include "ir/ops/Static.h"
 #include "ir/ops/Inline.h"
-#include "extern/PreProcessorAPI.h"
+#include "parse/PreProcessor.h"
 #include "random"
 #include "objects/include/uuid.h"
 
@@ -266,19 +266,13 @@ void IR::preCompile() {
     }
 
     auto tmpIR = IR(logger, config, Path(), HashMap<std::string, std::string>());
-    auto preprocessor = ClPreProcess_New();
-    ClPreProcess_AddIncludeDir(preprocessor, absolute(INCLUDE_PATH).string().c_str());
-    ClPreProcess_AddTargetString(preprocessor, code.c_str());
-    ClPreProcess_Process(preprocessor);
-    Targets *targets;
-    ClPreProcess_GetTargets(preprocessor, &targets);
-    assert(targets != nullptr);
-    assert(targets->size == 1);
-    tmpIR.parse(std::string(targets->targets[0]->code));
-    ClPreProcess_FreeTargets(preprocessor, targets);
-    targets = nullptr;
-    ClPreProcess_Free(preprocessor);
-    preprocessor = nullptr;
+    {
+        PreProcessor pp;
+        pp.addIncludeDir(absolute(INCLUDE_PATH));
+        pp.addTargetString(code);
+        pp.process();
+        tmpIR.parse(std::string(pp.getTargets()[0].code));
+    }
 
     for (u32 i = 0; i < values.size(); ++i) {
         if (auto *ptr = INSTANCEOF(values[i], Label)) {

@@ -100,8 +100,8 @@ add_executable(clang-mc
         src/cpp/extern/ResourceManager.h
         src/cpp/parse/ParseManager.cpp
         src/cpp/parse/ParseManager.h
-        src/cpp/extern/PreProcessorAPI.h
-        src/cpp/extern/ClRustAPI.h
+        src/cpp/parse/PreProcessor.h
+        src/cpp/parse/PreProcessor.cpp
         src/cpp/patches/fmt/core.h
         src/cpp/ir/ops/Jne.h
         src/cpp/objects/Int.h
@@ -116,8 +116,6 @@ add_executable(clang-mc
         src/cpp/ir/values/SymbolPtr.h
         src/cpp/ir/State.h
         src/cpp/ir/ops/Syscall.h
-        src/cpp/utils/Process.h
-        src/cpp/utils/Process.cpp
 )
 target_precompile_headers(clang-mc PRIVATE
         src/cpp/utils/Native.h
@@ -139,32 +137,6 @@ configure_file(
 add_compile_definitions(GENERATED_SETUP)
 include_directories(${CMAKE_BINARY_DIR}/generated)
 
-
-# Components
-if (DEBUG_MODE)
-    add_custom_command(
-            TARGET clang-mc
-            PRE_LINK
-            COMMAND cargo build
-            COMMENT "Building rust components"
-    )
-    set(RUST_COMPONENT_DIR "${CMAKE_SOURCE_DIR}/cmake-build-release/rust/debug")
-else ()
-    add_custom_command(
-            TARGET clang-mc
-            PRE_LINK
-            COMMAND cargo build -r
-            COMMENT "Building rust components"
-    )
-    set(RUST_COMPONENT_DIR "${CMAKE_SOURCE_DIR}/cmake-build-release/rust/release")
-endif ()
-set(RUST_COMPONENT_NAME "clang_mc_rust")
-if (WIN32)
-    set(RUST_COMPONENT_NAME "${RUST_COMPONENT_NAME}.lib")
-else ()
-    set(RUST_COMPONENT_NAME "${RUST_COMPONENT_NAME}.a")
-endif ()
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${RUST_COMPONENT_DIR}/${RUST_COMPONENT_NAME}")
 
 
 # Building
