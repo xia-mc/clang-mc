@@ -21,30 +21,6 @@ def getPrettyCmd(command):
     return ' '.join(map(lambda s: f'"{s}"' if " " in s else s, map(str, command)))
 
 
-def getVCVars64():
-    vswhere_path = r"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
-    if not os.path.isfile(vswhere_path):
-        vswhere_path = "vswhere.exe"
-
-    try:
-        cmd = [
-            vswhere_path,
-            "-latest",
-            "-products", "*",
-            "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-            "-property", "installationPath"
-        ]
-        vs_path = subprocess.check_output(cmd, encoding="utf-8").strip()
-        if vs_path:
-            vcvars_path = os.path.join(vs_path, "VC", "Auxiliary", "Build", "vcvars64.bat")
-            if os.path.isfile(vcvars_path):
-                return vcvars_path
-
-        return "vcvars64.bat"
-    except Exception:
-        return None
-
-
 def main():
     initialize()
 
@@ -82,28 +58,6 @@ def main():
 
     print("Cleaning...")
     shutil.rmtree(Path(Const.BUILD_DIR, "tmp"))
-
-    # 编译LLVM
-    print("Compiling LLVM...")
-    command = ["cmd", "/c", getVCVars64(), "&&", "compile_windows.bat"]
-    print(f"Compile command: {getPrettyCmd(command)}")
-    process = subprocess.Popen(
-        command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        encoding="GBK",
-        bufsize=1,
-        universal_newlines=True,
-        cwd=Const.LLVM_DIR
-    )
-    for out in process.communicate():
-        if out is None or len(out) == 0:
-            continue
-        print(out.strip())
-
-    # 拷贝clang
-    print("Copying clang...")
-    shutil.copyfile(Path(Const.LLVM_DIR, "build/bin/clang.exe"), Path(Const.BUILD_DIR, "bin/clang.exe"))
 
 
 if __name__ == '__main__':
