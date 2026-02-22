@@ -6,17 +6,17 @@ malloc:
     rle r0, 0
 
 .loop:
-    mov t0, [rax]
-    jg t0, r0, .found
-    sub rax, t0
-    jge rax, shp, .oom
-    jmp .loop
+    mov t0, [rax]  // 从26行进入此代码段时，[rax]恒为0，所以t0恒为0
+    jg t0, r0, .found  // 恒不跳转
+    sub rax, t0  // 恒无作用
+    jge rax, shp, .oom  // 恒不跳转
+    jmp .loop  // => 无限循环
 .oom:
     push r0
     mov r0, shp
     inline function std:heap/expand
 
-    mov t0, r0
+    mov t0, r0  // r0 恒为0！
     mov [rax], t0
 
     pop r0

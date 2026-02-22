@@ -10,3 +10,4 @@ EXECUTABLE = Path(BUILD_BIN_DIR, "clang-mc.exe" if platform.system() == "Windows
 
 MCASM_DIR = Path(PROJECT_DIR, "src/mcasm").absolute()
 RESOURCES_DIR = Path(PROJECT_DIR, "src/resources").absolute()
+LLVM_DIR = Path(PROJECT_DIR, "llvm").absolute()

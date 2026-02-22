@@ -16,3 +16,4 @@ PURE std::string getVersionMessage(const std::string& argv0) noexcept {
 #endif
     return result;
 }
+
