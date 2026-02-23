@@ -26,13 +26,13 @@ jobs:
 
           - os: ubuntu-latest
             name: Linux (amd64)
-            xmake_config: xmake f -p linux -m release --toolchain=clang -a x86_64 -y
+            xmake_config: xmake f -p linux -m release --toolchain=clang -a x86_64 -y -v
             artifact: clang-mc
             filename: "linux-amd64"
 
           - os: ubuntu-latest
             name: Linux (i386)
-            xmake_config: xmake f -p linux -m release --toolchain=clang -a x86 -y
+            xmake_config: xmake f -p linux -m release --toolchain=clang -a x86 -y -v
             artifact: clang-mc
             filename: "linux-i386"
 
