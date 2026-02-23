@@ -67,7 +67,7 @@ jobs:
             ${{ runner.os == 'Windows' && '%LOCALAPPDATA%\.xmake' || '~/.xmake' }}
           key: xmake-${{ runner.os }}-${{ matrix.filename }}-${{ hashFiles('xmake.lua') }}  # 使用 matrix.filename 而不是 name，因为 key 不支持逗号
           restore-keys: |
-            xmake-${{ runner.os }}-${{ matrix.name }}-
+            xmake-${{ runner.os }}-${{ matrix.filename }}-
 
       - name: Install zig (for Linux cross-compilation)
         if: matrix.os == 'macos-latest' && startsWith(matrix.name, 'Linux')
