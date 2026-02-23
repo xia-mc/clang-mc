@@ -174,8 +174,12 @@ target("clang-mc")
         target:add("includedirs", outdir, { public = false })
     end)
 
-    -- 生成 assets
+    -- 生成 assets（交叉编译时跳过：宿主机无法执行目标平台二进制）
     after_build(function(target)
+        local host_to_plat = { windows = "windows", linux = "linux", macosx = "macosx" }
+        if host_to_plat[os.host()] ~= get_config("plat") then
+            return
+        end
         local script = path.join(os.projectdir(), "./src/python/build_assets.py")
         os.exec("python " .. script)
     end)
