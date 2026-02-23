@@ -21,7 +21,7 @@ PURE static inline std::string getExecutableName(const std::string_view& argv0) 
 #ifdef _WIN32
         return "clang-mc.exe";
 #else
-        return "clang-mc"
+        return "clang-mc";
 #endif
     }
     return std::filesystem::path(argv0).filename().string();
@@ -32,7 +32,7 @@ PURE static inline std::string getExecutableDir(const std::string_view& argv0) {
 #ifdef _WIN32
         return "Unknown";
 #else
-        return "/"
+        return "/";
 #endif
     }
     return std::filesystem::path(argv0).parent_path().string();
