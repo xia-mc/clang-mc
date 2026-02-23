@@ -192,7 +192,7 @@ FORCEINLINE void IR::initLabels(LabelMap &labelMap) {
     }
 }
 
-static std::mt19937 random(std::random_device{}());
+static std::mt19937 rng(std::random_device{}());
 static std::uniform_int_distribution<> distrib(INT32_MIN, INT32_MAX);
 
 void IR::preCompile() {
@@ -227,8 +227,8 @@ void IR::preCompile() {
                 }
             }
         }
-        static uuids::basic_uuid_random_generator generator = uuids::basic_uuid_random_generator(random);
-        i32 uid = distrib(random);
+        static uuids::basic_uuid_random_generator generator = uuids::basic_uuid_random_generator(rng);
+        i32 uid = distrib(rng);
         auto id = to_string(generator());
         auto builder = StringBuilder();
         for (const auto &item: staticData) {
