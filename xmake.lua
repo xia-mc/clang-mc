@@ -14,9 +14,9 @@ add_rules("plugin.compile_commands.autoupdate", { outputdir = "." })
 -- debug_mode 开关
 -- 用法：xmake f --debug_mode=y
 option("debug_mode")
-set_description("Use debug flags even in release mode")
-set_default(false)
-set_showmenu(true)
+    set_description("Use debug flags even in release mode")
+    set_default(false)
+    set_showmenu(true)
 option_end()
 
 -- 运行时（仅 Windows MSVC/clang-cl）
