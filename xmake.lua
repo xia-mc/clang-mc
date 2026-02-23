@@ -11,12 +11,6 @@ set_policy("build.ccache", false)
 -- 生成 compile_commands.json
 add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 
--- Git Bash 下 xmake 将宿主架构检测为 "x86_64"（POSIX 命名），
--- 但 MSVC vcvarsall 字典以 "x64" 为键，自动映射，无需手动传 -a x64
-if is_plat("windows") and is_arch("x86_64") then
-    set_config("arch", "x64")
-end
-
 -- debug_mode 开关
 -- 用法：xmake f --debug_mode=y
 option("debug_mode")
@@ -25,11 +19,13 @@ option("debug_mode")
     set_showmenu(true)
 option_end()
 
--- 运行时
-if is_mode("release") then
-    set_runtimes("MT")
-else
-    set_runtimes("MTd")
+-- 运行时（仅 Windows MSVC/clang-cl）
+if is_plat("windows") then
+    if is_mode("release") then
+        set_runtimes("MT")
+    else
+        set_runtimes("MTd")
+    end
 end
 
 add_requires("fmt",           {configs = {header_only = true}})
@@ -40,7 +36,11 @@ add_requires("libzip",        {configs = {shared = false}})
 
 target("clang-mc")
     set_kind("binary")
-    set_toolchains("clang-cl")
+--     if is_plat("windows") then
+--         set_toolchains("msvc")
+--     else  -- is_plat("linux") or is_plat("macosx") or unknown
+--         set_toolchains("clang")
+--     end
     set_targetdir("$(projectdir)/build/bin")
 
     add_files(
@@ -71,22 +71,27 @@ target("clang-mc")
         "GENERATED_SETUP"
     )
 
-    add_cxflags("-Wall", "-Werror", "-Wunknown-pragmas",
-                "-Wno-unused-command-line-argument", "-Wno-declaration-after-statement",
-                "-Wno-shadow-field-in-constructor", "-Wno-shadow-field",
-                "-Wno-extra-semi", "-Wno-old-style-cast", "-Wno-exit-time-destructors", "-Wno-global-constructors",
-                "-Wno-covered-switch-default", "-Wno-shadow-uncaptured-local", "-Wno-ctad-maybe-unsupported",
-                "-Wno-pre-c11-compat", "-Wno-pre-c++17-compat", "-Wno-c++98-compat",
-                "-Wno-c++98-compat-pedantic", "-Wno-c++20-extensions",
-                "-Xclang", "-fsafe-buffer-usage-suggestions",
-                {force = true})
+--     add_cxflags("-Wall", "-Werror", "-Wunknown-pragmas",
+--                 "-Wno-unused-command-line-argument", "-Wno-declaration-after-statement",
+--                 "-Wno-shadow-field-in-constructor", "-Wno-shadow-field",
+--                 "-Wno-extra-semi", "-Wno-old-style-cast", "-Wno-exit-time-destructors", "-Wno-global-constructors",
+--                 "-Wno-covered-switch-default", "-Wno-shadow-uncaptured-local", "-Wno-ctad-maybe-unsupported",
+--                 "-Wno-pre-c11-compat", "-Wno-pre-c++17-compat", "-Wno-c++98-compat",
+--                 "-Wno-c++98-compat-pedantic", "-Wno-c++20-extensions",
+--                 "-Xclang", "-fsafe-buffer-usage-suggestions",
+--                 {force = true})
 
     -- Release 模式
     if is_mode("release") then
         if has_config("debug_mode") then
             add_cxflags("-g", {force = true})
         else
-            add_cxflags("/O2", "-flto", {force = true})
+            if is_plat("windows") then
+                add_cxflags("/O2", {force = true})
+            else
+                add_cxflags("-O2", {force = true})
+            end
+--             add_cxflags("-flto", {force = true})
             add_defines("NDEBUG")
         end
     else
@@ -97,11 +102,15 @@ target("clang-mc")
     if is_plat("windows") and is_mode("release") and not has_config("debug_mode") then
         add_ldflags("/OPT:REF", "/OPT:ICF", {force = true})
     end
-    -- 非 Windows 静态链接运行时
-    if not is_plat("windows") then
+    -- 非 Windows 链接标志
+    if is_plat("linux") then
         add_ldflags("-Wl,-static-libgcc", "-Wl,-static-libstdc++", {force = true})
         if is_mode("release") and not has_config("debug_mode") then
             add_ldflags("-Wl,--gc-sections", "-Wl,-s", {force = true})
+        end
+    elseif is_plat("macosx") then
+        if is_mode("release") and not has_config("debug_mode") then
+            add_ldflags("-Wl,-dead_strip", {force = true})
         end
     end
 

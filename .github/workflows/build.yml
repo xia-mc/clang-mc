@@ -1,0 +1,68 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: Windows
+            xmake_config: xmake f -p windows -m release --toolchain=clang-cl -a x64 -y
+            artifact: clang-mc.exe
+
+          - os: ubuntu-latest
+            name: Linux
+            xmake_config: xmake f -p linux -m release --toolchain=clang -a x86_64 -y
+            artifact: clang-mc
+
+          - os: macos-latest
+            name: macOS
+            xmake_config: xmake f -p macosx -m release --toolchain=clang -a arm64 -y
+            artifact: clang-mc
+
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+
+      - name: Cache xmake packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.xmake
+            ${{ runner.os == 'Windows' && '%LOCALAPPDATA%\.xmake' || '~/.xmake' }}
+          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          restore-keys: |
+            xmake-${{ runner.os }}-
+
+      - name: Install clang (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y clang
+
+      - name: Configure
+        run: ${{ matrix.xmake_config }}
+
+      - name: Build
+        run: xmake
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clang-mc-${{ matrix.name }}
+          path: build/bin/${{ matrix.artifact }}
+          if-no-files-found: error

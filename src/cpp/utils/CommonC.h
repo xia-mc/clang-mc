@@ -36,4 +36,9 @@
 
 #endif
 
+
+// some helper
+#define _STR_HELPER(x) #x
+#define STR(x) _STR_HELPER(x)
+
 #endif //CLANG_MC_COMMONC_H

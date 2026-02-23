@@ -7,9 +7,6 @@ from internal import *
 
 
 def initialize():
-    if os.name != "nt":
-        raise EnvironmentError("Currectly, Only Windows is supported.")
-
     assert Const.BUILD_DIR.exists()
     assert Const.BUILD_BIN_DIR.exists()
     FileUtils.ensureDirectoryNotExist(Path(Const.BUILD_DIR, "assets"))

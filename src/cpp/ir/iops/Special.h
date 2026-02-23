@@ -13,7 +13,7 @@
 
 class Special : public virtual Op {
 public:
-    explicit Special() noexcept = default;
+    explicit Special() noexcept {}
 
     [[nodiscard]] std::string compile() const final {
         throw UnsupportedOperationException("Op can't be compile normally.");

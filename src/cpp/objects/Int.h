@@ -92,7 +92,7 @@ public:
 
     FORCEINLINE constexpr operator i32() const noexcept { return value; } // NOLINT(*-explicit-constructor)
 
-    [[nodiscard]] FORCEINLINE constexpr std::string toString() const {
+    [[nodiscard]] FORCEINLINE std::string toString() const {
         return std::to_string(value);
     }
 };

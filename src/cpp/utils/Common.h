@@ -138,10 +138,4 @@ static FORCEINLINE constexpr T *requireNonNull(T *object) {
     return object;
 }
 
-static FORCEINLINE u64 getRsp() {
-    u64 rsp;
-    asm inline("mov %%rsp, %0" : "=r"(rsp));
-    return rsp;
-}
-
 #endif //CLANG_MC_COMMON_H

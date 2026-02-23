@@ -11,7 +11,7 @@ void initI18n();
 
 std::string &i18n(const std::string_view &key, Hash keyHash);
 
-FORCEINLINE constexpr std::string &i18n(const std::string_view &key) {
+FORCEINLINE std::string &i18n(const std::string_view &key) {
     return i18n(key, hash(key));
 }
 
