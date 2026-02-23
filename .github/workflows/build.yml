@@ -69,11 +69,11 @@ jobs:
           restore-keys: |
             xmake-${{ runner.os }}-
 
-      - name: Install clang (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y clang
+#      - name: Install clang (Linux)
+#        if: matrix.os == 'ubuntu-latest'
+#        run: |
+#          sudo apt-get update -q
+#          sudo apt-get install -y clang
 
       - name: Configure
         run: ${{ matrix.xmake_config }}
