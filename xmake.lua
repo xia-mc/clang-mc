@@ -115,8 +115,8 @@ target("clang-mc")
             add_ldflags("-static-libgcc", "-static-libstdc++", { force = true })
         end
         if is_mode("release") and not has_config("debug_mode") then
-            -- LLD (zig 内嵌) 和 GNU ld 均支持这两个标志
-            add_ldflags("--gc-sections", "-s", { force = true })
+            -- 通过 -Wl, 前缀透传给 LLD / GNU ld（zig cc 是 Clang 驱动，不接受裸链接器标志）
+            add_ldflags("-Wl,--gc-sections", "-Wl,-s", { force = true })
         end
     elseif is_plat("macosx") then
         if is_mode("release") and not has_config("debug_mode") then
