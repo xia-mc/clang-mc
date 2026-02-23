@@ -110,12 +110,12 @@ target("clang-mc")
     end
     -- 非 Windows 链接标志
     if is_plat("linux") then
-        if not is_config("toolchain", "zig-cc") then
+        if not is_config("toolchain", "zig") then
             -- GCC/Clang 工具链：显式静态链接运行时
             add_ldflags("-static-libgcc", "-static-libstdc++", { force = true })
         end
         if is_mode("release") and not has_config("debug_mode") then
-            -- LLD (zig-cc 内嵌) 和 GNU ld 均支持这两个标志
+            -- LLD (zig 内嵌) 和 GNU ld 均支持这两个标志
             add_ldflags("--gc-sections", "-s", { force = true })
         end
     elseif is_plat("macosx") then

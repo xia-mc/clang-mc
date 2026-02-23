@@ -26,13 +26,13 @@ jobs:
 
           - os: macos-latest
             name: Linux (amd64)
-            xmake_config: xmake f -p linux -a x86_64 --toolchain=zig-cc -m release -y
+            xmake_config: xmake f -p linux -a x86_64 --toolchain=zig -m release -y
             artifact: clang-mc
             filename: "linux-amd64"
 
           - os: macos-latest
             name: Linux (i386)
-            xmake_config: xmake f -p linux -a i386 --toolchain=zig-cc -m release -y
+            xmake_config: xmake f -p linux -a i386 --toolchain=zig -m release -y
             artifact: clang-mc
             filename: "linux-i386"
 
@@ -65,7 +65,7 @@ jobs:
           path: |
             ~/.xmake
             ${{ runner.os == 'Windows' && '%LOCALAPPDATA%\.xmake' || '~/.xmake' }}
-          key: xmake-${{ runner.os }}-${{ matrix.name }}-${{ hashFiles('xmake.lua') }}
+          key: xmake-${{ runner.os }}-${{ matrix.filename }}-${{ hashFiles('xmake.lua') }}  # 使用 matrix.filename 而不是 name，因为 key 不支持逗号
           restore-keys: |
             xmake-${{ runner.os }}-${{ matrix.name }}-
 
