@@ -24,15 +24,15 @@ jobs:
             artifact: clang-mc.exe
             filename: "windows-i386.exe"
 
-          - os: ubuntu-latest
+          - os: macos-latest
             name: Linux (amd64)
-            xmake_config: xmake f -p linux -m release --toolchain=clang -a x86_64 -y -v
+            xmake_config: xmake f -p linux -a x86_64 --toolchain=zig-cc -m release -y
             artifact: clang-mc
             filename: "linux-amd64"
 
-          - os: ubuntu-latest
+          - os: macos-latest
             name: Linux (i386)
-            xmake_config: xmake f -p linux -m release --toolchain=clang -a x86 -y -v
+            xmake_config: xmake f -p linux -a i386 --toolchain=zig-cc -m release -y
             artifact: clang-mc
             filename: "linux-i386"
 
@@ -65,15 +65,13 @@ jobs:
           path: |
             ~/.xmake
             ${{ runner.os == 'Windows' && '%LOCALAPPDATA%\.xmake' || '~/.xmake' }}
-          key: xmake-${{ runner.os }}-${{ hashFiles('xmake.lua') }}
+          key: xmake-${{ runner.os }}-${{ matrix.name }}-${{ hashFiles('xmake.lua') }}
           restore-keys: |
-            xmake-${{ runner.os }}-
+            xmake-${{ runner.os }}-${{ matrix.name }}-
 
-#      - name: Install clang (Linux)
-#        if: matrix.os == 'ubuntu-latest'
-#        run: |
-#          sudo apt-get update -q
-#          sudo apt-get install -y clang
+      - name: Install zig (for Linux cross-compilation)
+        if: matrix.os == 'macos-latest' && startsWith(matrix.name, 'Linux')
+        run: brew install zig
 
       - name: Configure
         run: ${{ matrix.xmake_config }}
