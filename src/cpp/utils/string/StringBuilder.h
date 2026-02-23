@@ -53,7 +53,7 @@ public:
     }
 
     FORCEINLINE void append(const char * __restrict const string) noexcept {
-        append(string, strlen(string));
+        append(string, std::char_traits<char>::length(string));
     }
 
     FORCEINLINE void append(const char * __restrict const string, size_t length) noexcept {
