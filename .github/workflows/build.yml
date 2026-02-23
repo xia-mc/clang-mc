@@ -13,19 +13,39 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            name: Windows
+            name: Windows (amd64)
             xmake_config: xmake f -p windows -m release --toolchain=clang-cl -a x64 -y
             artifact: clang-mc.exe
+            filename: "windows-amd64.exe"
+
+          - os: windows-latest
+            name: Windows (i386)
+            xmake_config: xmake f -p windows -m release --toolchain=clang-cl -a x86 -y
+            artifact: clang-mc.exe
+            filename: "windows-i386.exe"
 
           - os: ubuntu-latest
-            name: Linux
+            name: Linux (amd64)
             xmake_config: xmake f -p linux -m release --toolchain=clang -a x86_64 -y
             artifact: clang-mc
+            filename: "linux-amd64"
+
+          - os: ubuntu-latest
+            name: Linux (i386)
+            xmake_config: xmake f -p linux -m release --toolchain=clang -a x86 -y
+            artifact: clang-mc
+            filename: "linux-i386"
 
           - os: macos-latest
-            name: macOS
+            name: macOS (arm64,Apple)
             xmake_config: xmake f -p macosx -m release --toolchain=clang -a arm64 -y
             artifact: clang-mc
+            filename: "macos-apple"
+
+          - os: macos-15-intel
+            name: macOS (amd64,Intel)
+            xmake_config: xmake f -p macosx -m release --toolchain=clang -a x86_64 -y
+            artifact: "macos-intel"
 
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.name }}
@@ -60,18 +80,9 @@ jobs:
       - name: Build
         run: xmake
 
-      - name: Upload artifact (Windows)
-        if: matrix.os == 'windows-latest'
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: clang-mc-${{ matrix.name }}.exe
-          path: build/bin/${{ matrix.artifact }}
-          if-no-files-found: error
-
-      - name: Upload artifact (Others)
-        if: matrix.os != 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: clang-mc-${{ matrix.name }}
+          name: clang-mc-${{ matrix.filename }}
           path: build/bin/${{ matrix.artifact }}
           if-no-files-found: error
