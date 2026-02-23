@@ -110,13 +110,13 @@ target("clang-mc")
     end
     -- 非 Windows 链接标志
     if is_plat("linux") then
-        add_ldflags("-Wl,-static-libgcc", "-Wl,-static-libstdc++", { force = true })
+        add_ldflags("-static-libgcc", "-static-libstdc++", { force = true })
         if is_mode("release") and not has_config("debug_mode") then
-            add_ldflags("-Wl,--gc-sections", "-Wl,-s", { force = true })
+            add_ldflags("--gc-sections", "-s", { force = true })
         end
     elseif is_plat("macosx") then
         if is_mode("release") and not has_config("debug_mode") then
-            add_ldflags("-Wl,-dead_strip", { force = true })
+            add_ldflags("-dead_strip", { force = true })
         end
     end
 
