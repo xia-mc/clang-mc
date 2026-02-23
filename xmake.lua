@@ -36,11 +36,6 @@ add_requires("libzip",        {configs = {shared = false}})
 
 target("clang-mc")
     set_kind("binary")
---     if is_plat("windows") then
---         set_toolchains("msvc")
---     else  -- is_plat("linux") or is_plat("macosx") or unknown
---         set_toolchains("clang")
---     end
     set_targetdir("$(projectdir)/build/bin")
 
     add_files(
@@ -71,15 +66,20 @@ target("clang-mc")
         "GENERATED_SETUP"
     )
 
---     add_cxflags("-Wall", "-Werror", "-Wunknown-pragmas",
---                 "-Wno-unused-command-line-argument", "-Wno-declaration-after-statement",
---                 "-Wno-shadow-field-in-constructor", "-Wno-shadow-field",
---                 "-Wno-extra-semi", "-Wno-old-style-cast", "-Wno-exit-time-destructors", "-Wno-global-constructors",
---                 "-Wno-covered-switch-default", "-Wno-shadow-uncaptured-local", "-Wno-ctad-maybe-unsupported",
---                 "-Wno-pre-c11-compat", "-Wno-pre-c++17-compat", "-Wno-c++98-compat",
---                 "-Wno-c++98-compat-pedantic", "-Wno-c++20-extensions",
---                 "-Xclang", "-fsafe-buffer-usage-suggestions",
---                 {force = true})
+    if is_config("toolchain", "clang") or is_config("toolchain", "clang-cl") then
+        add_cxflags("-Wall", "-Werror", "-Wunknown-pragmas",
+
+                "-Wno-unused-command-line-argument", "-Wno-declaration-after-statement",
+                "-Wno-shadow-field-in-constructor", "-Wno-shadow-field",
+                "-Wno-extra-semi", "-Wno-old-style-cast", "-Wno-exit-time-destructors", "-Wno-global-constructors",
+                "-Wno-covered-switch-default", "-Wno-shadow-uncaptured-local", "-Wno-ctad-maybe-unsupported",
+                "-Wno-padded", "-Wno-reserved-macro-identifier",
+
+                "-Wno-pre-c11-compat", "-Wno-pre-c++17-compat", "-Wno-c++98-compat",
+                "-Wno-c++98-compat-pedantic", "-Wno-c++20-extensions",
+                "-Xclang", "-fsafe-buffer-usage-suggestions",
+                {force = true})
+    end
 
     -- Release 模式
     if is_mode("release") then
@@ -89,9 +89,13 @@ target("clang-mc")
             if is_plat("windows") then
                 add_cxflags("/O2", {force = true})
             else
-                add_cxflags("-O2", {force = true})
+                add_cxflags("-O3", {force = true})
             end
---             add_cxflags("-flto", {force = true})
+
+            if not is_config("toolchain", "msvc") then
+                add_cxflags("-flto", {force = true})
+            end
+
             add_defines("NDEBUG")
         end
     else
