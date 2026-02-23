@@ -20,7 +20,7 @@ jobs:
 
           - os: windows-latest
             name: Windows (i386)
-            xmake_config: xmake f -p windows -m release --toolchain=clang-cl -a x86 -y
+            xmake_config: xmake f -p windows -m release --toolchain=msvc -a x86 -y
             artifact: clang-mc.exe
             filename: "windows-i386.exe"
 
@@ -45,7 +45,8 @@ jobs:
           - os: macos-15-intel
             name: macOS (amd64,Intel)
             xmake_config: xmake f -p macosx -m release --toolchain=clang -a x86_64 -y
-            artifact: "macos-intel"
+            artifact: clang-mc
+            filename: "macos-intel"
 
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.name }}
