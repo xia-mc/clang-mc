@@ -9,21 +9,21 @@
 extern "C" {
 #endif
 
-void initNative();
+void initNative(void);
 
 #ifdef __cplusplus
 [[noreturn]]
 #endif
-void onOOM();
+void onOOM(void);
 
 void printStacktraceMsg(const char *err);
 
-void printStacktrace();
+void printStacktrace(void);
 
 #ifdef __cplusplus
 [[noreturn]]
 #endif
-void onTerminate();
+void onTerminate(void);
 
 #ifdef __cplusplus
 }

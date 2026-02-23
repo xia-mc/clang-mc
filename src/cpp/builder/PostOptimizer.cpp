@@ -4,8 +4,8 @@
 
 #include "PostOptimizer.h"
 
-static inline constexpr auto REPLACES = {
-        "return run return", "return"
+constexpr auto REPLACES = std::array{
+        std::pair{"return run return", "return"}
 };
 
 void PostOptimizer::doSingleOptimize(std::string &code) {
@@ -20,9 +20,8 @@ void PostOptimizer::doSingleOptimize(std::string &code) {
         if (!first) builder.append('\n');
         auto fixedLine = string::trim(line);
         std::string newLine;
-        for (auto from = REPLACES.begin(); from < REPLACES.end(); from += 2) {
-            const auto to = from + 1;
-            if (string::replaceFast(fixedLine, newLine, *from, *to)) {
+        for (const auto &p : REPLACES) {
+            if (string::replaceFast(fixedLine, newLine, p.first, p.second)) {
                 fixedLine = newLine;
             }
         }

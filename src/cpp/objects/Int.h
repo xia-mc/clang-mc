@@ -14,7 +14,7 @@ private:
 public:
     Int() = delete;
 
-    __forceinline constexpr Int(i32 value) noexcept: value(value) { // NOLINT(*-explicit-constructor)
+    FORCEINLINE constexpr Int(i32 value) noexcept: value(value) { // NOLINT(*-explicit-constructor)
     }
 
     [[nodiscard]] inline constexpr bool checkAdd(Int rhs) const noexcept {
@@ -41,58 +41,58 @@ public:
         return LIKELY(!(value == INT32_MIN && rhs.value == -1) && rhs.value != 0);
     }
 
-    __forceinline constexpr bool operator==(Int rhs) const noexcept {
+    FORCEINLINE constexpr bool operator==(Int rhs) const noexcept {
         return value == rhs.value;
     }
 
-    __forceinline constexpr bool operator==(i32 rhs) const noexcept {
+    FORCEINLINE constexpr bool operator==(i32 rhs) const noexcept {
         return operator==(Int(rhs));
     }
 
-    __forceinline constexpr Int operator+(Int rhs) const noexcept {
+    FORCEINLINE constexpr Int operator+(Int rhs) const noexcept {
         if (checkAdd(rhs)) return value + rhs.value;
         return {static_cast<i32>(
                         static_cast<u32>(value) + static_cast<u32>(rhs.value))};
     }
 
-    __forceinline constexpr Int operator-(Int rhs) const noexcept {
+    FORCEINLINE constexpr Int operator-(Int rhs) const noexcept {
         if (checkSub(rhs)) return value - rhs.value;
         return static_cast<i32>(
                 static_cast<u32>(value) - static_cast<u32>(rhs.value));
     }
 
-    __forceinline constexpr Int operator*(Int rhs) const noexcept {
+    FORCEINLINE constexpr Int operator*(Int rhs) const noexcept {
         if (checkMul(rhs)) return value * rhs.value;
         return static_cast<i32>(
                 static_cast<i64>(value) * static_cast<i64>(rhs.value));
 
     }
 
-    __forceinline constexpr Int operator/(Int rhs) const noexcept {
+    FORCEINLINE constexpr Int operator/(Int rhs) const noexcept {
         if (checkDiv(rhs)) return value / rhs.value;
         // UB：INT_MIN / -1 或除以 0
         return INT32_MAX;
     }
 
-    __forceinline constexpr i32 operator+(i32 rhs) const noexcept {
+    FORCEINLINE constexpr i32 operator+(i32 rhs) const noexcept {
         return operator+(Int(rhs));
     }
 
-    __forceinline constexpr i32 operator-(i32 rhs) const noexcept {
+    FORCEINLINE constexpr i32 operator-(i32 rhs) const noexcept {
         return operator-(Int(rhs));
     }
 
-    __forceinline constexpr i32 operator*(i32 rhs) const noexcept {
+    FORCEINLINE constexpr i32 operator*(i32 rhs) const noexcept {
         return operator*(Int(rhs));
     }
 
-    __forceinline constexpr i32 operator/(i32 rhs) const noexcept {
+    FORCEINLINE constexpr i32 operator/(i32 rhs) const noexcept {
         return operator/(Int(rhs));
     }
 
-    __forceinline constexpr operator i32() const noexcept { return value; } // NOLINT(*-explicit-constructor)
+    FORCEINLINE constexpr operator i32() const noexcept { return value; } // NOLINT(*-explicit-constructor)
 
-    [[nodiscard]] __forceinline constexpr std::string toString() const {
+    [[nodiscard]] FORCEINLINE constexpr std::string toString() const {
         return std::to_string(value);
     }
 };

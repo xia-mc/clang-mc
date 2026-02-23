@@ -6,25 +6,18 @@
 #include "i18n/I18n.h"
 #include "ir/values/Symbol.h"
 #include "ir/values/SymbolPtr.h"
+#include "span"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 
 PURE i32 parseToNumber(std::string_view string) {
     assert(!string.empty());
     string = string::trim(string);
 
-    // 字符串（"AB"）或字符（'A'）
-//    if (string.front() == '"' && string.back() == '"' && string.size() > 2) {
-//        std::string_view content = string.substr(1, string.size() - 2); // 去掉引号
-//        if (content.size() > 4) {
-//            throw ParseException(i18n("ir.op.out_of_range"));
-//        }
-//        int32_t result = 0;
-//        for (size_t i = 0; i < content.size(); ++i) {
-//            result |= (static_cast<uint8_t>(content[i]) << (i * 8)); // 小端存储字面量
-//        }
-//        return result;
-//    } else
+    // 字符
     if (string.front() == '\'' && string.back() == '\'' && string.size() == 3) {
-        return static_cast<int32_t>(string[1]); // 单字符
+        return static_cast<int32_t>(string[1]);
     }
 
     // 解析进制
@@ -41,6 +34,7 @@ PURE i32 parseToNumber(std::string_view string) {
         }
     }
 
+    // 处理前缀
     if (string.size() > 2) {
         if (string.substr(0, 2) == "0x" || string.substr(0, 2) == "0X") {
             base = 16;
@@ -86,6 +80,8 @@ PURE i32 parseToNumber(std::string_view string) {
     return static_cast<i32>(result);
 }
 
+#pragma clang diagnostic pop
+
 struct PtrData {
     const Register *base;
     const Register *index;
@@ -93,7 +89,7 @@ struct PtrData {
     const i32 displacement;
 };
 
-static __forceinline std::string fixStringForPtrData(const std::string_view &string) {
+static FORCEINLINE std::string fixStringForPtrData(const std::string_view &string) {
     auto splits = string::split(string, '-');
     if (splits.size() == 1) {
         return std::string(string);
@@ -195,11 +191,11 @@ static PtrData parsePtrData(const std::string_view &string) {
 }
 
 
-static __forceinline ValuePtr createImmediate(const std::string &string) {
+static FORCEINLINE ValuePtr createImmediate(const std::string &string) {
     return std::make_shared<Immediate>(parseToNumber(string));
 }
 
-static __forceinline ValuePtr createPtr(const std::string_view &string) {
+static FORCEINLINE ValuePtr createPtr(const std::string_view &string) {
     const auto data = parsePtrData(string);
     return std::make_shared<Ptr>(data.base, data.index, data.scale, data.displacement);
 }
@@ -224,11 +220,11 @@ PURE ValuePtr createValue(const LineState &line, const std::string &string) {
 
     try {
         return Registers::fromName(string);
-    } catch (const ParseException &e) {
+    } catch (const ParseException &) {
     }
     try {
         return createImmediate(string);
-    } catch (const ParseException &e) {
+    } catch (const ParseException &) {
     }
 
     return std::make_shared<Symbol>(fixSymbol(line, string));

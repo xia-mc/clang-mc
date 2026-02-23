@@ -27,7 +27,7 @@
 #include "ir/ops/Syscall.h"
 
 template<typename T>
-static OpPtr createWith1Arg(const std::string_view &args) {
+[[maybe_unused]] static OpPtr createWith1Arg(const std::string_view &args) {
     return std::make_unique<T>(INT_MIN, std::string(args));
 }
 
@@ -61,7 +61,7 @@ static std::string fixLabel(const LineState &line, const std::string_view &rawLa
     return std::string(rawLabel);
 }
 
-static __forceinline OpPtr createLabel(const LineState &line, const std::string_view &string) {
+static FORCEINLINE OpPtr createLabel(const LineState &line, const std::string_view &string) {
     assert(!string.empty());
     assert(string[string.length() - 1] == ':');
 

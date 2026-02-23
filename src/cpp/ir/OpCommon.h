@@ -27,7 +27,7 @@ static inline bool isLocalSymbol(const std::string_view &rawLabel) {
     return rawLabel[0] == '.';
 }
 
-static std::string fixSymbol(const LineState &line, const std::string_view &rawSymbol) {
+static inline std::string fixSymbol(const LineState &line, const std::string_view &rawSymbol) {
     if (isLocalSymbol(rawSymbol)) {
         if (line.lastLabel == nullptr) {
             throw ParseException(i18n("ir.invalid_local_symbol"));

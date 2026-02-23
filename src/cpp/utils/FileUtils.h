@@ -53,7 +53,7 @@ static inline void ensureDirectory(const Path &dir) { // NOLINT(*-no-recursion)
             }
             create_directory(dir);
         }
-    } catch (const std::filesystem::filesystem_error &e) {
+    } catch (const std::filesystem::filesystem_error &) {
         throw IOException(i18nFormat("file.failed_to_create", dir.string()));
     }
 }

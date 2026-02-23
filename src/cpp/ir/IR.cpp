@@ -16,7 +16,7 @@
 #include "ir/ops/Inline.h"
 #include "parse/PreProcessor.h"
 #include "random"
-#include "objects/include/uuid.h"
+#include "uuidWrapper.h"
 
 void IR::parse(std::string &&code) {
     this->sourceCode = std::move(code);
@@ -151,7 +151,7 @@ void IR::parse(std::string &&code) {
     }
 }
 
-__forceinline std::string IR::createForCall(const Label *labelOp) {
+FORCEINLINE std::string IR::createForCall(const Label *labelOp) {
     if (labelOp->getExport() || labelOp->getExtern()) {
         assert(string::count(labelOp->getLabel(), ':') == 1);
         return labelOp->getLabel();
@@ -173,7 +173,7 @@ static inline Path toPath(const std::string &mcPath) {
     return result;
 }
 
-__forceinline void IR::initLabels(LabelMap &labelMap) {
+FORCEINLINE void IR::initLabels(LabelMap &labelMap) {
     auto labelOp = CAST_FAST(this->values[0], Label);
     Hash label = labelOp->getLabelHash();
     labelMap.emplace(label, createForCall(labelOp));

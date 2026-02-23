@@ -32,7 +32,7 @@ public:
         return getName();
     }
 
-    [[nodiscard]] __forceinline bool operator==(const Register &target) const noexcept {
+    [[nodiscard]] FORCEINLINE bool operator==(const Register &target) const noexcept {
         return this == &target;
     }
 };

@@ -23,40 +23,40 @@ public:
 
     ~StringBuilder() = default;
 
-    [[nodiscard]] __forceinline std::string toString() const {
+    [[nodiscard]] FORCEINLINE std::string toString() const {
         return buffer.str();
     }
 
-    __forceinline void clear() noexcept {
+    FORCEINLINE void clear() noexcept {
         buffer.str("");
     }
 
-    __forceinline bool isEmpty() {
+    FORCEINLINE bool isEmpty() {
         return buffer.str().empty();
     }
 
-    __forceinline u32 size() {
+    FORCEINLINE u64 size() {
         return buffer.str().size();
     }
 
-    __forceinline u32 length() {
+    FORCEINLINE u64 length() {
         return buffer.str().length();
     }
 
     template<class StrLike>
-    __forceinline void append(const StrLike &string) noexcept {
+    FORCEINLINE void append(const StrLike &string) noexcept {
         try {
-            buffer.sputn(string.data(), string.length());
+            buffer.sputn(string.data(), (i64) string.length());
         } catch (const std::bad_alloc &) {
             onOOM();
         }
     }
 
-    __forceinline void append(const char * __restrict const string) noexcept {
+    FORCEINLINE void append(const char * __restrict const string) noexcept {
         append(string, strlen(string));
     }
 
-    __forceinline void append(const char * __restrict const string, size_t length) noexcept {
+    FORCEINLINE void append(const char * __restrict const string, size_t length) noexcept {
         try {
             buffer.sputn(string, static_cast<i64>(length));
         } catch (const std::bad_alloc &) {
@@ -64,7 +64,7 @@ public:
         }
     }
 
-    __forceinline void append(const char ch) noexcept {
+    FORCEINLINE void append(const char ch) noexcept {
         try {
             buffer.sputn(&ch, 1);
         } catch (const std::bad_alloc &) {
@@ -73,12 +73,12 @@ public:
     }
 
     template<class StrLike>
-    __forceinline void appendLine(const StrLike &string) noexcept {
+    FORCEINLINE void appendLine(const StrLike &string) noexcept {
         append(string);
         append('\n');
     }
 
-    __forceinline void appendLine(const char ch) noexcept {
+    FORCEINLINE void appendLine(const char ch) noexcept {
         append(ch);
         append('\n');
     }

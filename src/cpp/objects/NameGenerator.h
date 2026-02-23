@@ -8,6 +8,11 @@
 #include <cstdlib>
 #include "utils/Native.h"
 
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#endif
+
 class NameGenerator {
 private:
     static inline constexpr char DICTIONARY[] = "abcdefghijklmnopqrstuvwxyz";
@@ -29,12 +34,12 @@ public:
         free(counters);
     }
 
-    static __forceinline NameGenerator &getInstance() noexcept {
+    static FORCEINLINE NameGenerator &getInstance() noexcept {
         static auto generator = NameGenerator();
         return generator;
     }
 
-    __forceinline std::string generate() {
+    FORCEINLINE std::string generate() {
         auto result = std::string(length, '\0');
         for (size_t i = 0; i < length; i++) {
             result[i] = DICTIONARY[counters[i]];
@@ -44,7 +49,7 @@ public:
     }
 
 private:
-    __forceinline void incrementCounters() noexcept {
+    FORCEINLINE void incrementCounters() noexcept {
         size_t i = length - 1;
         do {
             counters[i]++;
@@ -65,5 +70,9 @@ private:
         }
     }
 };
+
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#endif
 
 #endif //CLANG_MC_NAMEGENERATOR_H

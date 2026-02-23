@@ -20,6 +20,10 @@ static inline const char *getLevelColor(spdlog::level::level_enum level) {
         case spdlog::level::debug:
         case spdlog::level::trace:
             return "\033[0;90m"; // 灰色（暗）
+        case spdlog::level::off:
+            FMT_FALLTHROUGH;
+        case spdlog::level::n_levels:
+            FMT_FALLTHROUGH;
         default:
             return "";
     }
@@ -40,6 +44,10 @@ static inline const char *getLevelName(spdlog::level::level_enum level) {
             return "debug";
         case spdlog::level::trace:
             return "trace";
+        case spdlog::level::off:
+            FMT_FALLTHROUGH;
+        case spdlog::level::n_levels:
+            FMT_FALLTHROUGH;
         default:
             return "?";
     }

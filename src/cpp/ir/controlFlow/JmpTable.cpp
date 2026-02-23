@@ -6,6 +6,9 @@
 #include "objects/NameGenerator.h"
 #include "utils/string/StringBuilder.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+
 static inline constexpr std::string_view JMP_LAST_TEMPLATE = "return run function {}";
 static inline constexpr std::string_view JMP_TEMPLATE = "execute if function {} run return 1";
 
@@ -69,3 +72,5 @@ void JmpTable::make() {
     free(labels);
     free(terminateData);
 }
+
+#pragma clang diagnostic pop

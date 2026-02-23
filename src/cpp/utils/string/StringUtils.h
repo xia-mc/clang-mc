@@ -128,6 +128,7 @@ namespace string {
                     switch (c) {
                         case '/':
                             if (!hasNextChar || line[i + 1] != '/') break;
+                            FMT_FALLTHROUGH;
                         case ';':
                             // Found comment, return the substring up to this point
                             return line.substr(0, i);
@@ -278,7 +279,7 @@ namespace string {
     }
 }
 
-static __forceinline void printStacktrace(const std::exception &exception) noexcept {
+static FORCEINLINE void printStacktrace(const std::exception &exception) noexcept {
     auto excName = typeid(exception).name();
     auto nameSplits = string::split(typeid(exception).name(), ' ', 2);
     if (nameSplits.empty()) {

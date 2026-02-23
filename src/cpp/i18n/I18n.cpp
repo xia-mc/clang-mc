@@ -14,7 +14,7 @@
 
 inline auto TRANSLATIONS = HashMap<Hash, std::string, decltype([](const Hash item) { return item; })>();
 
-void loadLanguage(const char *const data) {
+static void loadLanguage(const char *const data) {
     YAML::Node config = YAML::Load(data);
     for (const auto &it: config) {
         TRANSLATIONS[hash(it.first.as<std::string>())] = it.second.as<std::string>();
@@ -22,13 +22,13 @@ void loadLanguage(const char *const data) {
 }
 
 #if defined(_WIN32)
-#include <windows.h>
+#include <Windows.h>
 #elif defined(__APPLE__) || defined(__linux__)
 #include <locale.h>
 #include <langinfo.h>
 #endif
 
-std::string getSystemLanguage() {
+static std::string getSystemLanguage() {
     std::string lang = "en-US";
 
 #if defined(_WIN32) || defined(_WIN64)

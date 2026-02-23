@@ -60,6 +60,8 @@ void ArgParser::next(const std::string &arg) {
                 // 设置数据包目录
                 config.setDataDir(Path(arg));
                 break;
+            default:
+                break;
         }
         required = false;
         lastString = "";

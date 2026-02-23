@@ -5,10 +5,11 @@
 #ifndef CLANG_MC_COMMON_H
 #define CLANG_MC_COMMON_H
 
+#include "CommonC.h"
 #include "filesystem"
 #include "spdlog/spdlog.h"
 #include "cstdint"
-#include "objects/include/UnorderedDense.h"
+#include "UnorderedDenseWrapper.h"
 #include <nlohmann/json.hpp>
 #include "utils/Native.h"
 
@@ -61,10 +62,10 @@ public:
     }
 };
 
-#define GETTER(name, field) __forceinline auto &get##name() noexcept { return field; } __forceinline const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
-#define GETTER_POD(name, field) __forceinline auto get##name() const noexcept { return field; }
-#define SETTER(name, field) __forceinline void set##name(const auto &value) noexcept { field = value; }
-#define SETTER_POD(name, field) __forceinline void set##name(auto value) noexcept { field = value; }
+#define GETTER(name, field) FORCEINLINE auto &get##name() noexcept { return field; } FORCEINLINE const auto &get##name() const noexcept { return field; } // NOLINT(*-macro-parentheses)
+#define GETTER_POD(name, field) FORCEINLINE auto get##name() const noexcept { return field; }
+#define SETTER(name, field) FORCEINLINE void set##name(const auto &value) noexcept { field = value; }
+#define SETTER_POD(name, field) FORCEINLINE void set##name(auto value) noexcept { field = value; }
 
 #define DATA(name, field) GETTER(name, field) SETTER(name, field)
 #define DATA_POD(name, field) GETTER_POD(name, field) SETTER_POD(name, field)
@@ -79,9 +80,6 @@ public:
 #define UNUSED(expr) ((void) (expr))
 
 #define NOT_IMPLEMENTED() throw NotImplementedException()
-#define LIKELY(x)   __builtin_expect(!!(x), 1)
-#define UNLIKELY(x) __builtin_expect(!!(x), 0)
-#define UNREACHABLE() __builtin_unreachable()
 #define PURE [[nodiscard]]
 
 PURE static inline constexpr Hash hash(const std::string_view &str) noexcept {
@@ -122,23 +120,25 @@ PURE static inline constexpr Hash hash(const std::string_view &str) noexcept {
 #else
 #undef assert
 #define assert(expression) \
-    if (false) { \
-        UNREACHABLE(); \
-        ((void) (expression)); \
-    }
+    do { \
+        if (false) { \
+            UNREACHABLE(); \
+            ((void) (expression)); \
+        } \
+    } while (0)
 #define WARN(condition, message) UNUSED(condition); UNUSED(message)
 #define DEBUG_PRINT(message) UNUSED(message)
 #endif
 
 template<class T>
-static __forceinline constexpr T *requireNonNull(T *object) {
+static FORCEINLINE constexpr T *requireNonNull(T *object) {
     if (UNLIKELY(object == nullptr)) {
         throw NullPointerException("null");
     }
     return object;
 }
 
-static __forceinline u64 getRsp() {
+static FORCEINLINE u64 getRsp() {
     u64 rsp;
     asm inline("mov %%rsp, %0" : "=r"(rsp));
     return rsp;

@@ -124,7 +124,7 @@ VerifyResult Verifier::handleSingle(IR &ir) {
         const auto &op = ops[i];
         currentOp = op.get();
 
-        if (const auto staticOp = INSTANCEOF(op, Static)) {
+        if (INSTANCEOF(op, Static)) {
             continue;
         }
 

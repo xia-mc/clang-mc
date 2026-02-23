@@ -15,25 +15,25 @@ private:
 public:
     explicit MatrixStack() = default;
 
-    __forceinline void pushMatrix(T &&object) {
+    FORCEINLINE void pushMatrix(T &&object) {
         stack.push(std::move(object));
     }
 
-    __forceinline void pushMatrix(const T object) {
+    FORCEINLINE void pushMatrix(const T object) {
         stack.push(std::move(object));
     }
 
-    __forceinline T popMatrix() {
+    FORCEINLINE T popMatrix() {
         auto result = std::move(stack.top());
         stack.pop();
         return result;
     }
 
-    __forceinline bool isEmpty() {
+    FORCEINLINE bool isEmpty() {
         return stack.empty();
     }
 
-    __forceinline u32 size() {
+    FORCEINLINE u32 size() {
         return stack.size();
     }
 };

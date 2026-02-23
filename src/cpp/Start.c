@@ -6,13 +6,13 @@
 
 #ifdef _WIN32
 
-#include <windows.h>
+#include <Windows.h>
 
 #define bool BOOLEAN
 #define true TRUE
 #define false FALSE
 
-static __forceinline bool isVCRuntimeAvailable() {
+static bool isVCRuntimeAvailable(void) {
     HMODULE runtime = LoadLibraryA("MSVCP140.dll");
     if (runtime == NULL)
         return false;

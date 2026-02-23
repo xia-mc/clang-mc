@@ -26,13 +26,13 @@ private:
 
     void error(const std::string &message, const IR *ir, const Op *op);
 
-    __forceinline void error(const std::string &message) {
+    FORCEINLINE void error(const std::string &message) {
         return error(message, currentIR, currentOp);
     }
 
     bool warn(const std::string &message, const IR *ir, const Op *op);
 
-    __forceinline bool warn(const std::string &message) {
+    FORCEINLINE bool warn(const std::string &message) {
         return warn(message, currentIR, currentOp);
     }
 

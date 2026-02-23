@@ -12,6 +12,9 @@
 #include "utils/CLIUtils.h"
 #include "i18n/I18n.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+
 static inline Config parseArgs(const int argc, const char *argv[]) {
     auto config = Config();
     if (argc <= 1) {
@@ -28,7 +31,7 @@ static inline Config parseArgs(const int argc, const char *argv[]) {
     return config;
 }
 
-extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
+extern "C" int init(const int argc, const char *argv[]) {
     ARGC = argc;
     ARGV = argv;
 
@@ -47,6 +50,8 @@ extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
                 case hash("--version"):
                     std::cout << getVersionMessage(getArgv0()) << std::flush;
                     return 0;
+                default:
+                    break;
             }
         }
 
@@ -61,7 +66,7 @@ extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
         auto instance = ClangMc(config);
         instance.start();
         return 0;
-    } catch (const std::bad_alloc &e) {
+    } catch (const std::bad_alloc &) {
         onOOM();
 // 让异常termiate，以看到stacktrace
 //    } catch (const std::exception &e) {
@@ -69,5 +74,6 @@ extern "C" [[gnu::noinline]] int init(const int argc, const char *argv[]) {
 //    } catch (...) {
 //        printStacktrace();
     }
-    return 1;
 }
+
+#pragma clang diagnostic pop

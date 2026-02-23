@@ -42,7 +42,7 @@ public:
         fileDisplay(string::getPrettyPath(this->file)), defines(defines) {
     }
 
-    [[nodiscard]] __forceinline std::string_view getFileDisplay() const {
+    [[nodiscard]] FORCEINLINE std::string_view getFileDisplay() const {
         return fileDisplay;
     }
 

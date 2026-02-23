@@ -6,26 +6,27 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "inttypes.h"
+#include "CommonC.h"
 
 static const char *const OOM_MSG = "\033[31mfatal error:\033[97m out of memory\n\033[31m致命错误:\033[97m 内存已耗尽";
 static void *EMERGENCY_MEMORY = NULL;
 
-void initNative() {
+void initNative(void) {
     EMERGENCY_MEMORY = malloc(128);
 }
 
-void onOOM() {
+NORETURN void onOOM(void) {
     free(EMERGENCY_MEMORY);
     EMERGENCY_MEMORY = NULL;
 
     fputs(OOM_MSG, stderr);
     fflush(stderr);
-    _exit(1);
+    abort();
 }
 
 #if defined(_WIN32)
 
-#include <windows.h>
+#include <Windows.h>
 #include <DbgHelp.h>
 #include <string.h>
 
@@ -74,7 +75,7 @@ void printStacktraceMsg(const char *err) {
         if (address == 0) break;
 
         // 获取函数名
-        char symbolBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+        _Alignas(SYMBOL_INFO) char symbolBuffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
         SYMBOL_INFO *symbol = (SYMBOL_INFO *) symbolBuffer;
         symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
         symbol->MaxNameLen = MAX_SYM_NAME;
@@ -97,7 +98,7 @@ void printStacktraceMsg(const char *err) {
         line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
 
         if (SymGetLineFromAddr64(process, address, &displacement, &line)) {
-            fprintf(stderr, "(0x%" PRIxPTR ") (%s:%lu)\n", line.Address, line.FileName, line.LineNumber);
+            fprintf(stderr, "(0x%" PRIxPTR ") (%s:%lu)\n", (uintptr_t) line.Address, line.FileName, line.LineNumber);
         } else {
             fprintf(stderr, "(Unknown Source)\n");
         }
@@ -106,15 +107,15 @@ void printStacktraceMsg(const char *err) {
     SymCleanup(process);
 }
 
-void printStacktrace() {
+void printStacktrace(void) {
     printStacktraceMsg(NULL);
 }
 
-void onTerminate() {
+void onTerminate(void) {
     printStacktrace();
 }
 #else
-void onTerminate() {
+void onTerminate(void) {
     puts("Exception in thread unknown with an unknown exception.");
 }
 #endif
