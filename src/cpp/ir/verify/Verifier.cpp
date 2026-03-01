@@ -67,6 +67,7 @@ VerifyResult Verifier::handleSingle(IR &ir) {
     auto definedLabels = HashMap<Hash, Label *>();
     definedLabels.emplace(hash(LABEL_RET), &labelRet);
     auto undefinedLabels = HashMap<Hash, std::vector<CallLike *>>();  // label hash, 使用label的地方
+    auto labelRefMap = HashMap<Hash, std::vector<Hash>>();    // caller label -> referenced labels
     auto unusedLabels = HashSet<Hash>();
 
     if (ops.empty()) {
@@ -120,6 +121,8 @@ VerifyResult Verifier::handleSingle(IR &ir) {
     }
 
     bool unreachable = false;
+    bool inLabelBlock = false;
+    Hash currentLabel = 0;
     for (size_t i = 0; i < ops.size(); ++i) {
         const auto &op = ops[i];
         currentOp = op.get();
@@ -131,7 +134,8 @@ VerifyResult Verifier::handleSingle(IR &ir) {
         if (const auto labelOp = INSTANCEOF(op, Label)) {
             unreachable = false;
             const auto opHash = labelOp->getLabelHash();
-
+            inLabelBlock = true;
+            currentLabel = opHash;
             if (definedLabels.contains(opHash)) {
                 error(i18nFormat("ir.verify.label_redefinition", labelOp->getLabel()));
                 note(i18n("ir.verify.previous_definition"), &ir, definedLabels[opHash]);
@@ -159,6 +163,9 @@ VerifyResult Verifier::handleSingle(IR &ir) {
 
         if (const auto callLike = INSTANCEOF(op, CallLike)) {
             const auto label = callLike->getLabelHash();
+            if (inLabelBlock) {
+                labelRefMap[currentLabel].emplace_back(label);
+            }
 
             if (definedLabels.contains(label)) {
                 unusedLabels.erase(label);
@@ -208,14 +215,100 @@ VerifyResult Verifier::handleSingle(IR &ir) {
         }
     }
 
+    for (const auto &symbol: unusedSymbols) {
+        const auto &symbolOp = definedSymbols[symbol];
+        warn(i18nFormat("ir.verify.unused_symbol", symbolOp.name), &ir, symbolOp.op);
+    }
+
+    // 在 Verifier 末尾做可达分析和删减，确保前面的合法性检查先运行完成。
+    {
+        Hash previousLabel = 0;
+        bool hasPreviousLabel = false;
+        bool previousLabelTerminated = true;
+        for (const auto &op: ops) {
+            if (const auto labelOp = INSTANCEOF(op, Label)) {
+                const auto labelHash = labelOp->getLabelHash();
+                if (hasPreviousLabel && !previousLabelTerminated) {
+                    // label 穿透: 前一个标签块未终结，默认可落入下一个标签块
+                    labelRefMap[previousLabel].emplace_back(labelHash);
+                }
+                previousLabel = labelHash;
+                hasPreviousLabel = true;
+                previousLabelTerminated = labelOp->getExtern();
+                continue;
+            }
+            if (hasPreviousLabel && isTerminate(op)) {
+                previousLabelTerminated = true;
+            }
+        }
+
+        auto keepLabels = HashSet<Hash>();
+        for (const auto &entry: definedLabels.values()) {
+            if (entry.second->getExport()) {
+                keepLabels.emplace(entry.first);
+            }
+        }
+
+        auto worklist = std::vector<Hash>(keepLabels.begin(), keepLabels.end());
+        for (size_t i = 0; i < worklist.size(); ++i) {
+            const auto label = worklist[i];
+            if (!labelRefMap.contains(label)) {
+                continue;
+            }
+            for (const auto target: labelRefMap[label]) {
+                if (!definedLabels.contains(target) || keepLabels.contains(target)) {
+                    continue;
+                }
+                keepLabels.emplace(target);
+                worklist.emplace_back(target);
+            }
+        }
+
+        auto computedUnused = HashSet<Hash>();
+        for (const auto &entry: definedLabels.values()) {
+            const auto labelHash = entry.first;
+            if (labelHash == hash(LABEL_RET)) {
+                continue;
+            }
+            if (!keepLabels.contains(labelHash)) {
+                computedUnused.emplace(labelHash);
+            }
+        }
+        unusedLabels = std::move(computedUnused);
+    }
+
     for (const auto &label: unusedLabels) {
         const auto labelOp = definedLabels[label];
         warn(i18nFormat("ir.verify.unused_label", labelOp->getLabel()), &ir, labelOp);
     }
 
-    for (const auto &symbol: unusedSymbols) {
-        const auto &symbolOp = definedSymbols[symbol];
-        warn(i18nFormat("ir.verify.unused_symbol", symbolOp.name), &ir, symbolOp.op);
+    if (!unusedLabels.empty()) {
+        auto newOps = std::vector<OpPtr>();
+        newOps.reserve(ops.size());
+
+        bool removeCurrentLabelBlock = false;
+        bool hasAnyLabel = false;
+        for (auto &op: ops) {
+            if (const auto labelOp = INSTANCEOF(op, Label)) {
+                removeCurrentLabelBlock = unusedLabels.contains(labelOp->getLabelHash());
+                if (!removeCurrentLabelBlock) {
+                    hasAnyLabel = true;
+                    newOps.emplace_back(std::move(op));
+                }
+                continue;
+            }
+
+            if (removeCurrentLabelBlock) {
+                continue;
+            }
+            newOps.emplace_back(std::move(op));
+        }
+
+        if (!hasAnyLabel) {
+            ops.clear();
+        } else {
+            ops = std::move(newOps);
+        }
     }
 
     return VerifyResult(std::move(definedSymbols), std::move(unusedSymbols),
