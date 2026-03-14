@@ -19,7 +19,7 @@ public:
     }
 
     [[nodiscard]] std::string compile() const override {
-        return "mcfp syscall";
+        return "syscall";
     }
 };
 
