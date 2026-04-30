@@ -34,5 +34,6 @@ extern int errno;
 #define EPIPE 32
 #define EDOM 33
 #define ERANGE 34
+#define EILSEQ 84
 
 #endif
