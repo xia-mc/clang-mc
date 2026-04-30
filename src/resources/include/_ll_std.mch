@@ -12,11 +12,14 @@
 #include "compiler_rt/ashrdi3.mch"
 #include "compiler_rt/bits.mch"
 #include "compiler_rt/comparedf2.mch"
+#include "compiler_rt/comparesf2.mch"
 #include "compiler_rt/divdf3.mch"
+#include "compiler_rt/divdi3.mch"
 #include "compiler_rt/divsf3.mch"
 #include "compiler_rt/extendsfdf2.mch"
 #include "compiler_rt/fixdfsi.mch"
 #include "compiler_rt/fixsfsi.mch"
+#include "compiler_rt/floatunsidf.mch"
 #include "compiler_rt/floatsidf.mch"
 #include "compiler_rt/floatsisf.mch"
 #include "compiler_rt/fp_mode.mch"
@@ -33,7 +36,3 @@
 #include "compiler_rt/udivsi3.mch"
 #include "compiler_rt/umoddi3.mch"
 #include "compiler_rt/umodsi3.mch"
-
-abort:
-    inline tellraw @a "[DataPack] Aborted! Program has crashed, run /reload to reset."
-    ret

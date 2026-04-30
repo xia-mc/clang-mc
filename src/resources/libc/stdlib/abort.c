@@ -3,7 +3,7 @@
 void
 abort(void)
 {
-    __asm__("call abort");
+    __asm__("inline tellraw @a \"[DataPack] Aborted! Program has crashed, run /reload to reset.\"");
     for (;;) {
     }
 }
