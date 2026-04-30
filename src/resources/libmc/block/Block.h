@@ -48,7 +48,7 @@ Block_HasRandomTicks(Block block)
     return block ? block->randomTicks != 0 : 0;
 }
 
-static inline char *
+static inline String
 Block_GetRegistryName(Block block)
 {
     return block ? Identifier_Str(&block->identifier) : NULL;

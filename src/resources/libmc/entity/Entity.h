@@ -31,7 +31,7 @@ Entity_GetIdentifier(Entity entity)
     return entity ? &entity->identifier : NULL;
 }
 
-static inline char *
+static inline String
 Entity_GetRegistryName(Entity entity)
 {
     return entity ? Identifier_Str(&entity->identifier) : NULL;

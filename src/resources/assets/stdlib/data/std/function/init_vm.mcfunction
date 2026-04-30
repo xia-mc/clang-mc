@@ -67,6 +67,7 @@ data modify storage std:vm s5 set value {}
 data modify storage std:vm s6 set value {}
 data modify storage std:vm int2str_pool set value []
 data modify storage std:vm str2int_pool set value {}
+data modify storage std:vm mcstr set value {next_id: 0, free_head: -1, slots: []}
 
 # 准备内存
 # 总内存 32MB，栈 64KB

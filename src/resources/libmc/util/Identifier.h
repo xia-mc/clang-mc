@@ -7,16 +7,17 @@
  * Ownership:
  * - Functions returning Identifier allocate ns/path with malloc().
  * - Call Identifier_Clear() when done.
- * - Functions returning char * also allocate with malloc().
- *   Call free() on the returned string.
+ * - Functions returning String allocate a new ref-counted libmc String.
+ *   Call String_DECREF() when done.
  */
 
-#include <ctype.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct {
+#include "String.h"
+
+typedef struct Identifier {
     const char *ns;
     const char *path;
 } Identifier;
@@ -364,27 +365,98 @@ Identifier_WithSuffixedPath(const Identifier *id, const char *suffix, Identifier
     return status;
 }
 
-static inline char *
-Identifier_Str(const Identifier *id)
+static inline McfString
+McfString_FromIdentifier(const Identifier *id)
 {
     size_t ns_len;
     size_t path_len;
-    char *buf;
+    McfString s;
 
     if (!Identifier_IsInitialized(id)) {
         return NULL;
     }
-    ns_len = strlen(id->ns);
-    path_len = strlen(id->path);
-    buf = (char *)malloc(ns_len + 1u + path_len + 1u);
-    if (buf == NULL) {
+    s = McfString_New();
+    if (s == NULL) {
         return NULL;
     }
-    memcpy(buf, id->ns, ns_len);
-    buf[ns_len] = IDENTIFIER_NAMESPACE_SEPARATOR;
-    memcpy(buf + ns_len + 1u, id->path, path_len);
-    buf[ns_len + 1u + path_len] = '\0';
-    return buf;
+    ns_len = strlen(id->ns);
+    path_len = strlen(id->path);
+    if (_McfString_EnsureCapacity(s, ns_len + 1u + path_len + 1u) != 0) {
+        McfString_Release(s);
+        return NULL;
+    }
+
+    memcpy(s->data, id->ns, ns_len);
+    s->data[ns_len] = IDENTIFIER_NAMESPACE_SEPARATOR;
+    memcpy(s->data + ns_len + 1u, id->path, path_len);
+    s->data[ns_len + 1u + path_len] = '\0';
+    s->len = ns_len + 1u + path_len;
+    return s;
+}
+
+static inline String
+String_FromIdentifier(const Identifier *id)
+{
+    size_t ns_len;
+    size_t path_len;
+    String s;
+
+    if (!Identifier_IsInitialized(id)) {
+        return NULL;
+    }
+    s = String_New();
+    if (s == NULL) {
+        return NULL;
+    }
+    ns_len = strlen(id->ns);
+    path_len = strlen(id->path);
+    if (_String_EnsureCapacity(s, ns_len + 1u + path_len + 1u) != 0) {
+        String_DECREF(s);
+        return NULL;
+    }
+
+    memcpy(s->data, id->ns, ns_len);
+    s->data[ns_len] = IDENTIFIER_NAMESPACE_SEPARATOR;
+    memcpy(s->data + ns_len + 1u, id->path, path_len);
+    s->data[ns_len + 1u + path_len] = '\0';
+    s->len = ns_len + 1u + path_len;
+    return s;
+}
+
+static inline int
+McfString_AppendIdentifier(McfString s, const Identifier *id)
+{
+    if (!Identifier_IsInitialized(id)) {
+        return -1;
+    }
+    if (McfString_AppendCString(s, id->ns) != 0) {
+        return -1;
+    }
+    if (McfString_AppendCString(s, ":") != 0) {
+        return -1;
+    }
+    return McfString_AppendCString(s, id->path);
+}
+
+static inline int
+String_AppendIdentifier(String s, const Identifier *id)
+{
+    if (!Identifier_IsInitialized(id)) {
+        return -1;
+    }
+    if (String_AppendCString(s, id->ns) != 0) {
+        return -1;
+    }
+    if (String_AppendCString(s, ":") != 0) {
+        return -1;
+    }
+    return String_AppendCString(s, id->path);
+}
+
+static inline String
+Identifier_Str(const Identifier *id)
+{
+    return String_FromIdentifier(id);
 }
 
 static inline int
@@ -434,19 +506,19 @@ Identifier_Compare(const Identifier *a, const Identifier *b)
     return result;
 }
 
-static inline char *
+static inline String
 Identifier_ToUnderscoreSeparatedString(const Identifier *id)
 {
     size_t i;
-    char *buf;
+    String buf;
 
     buf = Identifier_Str(id);
     if (buf == NULL) {
         return NULL;
     }
-    for (i = 0; buf[i] != '\0'; i++) {
-        if (buf[i] == '/' || buf[i] == ':') {
-            buf[i] = '_';
+    for (i = 0; buf->data[i] != '\0'; i++) {
+        if (buf->data[i] == '/' || buf->data[i] == ':') {
+            buf->data[i] = '_';
         }
     }
     return buf;
