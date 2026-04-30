@@ -23,7 +23,7 @@ public:
 
     void start();
 
-    [[noreturn]] static void exit();
+    [[noreturn]] static void exit(int code = 1);
 private:
     void ensureEnvironment() const;
 

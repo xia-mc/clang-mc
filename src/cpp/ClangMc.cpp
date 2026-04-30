@@ -143,9 +143,9 @@ void ClangMc::start() {
     exit();
 }
 
-[[noreturn]] void ClangMc::exit() {
+[[noreturn]] void ClangMc::exit(const int code) {
     spdlog::drop_all();
-    std::exit(0);
+    std::exit(code);
     UNREACHABLE();
 }
 
