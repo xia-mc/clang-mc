@@ -3,19 +3,30 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "Ref.h"
 
 typedef struct _McfString _McfString;
 typedef _McfString *McfString;
 
 struct _McfString {
-    size_t refcnt;
-    size_t len;
-    size_t cap;
-    char  *data;
-    int    slot_id;
-    int    flags;
+    McRefHeader rc;
+    size_t      len;
+    size_t      cap;
+    char       *data;
+    int         slot_id;
+    int         flags;
+};
+
+/* McfString_New/From* return owned objects. Pair them with McfString_Release(). */
+static void _McfString_Destroy(void *obj);
+
+static const McRefOps _MCFSTRING_REF_OPS = {
+    _McfString_Destroy,
+    "McfString",
 };
 
 static inline int
@@ -155,7 +166,7 @@ _McfString_SetSlotRefcnt(McfString s)
         "inline execute store result storage std:vm s6.refcnt int 1 run scoreboard players get %1 vm_regs\n"
         "inline function std:_internal/mcstr_set_slot_refcnt with storage std:vm s6"
         :
-        : "r"(s->slot_id), "r"((int)s->refcnt)
+        : "r"(s->slot_id), "r"((int)s->rc.refcnt)
     );
     return 0;
 }
@@ -218,7 +229,7 @@ McfString_New(void)
         return NULL;
     }
 
-    s->refcnt = 1u;
+    MC_REF_INIT_DYNAMIC(s, &_MCFSTRING_REF_OPS);
     s->len = 0u;
     s->cap = 1u;
     s->data[0] = '\0';
@@ -260,11 +271,17 @@ McfString_FromLiteral(const char *src)
     return McfString_FromCString(src);
 }
 
+static inline const char *
+McfString_CStr(McfString s)
+{
+    return s ? s->data : NULL;
+}
+
 static inline McfString
 McfString_Retain(McfString s)
 {
-    if (s != NULL) {
-        s->refcnt++;
+    if (s != NULL && !McRef_IsStatic(s)) {
+        (void)McRef_Retain(s);
         (void)_McfString_SetSlotRefcnt(s);
     }
     return s;
@@ -273,28 +290,36 @@ McfString_Retain(McfString s)
 static inline void
 McfString_Release(McfString s)
 {
-    if (s == NULL) {
+    if (s == NULL || McRef_IsStatic(s)) {
         return;
     }
 
-    assert(s->refcnt != 0u);
-    s->refcnt--;
-    if (s->refcnt == 0u) {
-        if (s->slot_id >= 0) {
-            __asm volatile (
-                "inline data modify storage std:vm s6 set value %{id: -1%}\n"
-                "inline execute store result storage std:vm s6.id int 1 run scoreboard players get %0 vm_regs\n"
-                "inline function std:_internal/mcstr_free_slot with storage std:vm s6"
-                :
-                : "r"(s->slot_id)
-            );
-        }
-        free(s->data);
-        free(s);
+    if (s->rc.refcnt == 1) {
+        McRef_Release(s);
         return;
     }
 
+    McRef_Release(s);
     (void)_McfString_SetSlotRefcnt(s);
+}
+
+static void
+_McfString_Destroy(void *obj)
+{
+    McfString s;
+
+    s = (McfString)obj;
+    if (s->slot_id >= 0) {
+        __asm volatile (
+            "inline data modify storage std:vm s6 set value %{id: -1%}\n"
+            "inline execute store result storage std:vm s6.id int 1 run scoreboard players get %0 vm_regs\n"
+            "inline function std:_internal/mcstr_free_slot with storage std:vm s6"
+            :
+            : "r"(s->slot_id)
+        );
+    }
+    free(s->data);
+    free(s);
 }
 
 static inline int
@@ -372,6 +397,72 @@ McfString_AppendInt(McfString s, int value)
         return -1;
     }
     return McfString_AppendCString(s, buf);
+}
+
+static inline int
+McfString_AppendDouble(McfString s, double value)
+{
+    char buf[64];
+
+    snprintf(buf, sizeof(buf), "%.17g", value);
+    return McfString_AppendCString(s, buf);
+}
+
+static inline int
+McfString_AppendFloat(McfString s, float value)
+{
+    char buf[32];
+
+    snprintf(buf, sizeof(buf), "%.9g", value);
+    return McfString_AppendCString(s, buf);
+}
+
+static inline McfString
+McfString_FromInt(int value)
+{
+    McfString s;
+
+    s = McfString_New();
+    if (s == NULL) {
+        return NULL;
+    }
+    if (McfString_AppendInt(s, value) != 0) {
+        McfString_Release(s);
+        return NULL;
+    }
+    return s;
+}
+
+static inline McfString
+McfString_FromDouble(double value)
+{
+    McfString s;
+
+    s = McfString_New();
+    if (s == NULL) {
+        return NULL;
+    }
+    if (McfString_AppendDouble(s, value) != 0) {
+        McfString_Release(s);
+        return NULL;
+    }
+    return s;
+}
+
+static inline McfString
+McfString_FromFloat(float value)
+{
+    McfString s;
+
+    s = McfString_New();
+    if (s == NULL) {
+        return NULL;
+    }
+    if (McfString_AppendFloat(s, value) != 0) {
+        McfString_Release(s);
+        return NULL;
+    }
+    return s;
 }
 
 static inline int

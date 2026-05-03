@@ -183,7 +183,7 @@ static OpPtr createMovd(const LineState &line, const std::string_view &args) {
     auto leftStr = std::string(string::trim(parts[0]));
     auto rightStr = std::string(string::trim(parts[1]));
 
-    return std::make_unique<Movd>(INT_MIN, createValue(line, leftStr), rightStr);
+    return std::make_unique<Movd>(INT_MIN, createValue(line, leftStr), fixLabel(line, rightStr));
 }
 
 static OpPtr createCalld(const LineState &line, const std::string_view &args) {

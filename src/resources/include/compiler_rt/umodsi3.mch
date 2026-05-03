@@ -3,204 +3,227 @@
 // -- Begin function __umodsi3
 __umodsi3:                              // @__umodsi3
 // %bb.0:
-	mov	r2, r1
-	mov	r3, r0
-	mov	t1, 32
-	mov	r4, 32
-	jz	r2, .LBB0_2
+sub	rsp, 28
+	mov	[rsp+24], x0
+	mov	[rsp+20], x1
+	mov	[rsp+16], x2
+	mov	[rsp+12], x3
+	mov	[rsp+8], x4
+	mov	[rsp+4], x5
+	mov	[rsp], x6
+	mov	x0, r1
+	mov	x1, r0
+	mov	x6, 32
+	mov	x2, 32
+	jz	x0, .LBB0_2
 	jmp	.LBB0_1
 .LBB0_1:
 	mov	r1, 1
-	mov	r0, r2
+	mov	r0, x0
 	call	__bit_shr
+	mov	r0, x0
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 2
-	mov	r0, rax
+	mov	x2, rax
+	mov	r0, x2
 	call	__bit_shr
+	mov	r0, x2
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 4
-	mov	r0, rax
+	mov	x2, rax
+	mov	r0, x2
 	call	__bit_shr
+	mov	r0, x2
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 8
-	mov	r0, rax
+	mov	x2, rax
+	mov	r0, x2
 	call	__bit_shr
+	mov	r0, x2
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 16
-	mov	r0, rax
+	mov	x2, rax
+	mov	r0, x2
 	call	__bit_shr
+	mov	r0, x2
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 1
-	mov	r4, rax
-	mov	r0, r4
+	mov	x2, rax
+	mov	r0, x2
 	call	__bit_shr
 	mov	r1, 1431655765
 	mov	r0, rax
 	call	__bit_and
-	sub	r4, rax
+	sub	x2, rax
 	mov	r1, 2
-	mov	r0, r4
+	mov	r0, x2
 	call	__bit_shr
 	mov	r1, 858993459
 	mov	r0, rax
 	call	__bit_and
-	mov	r5, rax
-	mov	r0, r4
+	mov	r1, 858993459
+	mov	x3, rax
+	mov	r0, x2
 	call	__bit_and
-	add	r5, rax
+	add	x3, rax
 	mov	r1, 4
-	mov	r0, r5
+	mov	r0, x3
 	call	__bit_shr
-	add	r5, rax
+	add	x3, rax
 	mov	r1, 252645135
-	mov	r0, r5
+	mov	r0, x3
 	call	__bit_and
 	mul	rax, 16843009
 	mov	r1, 24
 	mov	r0, rax
 	call	__bit_shr
-	mov	r4, 32
-	sub	r4, rax
+	mov	x2, 32
+	sub	x2, rax
 .LBB0_2:
-	jz	r3, .LBB0_4
+	jz	x1, .LBB0_4
 	jmp	.LBB0_3
 .LBB0_3:
 	mov	r1, 1
-	mov	r0, r3
+	mov	r0, x1
 	call	__bit_shr
+	mov	r0, x1
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 2
-	mov	r0, rax
+	mov	x3, rax
+	mov	r0, x3
 	call	__bit_shr
+	mov	r0, x3
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 4
-	mov	r0, rax
+	mov	x3, rax
+	mov	r0, x3
 	call	__bit_shr
+	mov	r0, x3
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 8
-	mov	r0, rax
+	mov	x3, rax
+	mov	r0, x3
 	call	__bit_shr
+	mov	r0, x3
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 16
-	mov	r0, rax
+	mov	x3, rax
+	mov	r0, x3
 	call	__bit_shr
+	mov	r0, x3
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 1
-	mov	r5, rax
-	mov	r0, r5
+	mov	x3, rax
+	mov	r0, x3
 	call	__bit_shr
 	mov	r1, 1431655765
 	mov	r0, rax
 	call	__bit_and
-	sub	r5, rax
+	sub	x3, rax
 	mov	r1, 2
-	mov	r0, r5
+	mov	r0, x3
 	call	__bit_shr
 	mov	r1, 858993459
 	mov	r0, rax
 	call	__bit_and
-	mov	r6, rax
-	mov	r0, r5
+	mov	r1, 858993459
+	mov	x4, rax
+	mov	r0, x3
 	call	__bit_and
-	add	r6, rax
+	add	x4, rax
 	mov	r1, 4
-	mov	r0, r6
+	mov	r0, x4
 	call	__bit_shr
-	add	r6, rax
+	add	x4, rax
 	mov	r1, 252645135
-	mov	r0, r6
+	mov	r0, x4
 	call	__bit_and
 	mul	rax, 16843009
 	mov	r1, 24
 	mov	r0, rax
 	call	__bit_shr
-	sub	t1, rax
+	sub	x6, rax
 .LBB0_4:
-	mov	r6, r4
-	sub	r6, t1
+	mov	x4, x2
+	sub	x4, x6
 	mov	r1, -2147483648
-	mov	r0, r6
+	mov	r0, x4
 	call	__bit_xor
 	mov	r0, -2147483617
-	mov	r5, r3
-	jg	rax, r0, .LBB0_8
+	mov	x3, x1
+	jg	rax, r0, .LBB0_10
 	jmp	.LBB0_5
 .LBB0_5:
-	mov	r7, 31
-	mov	r5, 0
-	je	r6, r7, .LBB0_8
+	mov	x5, 31
+	mov	x3, 0
+	je	x4, x5, .LBB0_10
 	jmp	.LBB0_6
 .LBB0_6:
-	mov	r1, r6
-	add	r1, 1
-	mov	r0, r3
+	mov	r1, x4
+add	r1, 1
+	mov	r0, x1
 	call	__bit_shr
-	sub	r7, r6
-	mov	r5, rax
-	mov	r1, r7
+	sub	x5, x4
+	mov	x3, rax
+	mov	r0, x1
+	mov	r1, x5
 	call	__bit_shl
-	mov	r6, rax
-	mov	r0, r4
+	mov	x4, rax
+	mov	r0, x2
 	call	__bit_not
-	mov	r3, rax
-	add	r3, t1
-	mov	r4, 0
+	mov	x1, rax
+	add	x1, x6
+	mov	x6, 0
+	mov	x2, 0
 .LBB0_7:                                // =>This Inner Loop Header: Depth=1
 	mov	r1, 1
-	mov	r0, r5
+	mov	r0, x3
 	call	__bit_shl
 	mov	r1, 31
-	mov	r5, rax
-	mov	r0, r6
+	mov	x3, rax
+	mov	r0, x4
 	call	__bit_shr
-	mov	r0, r5
+	mov	r0, x3
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 1
-	mov	r5, rax
-	mov	r0, r6
+	mov	x3, rax
+	mov	r0, x4
 	call	__bit_shl
 	mov	r0, rax
-	mov	r1, r4
+	mov	r1, x2
 	call	__bit_or
-	mov	r6, rax
-	mov	r0, r5
+	mov	x4, rax
+	mov	r0, x3
 	call	__bit_not
-	mov	r0, rax
-	add	r0, r2
+	mov	x5, rax
+	add	x5, x0
 	mov	r1, 31
+	mov	r0, x5
 	call	__bit_shr
-	mov	r1, -2147483648
-	mov	r4, rax
-	call	__bit_xor
-	add	rax, -2147483648
-	mov	r1, 31
-	mov	r0, rax
-	call	__bit_shr
-	mov	r1, 1
-	mov	r0, rax
-	call	__bit_and
-	mov	r0, rax
+	mov	x2, rax
+	mov	r0, x0
+	jl	x5, x6, .LBB0_9
+	jmp	.LBB0_8
+.LBB0_8:                                //   in Loop: Header=BB0_7 Depth=1
+	mov	r0, 0
+.LBB0_9:                                //   in Loop: Header=BB0_7 Depth=1
+add	x1, 1
+	sub	x3, r0
+	mov	r0, x1
 	call	__bit_not
-	add	rax, 1
-	mov	r0, rax
-	mov	r1, r2
-	call	__bit_and
-	add	r3, 1
-	sub	r5, rax
-	mov	r0, r3
-	call	__bit_not
-	add	rax, 1
+add	rax, 1
+	mov	r0, x1
 	mov	r1, rax
 	call	__bit_or
 	mov	r1, 31
@@ -209,11 +232,20 @@ __umodsi3:                              // @__umodsi3
 	mov	r1, 1
 	mov	r0, rax
 	call	__bit_xor
+	mov	r1, 1
 	mov	r0, rax
 	call	__bit_and
 	jz	rax, .LBB0_7
-	jmp	.LBB0_8
-.LBB0_8:
-	mov	rax, r5
+	jmp	.LBB0_10
+.LBB0_10:
+	mov	rax, x3
+	mov	x6, [rsp]
+	mov	x5, [rsp+4]
+	mov	x4, [rsp+8]
+	mov	x3, [rsp+12]
+	mov	x2, [rsp+16]
+	mov	x1, [rsp+20]
+	mov	x0, [rsp+24]
+add	rsp, 28
 	ret
 // -- End function

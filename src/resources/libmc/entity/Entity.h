@@ -16,6 +16,7 @@ typedef enum {
 
 typedef struct _Entity {
     Identifier identifier;
+    McfString mcfName;
     const char *translationKey;
     EntitySpawnGroup spawnGroup;
     float width;
@@ -24,6 +25,35 @@ typedef struct _Entity {
 } _Entity;
 
 typedef const struct _Entity *Entity;
+typedef Entity EntityType;
+
+static inline McfString
+Entity_EnsureMcfName(Entity entity)
+{
+    _Entity *mutable_entity;
+
+    if (entity == NULL) {
+        return NULL;
+    }
+
+    mutable_entity = (_Entity *)entity;
+    if (mutable_entity->mcfName == NULL) {
+        mutable_entity->mcfName = McfString_FromIdentifier(&entity->identifier);
+        if (mutable_entity->mcfName == NULL) {
+            return NULL;
+        }
+    }
+    if (_McfString_EnsureSlot(mutable_entity->mcfName) != 0) {
+        return NULL;
+    }
+    return mutable_entity->mcfName;
+}
+
+static inline McfString
+EntityType_EnsureMcfName(EntityType type)
+{
+    return Entity_EnsureMcfName(type);
+}
 
 static inline const Identifier *
 Entity_GetIdentifier(Entity entity)
@@ -31,10 +61,22 @@ Entity_GetIdentifier(Entity entity)
     return entity ? &entity->identifier : NULL;
 }
 
+static inline const Identifier *
+EntityType_GetIdentifier(EntityType type)
+{
+    return Entity_GetIdentifier(type);
+}
+
 static inline String
 Entity_GetRegistryName(Entity entity)
 {
     return entity ? Identifier_Str(&entity->identifier) : NULL;
+}
+
+static inline String
+EntityType_GetRegistryName(EntityType type)
+{
+    return Entity_GetRegistryName(type);
 }
 
 static inline const char *

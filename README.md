@@ -63,6 +63,7 @@ Without these projects, `clang-mc` would not exist:
 - [fmt](https://fmt.dev/) - A fast and safe formatting library for C++, licensed under the [MIT License](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst).
 - [spdlog](https://github.com/gabime/spdlog) - A fast C++ logging library, licensed under the [MIT License](https://github.com/gabime/spdlog/blob/v1.x/LICENSE).
 - [yaml-cpp](https://github.com/jbeder/yaml-cpp) - A YAML parser and emitter for C++, licensed under the [MIT License](https://github.com/jbeder/yaml-cpp/blob/master/LICENSE).
+- [Datapack Optimization Helper](https://github.com/TheSalts/datapack-optimization-helper) - A Minecraft datapack optimization helper that inspired `mcfunction` post-optimization passes, licensed under the [MIT License](https://github.com/TheSalts/datapack-optimization-helper/blob/master/LICENSE).
 - [Claude Code](https://claude.com/product/claude-code) — Special thanks to Claude Code for the crucial assistance in developing the LLVM backend prototype within just three days; without it I would not have been able to complete that urgent prototype work.
 
 Special thanks to all contributors in the open-source community!

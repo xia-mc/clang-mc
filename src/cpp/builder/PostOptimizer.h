@@ -7,8 +7,6 @@
 
 
 #include "ir/IRCommon.h"
-#include "config/Config.h"
-#include <ranges>
 
 class PostOptimizer {
 private:

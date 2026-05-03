@@ -1,8 +1,9 @@
 #include "Blocks.h"
 
 #define X(id, ns, path, translationKey, resistance, slipperiness, randomTicks) \
-    const _Block id##_IMPL = {                                              \
+    _Block id##_IMPL = {                                                    \
         { ns, path },                                                       \
+        NULL,                                                               \
         translationKey,                                                     \
         resistance,                                                         \
         slipperiness,                                                       \

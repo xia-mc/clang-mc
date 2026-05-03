@@ -9,6 +9,7 @@
 #include "ir/ops/Jmp.h"
 #include "utils/string/StringBuilder.h"
 #include "ir/ops/Call.h"
+#include "ir/ops/Movd.h"
 #include "ir/controlFlow/JmpTable.h"
 #include "objects/MatrixStack.h"
 #include "ir/iops/Special.h"
@@ -311,6 +312,8 @@ static size_t findFirstLabelIndex(const std::vector<OpPtr>& values) {
 
         if (const auto &call = INSTANCEOF(op, Call)) {
             compiled = call->compile(labelMap);
+        } else if (const auto &movd = INSTANCEOF(op, Movd)) {
+            compiled = movd->compile(labelMap);
         } else if (const auto &jmpLike = INSTANCEOF(op, JmpLike)) {
             compiled = jmpLike->compile(jmpMap);
         } else {

@@ -55,6 +55,15 @@ target("clang-mc")
         "src/cpp/ir/verify/Verifier.cpp",
         "src/cpp/builder/Builder.cpp",
         "src/cpp/builder/PostOptimizer.cpp",
+        "src/cpp/builder/postopt/core/Pipeline.cpp",
+        "src/cpp/builder/postopt/core/PostOptimizeContext.cpp",
+        "src/cpp/builder/postopt/parser/CommandTokenizer.cpp",
+        "src/cpp/builder/postopt/parser/ExecuteParser.cpp",
+        "src/cpp/builder/postopt/parser/SelectorParser.cpp",
+        "src/cpp/builder/postopt/passes/function/ExecuteGroupPass.cpp",
+        "src/cpp/builder/postopt/passes/generated/SpecialFunctionPass.cpp",
+        "src/cpp/builder/postopt/passes/line/LineCleanupPass.cpp",
+        "src/cpp/builder/postopt/passes/line/SafeLineTransforms.cpp",
         "src/cpp/parse/ParseManager.cpp",
         "src/cpp/parse/PreProcessor.cpp"
     )

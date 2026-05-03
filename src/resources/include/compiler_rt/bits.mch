@@ -107,10 +107,11 @@ __bit_and4_u4:
 //     return and4_u4(al, bl) + 16 * and4_u4(ah, bh);
 // }
 __bit_and8_u8:
-	mov [rsp-1], x0
-	mov [rsp-2], x1
-	mov [rsp-3], x2
-	mov [rsp-4], x3
+	sub rsp, 16
+	mov [rsp+1], x0
+	mov [rsp+2], x1
+	mov [rsp+3], x2
+	mov [rsp+4], x3
 
 	mov x2, r0
 	mov x3, r1
@@ -141,10 +142,11 @@ __bit_and8_u8:
 	mul rax, 16
 	add rax, x2
 
-	mov x3, [rsp-4]
-	mov x2, [rsp-3]
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x3, [rsp+4]
+	mov x2, [rsp+3]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 16
 	ret
 
 
@@ -185,12 +187,13 @@ __bit_and8_u8:
 //     return (((top * 256 + r2) * 256 + r1) * 256 + r0);
 // }
 __bit_and:
-	mov [rsp-1], x0
-	mov [rsp-2], x1
-	mov [rsp-3], x2
-	mov [rsp-4], x3
-	mov [rsp-5], x4
-	mov [rsp-6], x5
+	sub rsp, 36
+	mov [rsp+1], x0
+	mov [rsp+2], x1
+	mov [rsp+3], x2
+	mov [rsp+4], x3
+	mov [rsp+5], x4
+	mov [rsp+6], x5
 
 	mov x0, r0
 	mov x1, r1
@@ -212,7 +215,7 @@ __bit_and:
 	div r5, 256
 	mov x1, r5
 	call __bit_and8_u8
-	mov [rsp-7], rax
+	mov [rsp+7], rax
 
 	mov r0, x0
 	rem r0, 256
@@ -231,7 +234,7 @@ __bit_and:
 	div r5, 256
 	mov x1, r5
 	call __bit_and8_u8
-	mov [rsp-8], rax
+	mov [rsp+8], rax
 
 	mov r0, x0
 	rem r0, 256
@@ -250,7 +253,7 @@ __bit_and:
 	div r5, 256
 	mov x1, r5
 	call __bit_and8_u8
-	mov [rsp-9], rax
+	mov [rsp+9], rax
 
 	mov r0, x0
 	rem r0, 256
@@ -268,29 +271,31 @@ __bit_and:
 	mul r5, 256
 	sub rax, r5
 	mul rax, 256
-	add rax, [rsp-9]
+	add rax, [rsp+9]
 	mul rax, 256
-	add rax, [rsp-8]
+	add rax, [rsp+8]
 	mul rax, 256
-	add rax, [rsp-7]
-	mov x5, [rsp-6]
-	mov x4, [rsp-5]
-	mov x3, [rsp-4]
-	mov x2, [rsp-3]
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	add rax, [rsp+7]
+	mov x5, [rsp+6]
+	mov x4, [rsp+5]
+	mov x3, [rsp+4]
+	mov x2, [rsp+3]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 36
 	ret
 
 
 __bit_or:
-	mov [rsp-1], x0
-	mov [rsp-2], x1
-	mov [rsp-3], x2
-	mov [rsp-4], x3
-	mov [rsp-5], x4
-	mov [rsp-6], x5
-	mov [rsp-7], x6
-	mov [rsp-8], x7
+	sub rsp, 52
+	mov [rsp+1], x0
+	mov [rsp+2], x1
+	mov [rsp+3], x2
+	mov [rsp+4], x3
+	mov [rsp+5], x4
+	mov [rsp+6], x5
+	mov [rsp+7], x6
+	mov [rsp+8], x7
 
 	mov x0, r0
 	mov x1, r1
@@ -314,15 +319,15 @@ __bit_or:
 	div r5, 256
 	mov x1, r5
 	mov x3, r1
-	mov [rsp-12], x2
-	mov [rsp-13], x3
+	mov [rsp+12], x2
+	mov [rsp+13], x3
 	mov r0, x2
 	mov r1, x3
 	call __bit_and8_u8
-	mov r2, [rsp-12]
-	add r2, [rsp-13]
+	mov r2, [rsp+12]
+	add r2, [rsp+13]
 	sub r2, rax
-	mov [rsp-9], r2
+	mov [rsp+9], r2
 
 	mov r0, x0
 	rem r0, 256
@@ -343,15 +348,15 @@ __bit_or:
 	div r5, 256
 	mov x1, r5
 	mov x3, r1
-	mov [rsp-12], x2
-	mov [rsp-13], x3
+	mov [rsp+12], x2
+	mov [rsp+13], x3
 	mov r0, x2
 	mov r1, x3
 	call __bit_and8_u8
-	mov r2, [rsp-12]
-	add r2, [rsp-13]
+	mov r2, [rsp+12]
+	add r2, [rsp+13]
 	sub r2, rax
-	mov [rsp-10], r2
+	mov [rsp+10], r2
 
 	mov r0, x0
 	rem r0, 256
@@ -372,15 +377,15 @@ __bit_or:
 	div r5, 256
 	mov x1, r5
 	mov x3, r1
-	mov [rsp-12], x2
-	mov [rsp-13], x3
+	mov [rsp+12], x2
+	mov [rsp+13], x3
 	mov r0, x2
 	mov r1, x3
 	call __bit_and8_u8
-	mov r2, [rsp-12]
-	add r2, [rsp-13]
+	mov r2, [rsp+12]
+	add r2, [rsp+13]
 	sub r2, rax
-	mov [rsp-11], r2
+	mov [rsp+11], r2
 
 	mov r0, x0
 	rem r0, 256
@@ -390,11 +395,11 @@ __bit_or:
 	rem r1, 256
 	add r1, 256
 	rem r1, 256
-	mov [rsp-12], r0
-	mov [rsp-13], r1
+	mov [rsp+12], r0
+	mov [rsp+13], r1
 	call __bit_and8_u8
-	mov r0, [rsp-12]
-	add r0, [rsp-13]
+	mov r0, [rsp+12]
+	add r0, [rsp+13]
 	sub r0, rax
 	mov r5, r0
 	add r5, 128
@@ -403,32 +408,34 @@ __bit_or:
 	sub r0, r5
 	mov rax, r0
 	mul rax, 256
-	add rax, [rsp-11]
+	add rax, [rsp+11]
 	mul rax, 256
-	add rax, [rsp-10]
+	add rax, [rsp+10]
 	mul rax, 256
-	add rax, [rsp-9]
+	add rax, [rsp+9]
 
-	mov x7, [rsp-8]
-	mov x6, [rsp-7]
-	mov x5, [rsp-6]
-	mov x4, [rsp-5]
-	mov x3, [rsp-4]
-	mov x2, [rsp-3]
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x7, [rsp+8]
+	mov x6, [rsp+7]
+	mov x5, [rsp+6]
+	mov x4, [rsp+5]
+	mov x3, [rsp+4]
+	mov x2, [rsp+3]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 52
 	ret
 
 
 __bit_xor:
-	mov [rsp-1], x0
-	mov [rsp-2], x1
-	mov [rsp-3], x2
-	mov [rsp-4], x3
-	mov [rsp-5], x4
-	mov [rsp-6], x5
-	mov [rsp-7], x6
-	mov [rsp-8], x7
+	sub rsp, 52
+	mov [rsp+1], x0
+	mov [rsp+2], x1
+	mov [rsp+3], x2
+	mov [rsp+4], x3
+	mov [rsp+5], x4
+	mov [rsp+6], x5
+	mov [rsp+7], x6
+	mov [rsp+8], x7
 
 	mov x0, r0
 	mov x1, r1
@@ -452,17 +459,17 @@ __bit_xor:
 	div r5, 256
 	mov x1, r5
 	mov x3, r1
-	mov [rsp-12], x2
-	mov [rsp-13], x3
+	mov [rsp+12], x2
+	mov [rsp+13], x3
 	mov r0, x2
 	mov r1, x3
 	call __bit_and8_u8
-	mov r2, [rsp-12]
-	add r2, [rsp-13]
+	mov r2, [rsp+12]
+	add r2, [rsp+13]
 	mov r3, rax
 	add r3, rax
 	sub r2, r3
-	mov [rsp-9], r2
+	mov [rsp+9], r2
 
 	mov r0, x0
 	rem r0, 256
@@ -483,17 +490,17 @@ __bit_xor:
 	div r5, 256
 	mov x1, r5
 	mov x3, r1
-	mov [rsp-12], x2
-	mov [rsp-13], x3
+	mov [rsp+12], x2
+	mov [rsp+13], x3
 	mov r0, x2
 	mov r1, x3
 	call __bit_and8_u8
-	mov r2, [rsp-12]
-	add r2, [rsp-13]
+	mov r2, [rsp+12]
+	add r2, [rsp+13]
 	mov r3, rax
 	add r3, rax
 	sub r2, r3
-	mov [rsp-10], r2
+	mov [rsp+10], r2
 
 	mov r0, x0
 	rem r0, 256
@@ -514,17 +521,17 @@ __bit_xor:
 	div r5, 256
 	mov x1, r5
 	mov x3, r1
-	mov [rsp-12], x2
-	mov [rsp-13], x3
+	mov [rsp+12], x2
+	mov [rsp+13], x3
 	mov r0, x2
 	mov r1, x3
 	call __bit_and8_u8
-	mov r2, [rsp-12]
-	add r2, [rsp-13]
+	mov r2, [rsp+12]
+	add r2, [rsp+13]
 	mov r3, rax
 	add r3, rax
 	sub r2, r3
-	mov [rsp-11], r2
+	mov [rsp+11], r2
 
 	mov r0, x0
 	rem r0, 256
@@ -534,11 +541,11 @@ __bit_xor:
 	rem r1, 256
 	add r1, 256
 	rem r1, 256
-	mov [rsp-12], r0
-	mov [rsp-13], r1
+	mov [rsp+12], r0
+	mov [rsp+13], r1
 	call __bit_and8_u8
-	mov r0, [rsp-12]
-	add r0, [rsp-13]
+	mov r0, [rsp+12]
+	add r0, [rsp+13]
 	mov r2, rax
 	add r2, rax
 	sub r0, r2
@@ -549,25 +556,27 @@ __bit_xor:
 	sub r0, r5
 	mov rax, r0
 	mul rax, 256
-	add rax, [rsp-11]
+	add rax, [rsp+11]
 	mul rax, 256
-	add rax, [rsp-10]
+	add rax, [rsp+10]
 	mul rax, 256
-	add rax, [rsp-9]
+	add rax, [rsp+9]
 
-	mov x7, [rsp-8]
-	mov x6, [rsp-7]
-	mov x5, [rsp-6]
-	mov x4, [rsp-5]
-	mov x3, [rsp-4]
-	mov x2, [rsp-3]
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x7, [rsp+8]
+	mov x6, [rsp+7]
+	mov x5, [rsp+6]
+	mov x4, [rsp+5]
+	mov x3, [rsp+4]
+	mov x2, [rsp+3]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 52
 	ret
 
 
 __bit_shl:
-	mov [rsp-1], x0
+	sub rsp, 4
+	mov [rsp+1], x0
 	mov	r2, 0
 	jl	r1, r2, .LBB6_3
 	jmp	.LBB6_1
@@ -582,11 +591,13 @@ __bit_shl:
 	mov	r2, x0
 	mul	r2, rax
 	mov	rax, r2
-	mov x0, [rsp-1]
+	mov x0, [rsp+1]
+	add rsp, 4
 	ret
 .LBB6_3:
 	mov	rax, 0
-	mov x0, [rsp-1]
+	mov x0, [rsp+1]
+	add rsp, 4
 	ret
 
 
@@ -602,10 +613,11 @@ __bit_shl:
 //         : (pow2u(31 - b) + (u32)((x - INT_MIN) / d));
 // }
 __bit_shr:
-	mov [rsp-1], x0
-	mov [rsp-2], x1
-	mov [rsp-3], x2
-	mov [rsp-4], x3
+	sub rsp, 16
+	mov [rsp+1], x0
+	mov [rsp+2], x1
+	mov [rsp+3], x2
+	mov [rsp+4], x3
 	je r1, 0, .isB0
 	je r1, 31, .isB31
 
@@ -620,10 +632,11 @@ __bit_shr:
 .isXGE0:  // is x greater than 0
 	mov rax, x0
 	div rax, x2
-	mov x3, [rsp-4]
-	mov x2, [rsp-3]
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x3, [rsp+4]
+	mov x2, [rsp+3]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 16
 	ret
 
 .isXL0:  // is x less than 0
@@ -635,27 +648,39 @@ __bit_shr:
 	sub r0, x1
 	call __pow2u
 	add rax, x3
-	mov x3, [rsp-4]
-	mov x2, [rsp-3]
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x3, [rsp+4]
+	mov x2, [rsp+3]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 16
 	ret
 
 .isB0:
 	mov rax, r0
-	mov x3, [rsp-4]
-	mov x2, [rsp-3]
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x3, [rsp+4]
+	mov x2, [rsp+3]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 16
 	ret
 
 .isB31:
-	inline execute if score r0 vm_regs matches 0..2147483647 run return 0
+	jge r0, 0, .isB31NonNeg
 	mov rax, 1
-	mov x3, [rsp-4]
-	mov x2, [rsp-3]
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x3, [rsp+4]
+	mov x2, [rsp+3]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 16
+	ret
+
+.isB31NonNeg:
+	mov rax, 0
+	mov x3, [rsp+4]
+	mov x2, [rsp+3]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 16
 	ret
 
 
@@ -667,8 +692,9 @@ __bit_shr:
 //     return (x >= 0) ? (x / d) : (-1 - ((-1 - x) / d));
 // }
 __bit_sar:
-	mov [rsp-1], x0
-	mov [rsp-2], x1
+	sub rsp, 8
+	mov [rsp+1], x0
+	mov [rsp+2], x1
 	je r1, 0, .isS0
 	je r1, 31, .isS31
 
@@ -682,8 +708,9 @@ __bit_sar:
 
 .isXGE0:  // is x greater than 0
 	div rax, x1
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 8
 	ret
 
 .isXL0:  // is x less than 0
@@ -692,19 +719,29 @@ __bit_sar:
 	div rax, x1
 	mul rax, -1
 	sub rax, 1
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 8
 	ret
 
 .isS0:
 	mov rax, r0
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 8
 	ret
 
 .isS31:
-	inline execute if score r0 vm_regs matches 0..2147483647 run return 0
+	jge r0, 0, .isS31NonNeg
 	mov rax, -1
-	mov x1, [rsp-2]
-	mov x0, [rsp-1]
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 8
+	ret
+
+.isS31NonNeg:
+	mov rax, 0
+	mov x1, [rsp+2]
+	mov x0, [rsp+1]
+	add rsp, 8
 	ret

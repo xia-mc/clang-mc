@@ -3,48 +3,60 @@
 // -- Begin function __ashrdi3
 __ashrdi3:                              // @__ashrdi3
 // %bb.0:
-	mov	r3, r1
+sub	rsp, 16
+	mov	[rsp+12], x0
+	mov	[rsp+8], x1
+	mov	[rsp+4], x2
+	mov	[rsp], x3
+	mov	x0, r1
 	mov	r1, 32
-	mov	r4, r2
-	mov	r2, r0
-	mov	r0, r4
+	mov	x2, r2
+	mov	x1, r0
+	mov	r0, x2
 	call	__bit_and
 	jz	rax, .LBB0_2
 	jmp	.LBB0_1
 .LBB0_1:
 	mov	r1, 31
-	mov	r0, r2
+	mov	r0, x0
 	call	__bit_sar
-	add	r4, -32
-	mov	r5, rax
-	mov	r1, r4
+add	x2, -32
+	mov	x3, rax
+	mov	r0, x0
+	mov	r1, x2
 	call	__bit_sar
-	mov	r3, rax
-	mov	r2, r5
+	mov	x1, rax
+	mov	x0, x3
 	jmp	.LBB0_4
 .LBB0_2:
-	jz	r4, .LBB0_5
+	jz	x2, .LBB0_5
 	jmp	.LBB0_3
 .LBB0_3:
-	mov	r0, r2
-	mov	r1, r4
+	mov	r0, x0
+	mov	r1, x2
 	call	__bit_sar
 	mov	r1, 32
-	sub	r1, r4
-	mov	r5, rax
+	sub	r1, x2
+	mov	x3, rax
+	mov	r0, x0
 	call	__bit_shl
-	mov	r2, rax
-	mov	r0, r3
-	mov	r1, r4
+	mov	x0, rax
+	mov	r0, x1
+	mov	r1, x2
 	call	__bit_shr
-	mov	r0, r2
+	mov	r0, x0
 	mov	r1, rax
 	call	__bit_or
-	mov	r3, rax
-	mov	r2, r5
+	mov	x1, rax
+	mov	x0, x3
 .LBB0_4:
 .LBB0_5:
-	mov	rax, r2
-	mov	t0, r3
+	mov	rax, x1
+	mov	t0, x0
+	mov	x3, [rsp]
+	mov	x2, [rsp+4]
+	mov	x1, [rsp+8]
+	mov	x0, [rsp+12]
+add	rsp, 16
 	ret
 // -- End function

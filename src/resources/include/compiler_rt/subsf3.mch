@@ -3,12 +3,16 @@
 // -- Begin function __subsf3
 __subsf3:                               // @__subsf3
 // %bb.0:
+sub	rsp, 4
+	mov	[rsp], x0
 	mov	r2, r1
 	mov	r1, -2147483648
-	mov	r3, r0
+	mov	x0, r0
 	mov	r0, r2
 	call	__bit_xor
-	mov	r0, r3
+	mov	r0, x0
 	mov	r1, rax
+	mov	x0, [rsp]
+add	rsp, 4
 	jmp	__addsf3
 // -- End function

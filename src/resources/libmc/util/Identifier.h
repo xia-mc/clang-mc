@@ -7,8 +7,10 @@
  * Ownership:
  * - Functions returning Identifier allocate ns/path with malloc().
  * - Call Identifier_Clear() when done.
+ * - Identifier remains a value type and is not part of libmc's
+ *   intrusive Retain/Release hierarchy.
  * - Functions returning String allocate a new ref-counted libmc String.
- *   Call String_DECREF() when done.
+ *   Call String_Release() when done.
  */
 
 #include <stddef.h>
@@ -411,7 +413,7 @@ String_FromIdentifier(const Identifier *id)
     ns_len = strlen(id->ns);
     path_len = strlen(id->path);
     if (_String_EnsureCapacity(s, ns_len + 1u + path_len + 1u) != 0) {
-        String_DECREF(s);
+        String_Release(s);
         return NULL;
     }
 

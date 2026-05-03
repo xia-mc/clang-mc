@@ -1,0 +1,51 @@
+{
+  "commands": [
+    {
+      "name": "setblock",
+      "header": "setblock.h",
+      "kind": "setblock",
+      "enums": [
+        {
+          "name": "SetBlockMode",
+          "values": ["DESTROY", "KEEP", "REPLACE"]
+        }
+      ]
+    },
+    {
+      "name": "fill",
+      "header": "fill.h",
+      "kind": "fill",
+      "enums": [
+        {
+          "name": "FillMode",
+          "values": ["FILL_DESTROY", "FILL_HOLLOW", "FILL_KEEP", "FILL_OUTLINE", "FILL_REPLACE"]
+        }
+      ]
+    },
+    {
+      "name": "summon",
+      "header": "summon.h",
+      "kind": "summon"
+    },
+    {
+      "name": "kill",
+      "header": "kill.h",
+      "kind": "kill"
+    },
+    {
+      "name": "tp",
+      "header": "tp.h",
+      "kind": "tp"
+    },
+    {
+      "name": "say",
+      "header": "say.h",
+      "kind": "say"
+    },
+    {
+      "name": "tellraw",
+      "header": "tellraw.h",
+      "kind": "tellraw"
+    }
+  ]
+}

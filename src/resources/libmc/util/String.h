@@ -6,12 +6,20 @@ typedef struct _String _String;
 typedef _String *String;
 
 struct _String {
-    size_t    refcnt;
-    size_t    len;
-    size_t    cap;
-    char     *data;
-    int       flags;
+    McRefHeader rc;
+    size_t      len;
+    size_t      cap;
+    char       *data;
+    int         flags;
     McfString mcf;
+};
+
+/* String_New/From* return owned objects. Pair them with String_Release(). */
+static void _String_Destroy(void *obj);
+
+static const McRefOps _STRING_REF_OPS = {
+    _String_Destroy,
+    "String",
 };
 
 static inline int
@@ -71,7 +79,7 @@ String_New(void)
         return NULL;
     }
 
-    s->refcnt = 1u;
+    MC_REF_INIT_DYNAMIC(s, &_STRING_REF_OPS);
     s->len = 0u;
     s->cap = 1u;
     s->data[0] = '\0';
@@ -114,32 +122,27 @@ String_FromLiteral(const char *src)
 }
 
 static inline String
-String_IncRef(String s)
+String_Retain(String s)
 {
-    if (s != NULL) {
-        s->refcnt++;
-    }
-    return s;
+    return (String)McRef_Retain(s);
 }
 
 static inline void
-String_DecRef(String s)
+String_Release(String s)
 {
-    if (s == NULL) {
-        return;
-    }
-
-    assert(s->refcnt != 0u);
-    s->refcnt--;
-    if (s->refcnt == 0u) {
-        _String_InvalidateMcf(s);
-        free(s->data);
-        free(s);
-    }
+    McRef_Release(s);
 }
 
-#define String_INCREF(s) ((void)String_IncRef((s)))
-#define String_DECREF(s) String_DecRef((s))
+static void
+_String_Destroy(void *obj)
+{
+    String s;
+
+    s = (String)obj;
+    _String_InvalidateMcf(s);
+    free(s->data);
+    free(s);
+}
 
 static inline const char *
 String_CStr(String s)

@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <limits.h>
@@ -10,6 +11,7 @@ typedef enum {
     LEN_H,
     LEN_L,
     LEN_LL,
+    LEN_LD,
     LEN_Z,
     LEN_T
 } len_mod_t;
@@ -55,45 +57,53 @@ parse_uint10(const char **p)
 }
 
 static long long
-get_signed_arg(va_list ap, len_mod_t len)
+get_signed_arg(va_list *ap, len_mod_t len)
 {
     switch (len) {
     case LEN_HH:
-        return (signed char)va_arg(ap, int);
+        return (signed char)va_arg(*ap, int);
     case LEN_H:
-        return (short)va_arg(ap, int);
+        return (short)va_arg(*ap, int);
     case LEN_L:
-        return va_arg(ap, long);
+        return va_arg(*ap, long);
     case LEN_LL:
-        return va_arg(ap, long long);
+        return va_arg(*ap, long long);
     case LEN_Z:
-        return (long long)va_arg(ap, ptrdiff_t);
+        return (long long)va_arg(*ap, ptrdiff_t);
     case LEN_T:
-        return (long long)va_arg(ap, ptrdiff_t);
+        return (long long)va_arg(*ap, ptrdiff_t);
     default:
-        return va_arg(ap, int);
+        return va_arg(*ap, int);
     }
 }
 
 static unsigned long long
-get_unsigned_arg(va_list ap, len_mod_t len)
+get_unsigned_arg(va_list *ap, len_mod_t len)
 {
     switch (len) {
     case LEN_HH:
-        return (unsigned char)va_arg(ap, unsigned int);
+        return (unsigned char)va_arg(*ap, unsigned int);
     case LEN_H:
-        return (unsigned short)va_arg(ap, unsigned int);
+        return (unsigned short)va_arg(*ap, unsigned int);
     case LEN_L:
-        return va_arg(ap, unsigned long);
+        return va_arg(*ap, unsigned long);
     case LEN_LL:
-        return va_arg(ap, unsigned long long);
+        return va_arg(*ap, unsigned long long);
     case LEN_Z:
-        return (unsigned long long)va_arg(ap, size_t);
+        return (unsigned long long)va_arg(*ap, size_t);
     case LEN_T:
-        return (unsigned long long)va_arg(ap, ptrdiff_t);
+        return (unsigned long long)va_arg(*ap, ptrdiff_t);
     default:
-        return va_arg(ap, unsigned int);
+        return va_arg(*ap, unsigned int);
     }
+}
+
+static double
+get_float_arg(va_list *ap, len_mod_t len)
+{
+    if (len == LEN_LD)
+        return (double)va_arg(*ap, long double);
+    return va_arg(*ap, double);
 }
 
 static int
@@ -188,6 +198,429 @@ format_integer(out_t *o, unsigned long long uval, int neg, int base, int upper, 
         out_repeat(o, ' ', space_pad);
 }
 
+static void
+uppercase_ascii(char *s)
+{
+    while (*s) {
+        if (*s >= 'a' && *s <= 'z')
+            *s = (char)(*s - ('a' - 'A'));
+        ++s;
+    }
+}
+
+static void
+trim_trailing_zeros(char *s)
+{
+    char  *exp = strchr(s, 'e');
+    char  *dot;
+    size_t tail_len;
+    char  *p;
+
+    if (!exp)
+        exp = strchr(s, 'E');
+    if (!exp)
+        exp = s + strlen(s);
+
+    dot = strchr(s, '.');
+    if (!dot || dot >= exp)
+        return;
+
+    p = exp;
+    while (p > dot + 1 && p[-1] == '0')
+        --p;
+    if (p == dot + 1)
+        --p;
+
+    tail_len = strlen(exp);
+    memmove(p, exp, tail_len + 1);
+}
+
+static void
+ensure_decimal_point(char *s)
+{
+    char *exp = strchr(s, 'e');
+    char *dot;
+
+    if (!exp)
+        exp = strchr(s, 'E');
+    if (!exp)
+        exp = s + strlen(s);
+
+    dot = strchr(s, '.');
+    if (dot && dot < exp)
+        return;
+
+    memmove(exp + 1, exp, strlen(exp) + 1);
+    *exp = '.';
+}
+
+static int
+normalize_special_fp(double value, char *buf, int upper)
+{
+    if (value != value) {
+        memcpy(buf, upper ? "NAN" : "nan", 4);
+        return 1;
+    }
+    if (value > __DBL_MAX__ || value < -__DBL_MAX__) {
+        memcpy(buf, upper ? "INF" : "inf", 4);
+        return 1;
+    }
+    return 0;
+}
+
+static void
+reverse_range(char *start, char *end)
+{
+    while (start < end) {
+        char t = *start;
+        *start++ = *end;
+        *end-- = t;
+    }
+}
+
+static int
+extract_sig_digits(double value, int ndigit, char *digits, int *exp10_out)
+{
+    double x = value;
+    double tail = 0.0;
+    int    exp10 = 0;
+    int    i;
+    int    round_up = 0;
+
+    if (ndigit < 1)
+        ndigit = 1;
+
+    if (x == 0.0) {
+        digits[0] = '0';
+        digits[1] = '\0';
+        *exp10_out = 0;
+        return 1;
+    }
+
+    while (x >= 10.0) {
+        x *= 0.1;
+        ++exp10;
+    }
+    while (x < 1.0) {
+        x *= 10.0;
+        --exp10;
+    }
+
+    for (i = 0; i <= ndigit; ++i) {
+        int d = (int)x;
+        if (d < 0)
+            d = 0;
+        if (d > 9)
+            d = 9;
+        digits[i] = (char)('0' + d);
+        x = (x - (double)d) * 10.0;
+        if (x < 0.0)
+            x = 0.0;
+    }
+    tail = x;
+
+    if (digits[ndigit] > '5') {
+        round_up = 1;
+    } else if (digits[ndigit] == '5') {
+        if (tail > 1e-9) {
+            round_up = 1;
+        } else {
+            round_up = ((digits[ndigit - 1] - '0') & 1);
+        }
+    }
+
+    if (round_up) {
+        i = ndigit - 1;
+        while (i >= 0 && digits[i] == '9') {
+            digits[i] = '0';
+            --i;
+        }
+        if (i >= 0) {
+            digits[i] = (char)(digits[i] + 1);
+        } else {
+            for (i = ndigit; i > 0; --i)
+                digits[i] = digits[i - 1];
+            digits[0] = '1';
+            ++exp10;
+        }
+    }
+
+    digits[ndigit] = '\0';
+    *exp10_out = exp10;
+    return ndigit;
+}
+
+static int
+build_fixed_fp(double value, int precision, int alt, int upper, char *buf)
+{
+    char                whole_rev[64];
+    char                frac_digits[64];
+    int                 whole_i;
+    int                 frac_i = 0;
+    double              whole_d;
+    double              frac;
+    int                 whole_n;
+    int                 i;
+    int                 idx = 0;
+
+    if (precision < 0)
+        precision = 6;
+    if (precision > 9)
+        precision = 9;
+
+    if (normalize_special_fp(value, buf, upper))
+        return (int)strlen(buf);
+
+    whole_d = floor(value);
+    if (whole_d > (double)INT_MAX)
+        whole_d = (double)INT_MAX;
+    whole_i = (int)whole_d;
+    frac = value - whole_d;
+    if (frac < 0.0)
+        frac = 0.0;
+
+    for (i = 0; i <= precision; ++i) {
+        frac *= 10.0;
+        frac_i = (int)frac;
+        if (frac_i > 9)
+            frac_i = 9;
+        frac_digits[i] = (char)('0' + frac_i);
+        frac -= (double)frac_i;
+        if (frac < 0.0)
+            frac = 0.0;
+    }
+
+    if (precision > 0 && frac_digits[precision] >= '5') {
+        i = precision - 1;
+        while (i >= 0 && frac_digits[i] == '9') {
+            frac_digits[i] = '0';
+            --i;
+        }
+        if (i >= 0) {
+            frac_digits[i] = (char)(frac_digits[i] + 1);
+        } else {
+            ++whole_i;
+        }
+    } else if (precision == 0 && frac_digits[0] >= '5') {
+        ++whole_i;
+    }
+
+    whole_n = utoa_base((unsigned long long)(unsigned int)whole_i, 10, 0, whole_rev);
+    for (i = whole_n - 1; i >= 0; --i)
+        buf[idx++] = whole_rev[i];
+
+    if (precision > 0 || alt)
+        buf[idx++] = '.';
+
+    for (i = 0; i < precision; ++i)
+        buf[idx++] = frac_digits[i];
+
+    buf[idx] = '\0';
+    return idx;
+}
+
+static int
+build_exp_fp(double value, int precision, int alt, int upper, char *buf)
+{
+    char digits[96];
+    int  exp10;
+    int  idx = 0;
+    int  i;
+    if (precision < 0)
+        precision = 6;
+
+    if (normalize_special_fp(value, buf, upper))
+        return (int)strlen(buf);
+
+    extract_sig_digits(value, precision + 1, digits, &exp10);
+
+    buf[idx++] = digits[0];
+    if (precision > 0 || alt) {
+        buf[idx++] = '.';
+        for (i = 1; i <= precision; ++i)
+            buf[idx++] = digits[i];
+    }
+
+    buf[idx++] = upper ? 'E' : 'e';
+    if (exp10 < 0) {
+        buf[idx++] = '-';
+        exp10 = -exp10;
+    } else {
+        buf[idx++] = '+';
+    }
+
+    if (exp10 >= 100) {
+        char *start = buf + idx;
+        while (exp10 > 0) {
+            buf[idx++] = (char)('0' + (exp10 % 10));
+            exp10 /= 10;
+        }
+        reverse_range(start, buf + idx - 1);
+    } else {
+        buf[idx++] = (char)('0' + (exp10 / 10));
+        buf[idx++] = (char)('0' + (exp10 % 10));
+    }
+
+    buf[idx] = '\0';
+    if (upper)
+        uppercase_ascii(buf);
+    return idx;
+}
+
+static int
+build_general_fp(double value, int precision, int alt, int upper, char *buf)
+{
+    char digits[96];
+    int  exp10;
+    int  sig;
+    int  idx = 0;
+    int  i;
+
+    if (precision < 0)
+        precision = 6;
+    else if (precision == 0)
+        precision = 1;
+
+    if (normalize_special_fp(value, buf, upper))
+        return (int)strlen(buf);
+
+    extract_sig_digits(value, precision, digits, &exp10);
+
+    sig = precision;
+    if (!alt) {
+        while (sig > 1 && digits[sig - 1] == '0')
+            --sig;
+    }
+
+    if (exp10 < -4 || exp10 >= precision) {
+        buf[idx++] = digits[0];
+        if (sig > 1 || alt) {
+            buf[idx++] = '.';
+            for (i = 1; i < sig; ++i)
+                buf[idx++] = digits[i];
+            if (alt) {
+                for (; i < precision; ++i)
+                    buf[idx++] = '0';
+            }
+        }
+        buf[idx++] = upper ? 'E' : 'e';
+        if (exp10 < 0) {
+            buf[idx++] = '-';
+            exp10 = -exp10;
+        } else {
+            buf[idx++] = '+';
+        }
+        if (exp10 >= 100) {
+            char *start = buf + idx;
+            while (exp10 > 0) {
+                buf[idx++] = (char)('0' + (exp10 % 10));
+                exp10 /= 10;
+            }
+            reverse_range(start, buf + idx - 1);
+        } else {
+            buf[idx++] = (char)('0' + (exp10 / 10));
+            buf[idx++] = (char)('0' + (exp10 % 10));
+        }
+    } else if (exp10 >= 0) {
+        for (i = 0; i <= exp10; ++i) {
+            if (i < sig)
+                buf[idx++] = digits[i];
+            else
+                buf[idx++] = '0';
+        }
+        if (sig > exp10 + 1 || alt) {
+            buf[idx++] = '.';
+            for (i = exp10 + 1; i < sig; ++i)
+                buf[idx++] = digits[i];
+            if (alt) {
+                for (; i < precision; ++i)
+                    buf[idx++] = '0';
+            }
+        }
+    } else {
+        buf[idx++] = '0';
+        if (sig > 0 || alt)
+            buf[idx++] = '.';
+        for (i = 0; i < -exp10 - 1; ++i)
+            buf[idx++] = '0';
+        for (i = 0; i < sig; ++i)
+            buf[idx++] = digits[i];
+        if (alt) {
+            for (; i < precision; ++i)
+                buf[idx++] = '0';
+        }
+    }
+
+    buf[idx] = '\0';
+    if (!alt)
+        trim_trailing_zeros(buf);
+    if (upper)
+        uppercase_ascii(buf);
+    return (int)strlen(buf);
+}
+
+static void
+format_float(out_t *o, double value, char spec, int alt, int left, int plus, int space, int zero, int width,
+             int precision, len_mod_t len)
+{
+    char        buf[256];
+    const char *body;
+    size_t      body_len;
+    char        sign_ch = 0;
+    int         lower_spec = spec;
+    int         upper = 0;
+    int         pad;
+
+    (void)len;
+
+    if (lower_spec >= 'A' && lower_spec <= 'Z') {
+        upper = 1;
+        lower_spec = lower_spec - ('A' - 'a');
+    }
+
+    if (signbit(value)) {
+        sign_ch = '-';
+        value = -value;
+    } else if (plus) {
+        sign_ch = '+';
+    } else if (space) {
+        sign_ch = ' ';
+    }
+
+    switch (lower_spec) {
+    case 'f':
+        body_len = (size_t)build_fixed_fp(value, precision, alt, upper, buf);
+        break;
+    case 'e':
+        body_len = (size_t)build_exp_fp(value, precision, alt, upper, buf);
+        break;
+    case 'g':
+        body_len = (size_t)build_general_fp(value, precision, alt, upper, buf);
+        break;
+    default:
+        body = "";
+        body_len = 0;
+        goto emit;
+    }
+
+    body = buf;
+
+emit:
+    pad = width - (int)body_len - (sign_ch ? 1 : 0);
+    if (pad < 0)
+        pad = 0;
+
+    if (!left && !zero)
+        out_repeat(o, ' ', pad);
+    if (sign_ch)
+        out_char(o, sign_ch);
+    if (!left && zero)
+        out_repeat(o, '0', pad);
+    out_mem(o, body, body_len);
+    if (left)
+        out_repeat(o, ' ', pad);
+}
+
 int
 vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
 {
@@ -268,6 +701,9 @@ vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
                 p++;
                 len = LEN_LL;
             }
+        } else if (*p == 'L') {
+            p++;
+            len = LEN_LD;
         } else if (*p == 'z') {
             p++;
             len = LEN_Z;
@@ -283,7 +719,7 @@ vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
         switch (spec) {
         case 'd':
         case 'i': {
-            long long          v = get_signed_arg(ap, len);
+            long long          v = get_signed_arg(&ap, len);
             unsigned long long u;
             int                neg = 0;
             if (v < 0) {
@@ -296,18 +732,18 @@ vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
             break;
         }
         case 'u': {
-            unsigned long long u = get_unsigned_arg(ap, len);
+            unsigned long long u = get_unsigned_arg(&ap, len);
             format_integer(&out, u, 0, 10, 0, 0, left, 0, 0, zero, width, precision);
             break;
         }
         case 'x':
         case 'X': {
-            unsigned long long u = get_unsigned_arg(ap, len);
+            unsigned long long u = get_unsigned_arg(&ap, len);
             format_integer(&out, u, 0, 16, spec == 'X', alt, left, 0, 0, zero, width, precision);
             break;
         }
         case 'o': {
-            unsigned long long u = get_unsigned_arg(ap, len);
+            unsigned long long u = get_unsigned_arg(&ap, len);
             format_integer(&out, u, 0, 8, 0, alt, left, 0, 0, zero, width, precision);
             break;
         }
@@ -318,6 +754,16 @@ vsnprintf(char *s, size_t n, const char *fmt, va_list ap)
             out_char(&out, ch);
             if (left)
                 out_repeat(&out, ' ', width > 1 ? width - 1 : 0);
+            break;
+        }
+        case 'f':
+        case 'F':
+        case 'e':
+        case 'E':
+        case 'g':
+        case 'G': {
+            double v = get_float_arg(&ap, len);
+            format_float(&out, v, spec, alt, left, plus, space, zero, width, precision, len);
             break;
         }
         case 's': {

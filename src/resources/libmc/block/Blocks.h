@@ -1104,7 +1104,7 @@ extern "C" {
     X(BLOCK_POTTED_CLOSED_EYEBLOSSOM, "minecraft", "potted_closed_eyeblossom", "block.minecraft.potted_closed_eyeblossom", 0.0f, 0.6f, 1)
 
 #define X(id, ns, path, translationKey, resistance, slipperiness, randomTicks) \
-    extern const _Block id##_IMPL;
+    extern _Block id##_IMPL;
 BLOCK_LIST(X)
 #undef X
 

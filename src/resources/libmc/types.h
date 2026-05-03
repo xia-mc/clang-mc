@@ -1,3 +1,5 @@
 #pragma once
 
-#include "entity/Entities.h"
+#include "entity/EntityTypes.h"
+#include "util/Target.h"
+#include "util/UUID.h"

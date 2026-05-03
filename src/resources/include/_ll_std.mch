@@ -33,6 +33,7 @@
 #include "compiler_rt/subsf3.mch"
 #include "compiler_rt/truncdfsf2.mch"
 #include "compiler_rt/udivdi3.mch"
+#include "compiler_rt/udivmoddi4.mch"
 #include "compiler_rt/udivsi3.mch"
 #include "compiler_rt/umoddi3.mch"
 #include "compiler_rt/umodsi3.mch"

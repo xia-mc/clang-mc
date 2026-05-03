@@ -45,12 +45,14 @@ scoreboard players set x15 vm_regs 0
 scoreboard players set rsp vm_regs 0
 # 堆大小
 scoreboard players set shp vm_regs 0
-# 编译器保留
+# 汇编器/标准库保留
 scoreboard players set s0 vm_regs 0
 scoreboard players set s1 vm_regs 0
 scoreboard players set s2 vm_regs 0
 scoreboard players set s3 vm_regs 0
 scoreboard players set s4 vm_regs 0
+# LLVM 保留
+scoreboard players set ls0 vm_regs 0
 
 # list[int] 内存空间
 data modify storage std:vm heap set value []
