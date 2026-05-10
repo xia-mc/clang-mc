@@ -15,12 +15,10 @@ extern "C" {
 #endif
 
 static inline int
-setblock_unsafe(int x, int y, int z, McfString block_name, SetBlockMode mode)
+setblock_unsafe(int x, int y, int z, int slot_id, SetBlockMode mode)
 {
     int ret;
-    int slot_id;
 
-    slot_id = _McfString_GetSlotId(block_name);
     if (slot_id < 0) {
         return -1;
     }
@@ -28,26 +26,41 @@ setblock_unsafe(int x, int y, int z, McfString block_name, SetBlockMode mode)
     switch (mode) {
         case DESTROY:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%4].value\n"
-                "inline execute store result score %0 vm_regs run setblock %1 %2 %3 $(block) destroy"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\n"
+                "inline $execute store result score %0 vm_regs run setblock %1 %2 %3 $(block) destroy"
                 : "=r"(ret)
-                : "r"(x), "r"(y), "r"(z), "r"(slot_id)
+                : "r"(x), "r"(y), "r"(z)
             );
             return ret;
         case KEEP:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%4].value\n"
-                "inline execute store result score %0 vm_regs run setblock %1 %2 %3 $(block) keep"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\n"
+                "inline $execute store result score %0 vm_regs run setblock %1 %2 %3 $(block) keep"
                 : "=r"(ret)
-                : "r"(x), "r"(y), "r"(z), "r"(slot_id)
+                : "r"(x), "r"(y), "r"(z)
             );
             return ret;
         case REPLACE:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%4].value\n"
-                "inline execute store result score %0 vm_regs run setblock %1 %2 %3 $(block)"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\n"
+                "inline $execute store result score %0 vm_regs run setblock %1 %2 %3 $(block)"
                 : "=r"(ret)
-                : "r"(x), "r"(y), "r"(z), "r"(slot_id)
+                : "r"(x), "r"(y), "r"(z)
             );
             return ret;
         default:
@@ -59,12 +72,14 @@ static inline int
 setblock(Vec3i pos, Block block, SetBlockMode mode)
 {
     McfString block_name;
+    int slot_id;
 
     block_name = Block_EnsureMcfName(block);
-    if (block_name == NULL) {
+    slot_id = _McfString_GetSlotId(block_name);
+    if (slot_id < 0) {
         return -1;
     }
-    return setblock_unsafe(pos.x, pos.y, pos.z, block_name, mode);
+    return setblock_unsafe(pos.x, pos.y, pos.z, slot_id, mode);
 }
 
 #ifdef __cplusplus

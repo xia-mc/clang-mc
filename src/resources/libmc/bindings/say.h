@@ -9,20 +9,26 @@
 extern "C" {
 #endif
 
+__asm__(
+"export _ll_shared:z/libmc_cmd_say:\n"
+"    inline $execute store result score r0 vm_regs run say $(text)\n"
+"    ret\n"
+);
+
 static inline int
-say_unsafe(McfString text)
+say_unsafe(int slot_id)
 {
     int ret;
-    int slot_id;
 
-    slot_id = _McfString_GetSlotId(text);
     if (slot_id < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.text set from storage std:vm mcstr.slots[%1].value\n"
-        "inline execute store result score %0 vm_regs run say $(text)"
+        "inline data modify storage std:vm s6.cmd set value %{text: \"\"%}\n"
+        "inline $data modify storage std:vm s6.cmd.text set from storage std:vm mcstr.slots[%1].value\n"
+        "inline function _ll_shared:z/libmc_cmd_say with storage std:vm s6.cmd\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(slot_id)
     );
@@ -33,12 +39,14 @@ static inline int
 say(String text)
 {
     McfString text_mcf;
+    int slot_id;
 
     text_mcf = _Command_RequireStringMcf(text);
-    if (text_mcf == NULL) {
+    slot_id = _McfString_GetSlotId(text_mcf);
+    if (slot_id < 0) {
         return -1;
     }
-    return say_unsafe(text_mcf);
+    return say_unsafe(slot_id);
 }
 
 #ifdef __cplusplus

@@ -9,23 +9,27 @@
 extern "C" {
 #endif
 
+__asm__(
+"export _ll_shared:z/libmc_cmd_tellraw:\n"
+"    inline $execute store result score r0 vm_regs run tellraw $(target) $(json)\n"
+"    ret\n"
+);
+
 static inline int
-tellraw_unsafe(McfString target_name, McfString json_text)
+tellraw_unsafe(int target_slot, int json_slot)
 {
     int ret;
-    int target_slot;
-    int json_slot;
 
-    target_slot = _McfString_GetSlotId(target_name);
-    json_slot = _McfString_GetSlotId(json_text);
     if (target_slot < 0 || json_slot < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.target set from storage std:vm mcstr.slots[%1].value\n"
-        "inline data modify storage std:vm s0.json set from storage std:vm mcstr.slots[%2].value\n"
-        "inline execute store result score %0 vm_regs run tellraw $(target) $(json)"
+        "inline data modify storage std:vm s6.cmd set value %{target: \"\", json: \"\"%}\n"
+        "inline $data modify storage std:vm s6.cmd.target set from storage std:vm mcstr.slots[%1].value\n"
+        "inline $data modify storage std:vm s6.cmd.json set from storage std:vm mcstr.slots[%2].value\n"
+        "inline function _ll_shared:z/libmc_cmd_tellraw with storage std:vm s6.cmd\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(target_slot), "r"(json_slot)
     );
@@ -37,13 +41,17 @@ tellraw(Target target, String json)
 {
     McfString target_name;
     McfString json_text;
+    int target_slot;
+    int json_slot;
 
     target_name = _Command_RequireTargetMcf(target);
+    target_slot = _McfString_GetSlotId(target_name);
     json_text = _Command_RequireStringMcf(json);
-    if (target_name == NULL || json_text == NULL) {
+    json_slot = _McfString_GetSlotId(json_text);
+    if (target_slot < 0 || json_slot < 0) {
         return -1;
     }
-    return tellraw_unsafe(target_name, json_text);
+    return tellraw_unsafe(target_slot, json_slot);
 }
 
 #ifdef __cplusplus

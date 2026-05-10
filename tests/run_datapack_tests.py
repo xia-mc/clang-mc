@@ -32,6 +32,9 @@ WORLD_DATAPACKS = SERVER_DIR / "world" / "datapacks"
 ACTIVE_PACK = WORLD_DATAPACKS / "a.zip"
 ACTIVE_DIR_PACK = WORLD_DATAPACKS / "file"
 BIN_DIR = ROOT / "build" / "bin"
+LIBMC_INCLUDE = ROOT / "build" / "libmc"
+PUBLIC_INCLUDE = ROOT / "build" / "include"
+LIBC_INCLUDE = ROOT / "src" / "resources" / "libc" / "include"
 
 CLANG = BIN_DIR / ("clang.exe" if sys.platform == "win32" else "clang")
 ASM = BIN_DIR / ("clang-mc.exe" if sys.platform == "win32" else "clang-mc")
@@ -57,6 +60,31 @@ CASES: list[Case] = [
     Case("float_format_o0", "float_format.c"),
     Case("o3_behavior_o0", "o3_behavior.c", "-O0"),
     Case("o3_behavior_o3", "o3_behavior.c", "-O3"),
+    Case("libmc_mcf_quote_probe_o0", "libmc_mcf_quote_probe.c"),
+    Case("libmc_mcf_numeric_probe_o0", "libmc_mcf_numeric_probe.c"),
+    Case("libmc_mcf_release_probe_o0", "libmc_mcf_release_probe.c"),
+    Case("libmc_string_release_probe_o0", "libmc_string_release_probe.c"),
+    Case("libc_free_adjacent_probe_o0", "libc_free_adjacent_probe.c"),
+    Case("libmc_say_trace_o0", "libmc_say_trace.c"),
+    Case("libmc_say_only_o0", "libmc_say_only.c"),
+    Case("libmc_header_smoke_o0", "libmc_header_smoke.c"),
+    Case("libmc_setblock_fill_o0", "libmc_setblock_fill.c"),
+    Case("libmc_tellraw_players_only_o0", "libmc_tellraw_players_only.c"),
+    Case("libmc_tellraw_raw_only_o0", "libmc_tellraw_raw_only.c"),
+    Case("libmc_tellraw_with_prior_msg_o0", "libmc_tellraw_with_prior_msg.c"),
+    Case("libmc_target_chat_o0", "libmc_target_chat.c"),
+    Case("libmc_summon_only_o0", "libmc_summon_only.c"),
+    Case("libmc_summon_unsafe_probe_o0", "libmc_summon_unsafe_probe.c"),
+    Case("libmc_tp_only_o0", "libmc_tp_only.c"),
+    Case("libmc_tp_rot_only_o0", "libmc_tp_rot_only.c"),
+    Case("libmc_summon_tp_rot_only_combo_o0", "libmc_summon_tp_rot_only_combo.c"),
+    Case("libmc_tp_then_tp_rot_combo_o0", "libmc_tp_then_tp_rot_combo.c"),
+    Case("libmc_summon_tp_trace_o0", "libmc_summon_tp_trace.c"),
+    Case("libmc_summon_tp_alloc_trace_o0", "libmc_summon_tp_alloc_trace.c"),
+    Case("libmc_target_mcf_after_numeric_release_o0", "libmc_target_mcf_after_numeric_release.c"),
+    Case("libmc_float_after_summon_tp_repro_o0", "libmc_float_after_summon_tp_repro.c"),
+    Case("libc_snprintf_target_corrupt_probe_o0", "libc_snprintf_target_corrupt_probe.c"),
+    Case("libmc_summon_tp_o0", "libmc_summon_tp.c"),
 ]
 
 
@@ -130,17 +158,44 @@ def stop_existing_server_processes() -> None:
         return
     cmd = (
         "Get-CimInstance Win32_Process | "
-        "Where-Object { $_.Name -like 'java*' -and $_.CommandLine -like '*run\\\\server*server.jar*' } | "
+        "Where-Object { $_.Name -like 'java*' -and $_.CommandLine -like '*-jar server.jar nogui*' } | "
         "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
     )
     subprocess.run(["powershell", "-Command", cmd], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(2)
+
+
+def remove_tree_with_retries(path: Path, retries: int = 5, delay_seconds: float = 1.0) -> None:
+    for attempt in range(retries):
+        try:
+            shutil.rmtree(path)
+            return
+        except FileNotFoundError:
+            return
+        except (PermissionError, OSError):
+            if attempt + 1 == retries:
+                raise
+            time.sleep(delay_seconds)
+
+
+def unlink_with_retries(path: Path, retries: int = 5, delay_seconds: float = 1.0) -> None:
+    for attempt in range(retries):
+        try:
+            path.unlink()
+            return
+        except FileNotFoundError:
+            return
+        except PermissionError:
+            if attempt + 1 == retries:
+                raise
+            time.sleep(delay_seconds)
 
 
 def cleanup_active_pack() -> None:
     if ACTIVE_PACK.exists():
-        ACTIVE_PACK.unlink()
+        unlink_with_retries(ACTIVE_PACK)
     if ACTIVE_DIR_PACK.exists():
-        shutil.rmtree(ACTIVE_DIR_PACK, ignore_errors=True)
+        remove_tree_with_retries(ACTIVE_DIR_PACK)
 
 
 def wait_for_rcon(client: RconClient, timeout_seconds: int = 120) -> bool:
@@ -203,6 +258,13 @@ def score(client: RconClient, name: str) -> int:
     return int(output[start:end].strip())
 
 
+def storage_value(client: RconClient, path: str) -> str:
+    try:
+        return client.command(f"data get storage std:vm {path}")
+    except Exception as exc:
+        return f"<unavailable: {exc}>"
+
+
 def scan_logs(paths: Iterable[Path]) -> list[str]:
     hits: list[str] = []
     for path in paths:
@@ -218,15 +280,29 @@ def compile_case(case: Case) -> Path:
     case_dir = TMP_DIR / case.name
     case_dir.mkdir(parents=True, exist_ok=True)
     pack_build = case_dir / "pack-build"
+    pack_zip = case_dir / "pack.zip.zip"
     if pack_build.exists():
-        shutil.rmtree(pack_build)
+        remove_tree_with_retries(pack_build)
+    if pack_zip.exists():
+        unlink_with_retries(pack_zip)
 
     mcasm_path = case_dir / f"{case.name}.mcasm"
     clang_log = case_dir / "clang.log"
     asm_log = case_dir / "asm.log"
 
     run_logged(
-        [str(CLANG), str(CASE_DIR / case.source), "-target", "mcasm", case.opt, "-S", "-o", str(mcasm_path)],
+        [
+            str(CLANG),
+            str(CASE_DIR / case.source),
+            "-target", "mcasm",
+            case.opt,
+            "-I", str(LIBMC_INCLUDE),
+            "-I", str(PUBLIC_INCLUDE),
+            "-I", str(LIBC_INCLUDE),
+            "-S",
+            "-o",
+            str(mcasm_path),
+        ],
         clang_log,
         ROOT,
     )
@@ -235,7 +311,7 @@ def compile_case(case: Case) -> Path:
         asm_log,
         ROOT,
     )
-    return case_dir / "pack.zip.zip"
+    return pack_zip
 
 
 def run_case(case: Case, pack_zip: Path, client: RconClient) -> tuple[bool, str]:
@@ -254,7 +330,7 @@ def run_case(case: Case, pack_zip: Path, client: RconClient) -> tuple[bool, str]
 
         client.command("gamerule maxCommandChainLength 10000000")
         client.command("player CodexBot spawn")
-        shutil.copy2(pack_zip, ACTIVE_PACK)
+        shutil.unpack_archive(str(pack_zip), str(ACTIVE_DIR_PACK), "zip")
         client.command("reload")
         time.sleep(case.wait_seconds)
 
@@ -262,10 +338,24 @@ def run_case(case: Case, pack_zip: Path, client: RconClient) -> tuple[bool, str]
         rsp = score(client, "rsp")
         log_hits = scan_logs((stdout_log, stderr_log))
 
+        trace = storage_value(client, "trace")
+        ls0 = storage_value(client, "ls0")
+        trace_r2 = storage_value(client, "trace_r2")
+        trace_tp_ls0 = storage_value(client, "trace_tp_ls0")
+        trace_tp_cmd = storage_value(client, "trace_tp_cmd")
+        trace_tp_ret = storage_value(client, "trace_tp_ret")
+        trace_cmd = storage_value(client, "trace_cmd")
+        mcstr_state = storage_value(client, "mcstr")
+        trace_tp_slots = storage_value(client, "trace_tp_slots")
+        trace_before_slot = storage_value(client, "trace_before_slot")
+        trace_after_summon_slot = storage_value(client, "trace_after_summon_slot")
+        trace_ptrs_before = storage_value(client, "trace_ptrs_before")
+        trace_ptrs_after = storage_value(client, "trace_ptrs_after")
+        trace_ptrs_created = storage_value(client, "trace_ptrs_created")
         if rax != case.expected_rax:
-            return False, f"rax={rax}, expected={case.expected_rax}"
+            return False, f"rax={rax}, expected={case.expected_rax}, trace={trace}, ls0={ls0}, trace_r2={trace_r2}, trace_tp_ls0={trace_tp_ls0}, trace_tp_cmd={trace_tp_cmd}, trace_tp_ret={trace_tp_ret}, trace_cmd={trace_cmd}, trace_tp_slots={trace_tp_slots}, before_slot={trace_before_slot}, after_summon_slot={trace_after_summon_slot}, ptrs_before={trace_ptrs_before}, ptrs_created={trace_ptrs_created}, ptrs_after={trace_ptrs_after}, mcstr={mcstr_state}"
         if rsp != case.expected_rsp:
-            return False, f"rsp={rsp}, expected={case.expected_rsp}"
+            return False, f"rsp={rsp}, expected={case.expected_rsp}, trace={trace}, ls0={ls0}, trace_r2={trace_r2}, trace_tp_ls0={trace_tp_ls0}, trace_tp_cmd={trace_tp_cmd}, trace_tp_ret={trace_tp_ret}, trace_cmd={trace_cmd}, trace_tp_slots={trace_tp_slots}, before_slot={trace_before_slot}, after_summon_slot={trace_after_summon_slot}, ptrs_before={trace_ptrs_before}, ptrs_created={trace_ptrs_created}, ptrs_after={trace_ptrs_after}, mcstr={mcstr_state}"
         if log_hits:
             return False, "log errors: " + " | ".join(log_hits[:3])
         return True, f"rax={rax} rsp={rsp}"
@@ -294,7 +384,7 @@ def main() -> int:
 
     stop_existing_server_processes()
     if TMP_DIR.exists():
-        shutil.rmtree(TMP_DIR)
+        remove_tree_with_retries(TMP_DIR)
     TMP_DIR.mkdir(parents=True, exist_ok=True)
 
     try:

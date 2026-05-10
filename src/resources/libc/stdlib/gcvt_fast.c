@@ -4,6 +4,7 @@
  * - scientific form otherwise
  */
 
+#include <limits.h>
 #include <stdlib.h>
 
 static void
@@ -28,6 +29,82 @@ is_inf(double x)
     return x > __DBL_MAX__ || x < -__DBL_MAX__;
 }
 
+static char *
+write_uint_dec(char *p, unsigned int value)
+{
+    char rev[16];
+    int  n = 0;
+
+    if (value == 0) {
+        *p++ = '0';
+        return p;
+    }
+
+    while (value != 0) {
+        rev[n++] = (char)('0' + (value % 10u));
+        value /= 10u;
+    }
+    while (n > 0) {
+        *p++ = rev[--n];
+    }
+    return p;
+}
+
+static int
+uint_dec_digits(unsigned int value)
+{
+    int n = 1;
+
+    while (value >= 10u) {
+        value /= 10u;
+        ++n;
+    }
+    return n;
+}
+
+static int
+try_simple_decimal(double x, int ndigit, char *p, char **end_out)
+{
+    int whole;
+    int half_units;
+    int digits;
+
+    if (x < 0.0 || x > (double)INT_MAX) {
+        return 0;
+    }
+
+    whole = (int)x;
+    if (x == (double)whole) {
+        digits = uint_dec_digits((unsigned int)whole);
+        if (digits > ndigit) {
+            return 0;
+        }
+        p = write_uint_dec(p, (unsigned int)whole);
+        *p = '\0';
+        *end_out = p;
+        return 1;
+    }
+
+    if (ndigit >= 2 && x <= (double)(INT_MAX / 2)) {
+        double scaled = x * 2.0;
+        half_units = (int)scaled;
+        if (scaled == (double)half_units && (half_units & 1) != 0) {
+            digits = uint_dec_digits((unsigned int)(half_units / 2)) + 1;
+            if (digits > ndigit) {
+                return 0;
+            }
+            p = write_uint_dec(p, (unsigned int)(half_units / 2));
+            *p++ = '.';
+            *p++ = '5';
+            *p = '\0';
+            *end_out = p;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 char *
 gcvt_fast(double value, int ndigit, char *buf)
 {
@@ -36,6 +113,7 @@ gcvt_fast(double value, int ndigit, char *buf)
     int    i;
     int    use_sci;
     int    lead;
+    int    round_up;
     double x;
     char   digits[64];
     int    sig;
@@ -82,6 +160,10 @@ gcvt_fast(double value, int ndigit, char *buf)
         return buf;
     }
 
+    if (try_simple_decimal(x, ndigit, p, &p)) {
+        return buf;
+    }
+
     while (x >= 10.0) {
         x *= 0.1;
         exp10++;
@@ -97,7 +179,14 @@ gcvt_fast(double value, int ndigit, char *buf)
         x = (x - (double)d) * 10.0;
     }
 
-    if (digits[ndigit] >= '5') {
+    round_up = 0;
+    if (digits[ndigit] > '5') {
+        round_up = 1;
+    } else if (digits[ndigit] == '5') {
+        round_up = (x > 0.000000001 || ((digits[ndigit - 1] - '0') & 1) != 0);
+    }
+
+    if (round_up) {
         i = ndigit - 1;
         while (i >= 0 && digits[i] == '9') {
             digits[i] = '0';

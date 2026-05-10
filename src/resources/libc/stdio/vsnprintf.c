@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <string.h>
+#include <stdlib.h>
 
 typedef enum {
     LEN_DEFAULT = 0,
@@ -470,90 +471,24 @@ build_exp_fp(double value, int precision, int alt, int upper, char *buf)
 static int
 build_general_fp(double value, int precision, int alt, int upper, char *buf)
 {
-    char digits[96];
-    int  exp10;
-    int  sig;
-    int  idx = 0;
-    int  i;
+    int sig;
 
     if (precision < 0)
-        precision = 6;
+        sig = 6;
     else if (precision == 0)
-        precision = 1;
+        sig = 1;
+    else
+        sig = precision;
 
     if (normalize_special_fp(value, buf, upper))
         return (int)strlen(buf);
 
-    extract_sig_digits(value, precision, digits, &exp10);
-
-    sig = precision;
-    if (!alt) {
-        while (sig > 1 && digits[sig - 1] == '0')
-            --sig;
+    if (gcvt_fast(value, sig, buf) == NULL) {
+        buf[0] = '\0';
+        return 0;
     }
-
-    if (exp10 < -4 || exp10 >= precision) {
-        buf[idx++] = digits[0];
-        if (sig > 1 || alt) {
-            buf[idx++] = '.';
-            for (i = 1; i < sig; ++i)
-                buf[idx++] = digits[i];
-            if (alt) {
-                for (; i < precision; ++i)
-                    buf[idx++] = '0';
-            }
-        }
-        buf[idx++] = upper ? 'E' : 'e';
-        if (exp10 < 0) {
-            buf[idx++] = '-';
-            exp10 = -exp10;
-        } else {
-            buf[idx++] = '+';
-        }
-        if (exp10 >= 100) {
-            char *start = buf + idx;
-            while (exp10 > 0) {
-                buf[idx++] = (char)('0' + (exp10 % 10));
-                exp10 /= 10;
-            }
-            reverse_range(start, buf + idx - 1);
-        } else {
-            buf[idx++] = (char)('0' + (exp10 / 10));
-            buf[idx++] = (char)('0' + (exp10 % 10));
-        }
-    } else if (exp10 >= 0) {
-        for (i = 0; i <= exp10; ++i) {
-            if (i < sig)
-                buf[idx++] = digits[i];
-            else
-                buf[idx++] = '0';
-        }
-        if (sig > exp10 + 1 || alt) {
-            buf[idx++] = '.';
-            for (i = exp10 + 1; i < sig; ++i)
-                buf[idx++] = digits[i];
-            if (alt) {
-                for (; i < precision; ++i)
-                    buf[idx++] = '0';
-            }
-        }
-    } else {
-        buf[idx++] = '0';
-        if (sig > 0 || alt)
-            buf[idx++] = '.';
-        for (i = 0; i < -exp10 - 1; ++i)
-            buf[idx++] = '0';
-        for (i = 0; i < sig; ++i)
-            buf[idx++] = digits[i];
-        if (alt) {
-            for (; i < precision; ++i)
-                buf[idx++] = '0';
-        }
-    }
-
-    buf[idx] = '\0';
-    if (!alt)
-        trim_trailing_zeros(buf);
+    if (alt)
+        ensure_decimal_point(buf);
     if (upper)
         uppercase_ascii(buf);
     return (int)strlen(buf);

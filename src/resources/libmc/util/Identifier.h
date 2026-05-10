@@ -370,29 +370,49 @@ Identifier_WithSuffixedPath(const Identifier *id, const char *suffix, Identifier
 static inline McfString
 McfString_FromIdentifier(const Identifier *id)
 {
+    const char *ns;
+    const char *path;
     size_t ns_len;
     size_t path_len;
     McfString s;
+    int slot_id;
 
     if (!Identifier_IsInitialized(id)) {
         return NULL;
     }
+    ns = id->ns;
+    path = id->path;
     s = McfString_New();
     if (s == NULL) {
         return NULL;
     }
-    ns_len = strlen(id->ns);
-    path_len = strlen(id->path);
+    ns_len = strlen(ns);
+    path_len = strlen(path);
     if (_McfString_EnsureCapacity(s, ns_len + 1u + path_len + 1u) != 0) {
         McfString_Release(s);
         return NULL;
     }
 
-    memcpy(s->data, id->ns, ns_len);
+    memcpy(s->data, ns, ns_len);
     s->data[ns_len] = IDENTIFIER_NAMESPACE_SEPARATOR;
-    memcpy(s->data + ns_len + 1u, id->path, path_len);
+    memcpy(s->data + ns_len + 1u, path, path_len);
     s->data[ns_len + 1u + path_len] = '\0';
     s->len = ns_len + 1u + path_len;
+    if (_McfString_GetOrAllocSlotId(s, &slot_id) != 0) {
+        McfString_Release(s);
+        return NULL;
+    }
+    if (_McfString_PrepareSlotUpdateById(slot_id) != 0) {
+        McfString_Release(s);
+        return NULL;
+    }
+    _McfString_BeginScratchValueFromCString(ns, ns_len);
+    _McfString_AppendScratchValueFromCString(":", 1u);
+    _McfString_AppendScratchValueFromCString(path, path_len);
+    if (_McfString_CommitScratchToSlotById(slot_id, 1) != 0) {
+        McfString_Release(s);
+        return NULL;
+    }
     return s;
 }
 

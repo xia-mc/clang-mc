@@ -9,29 +9,29 @@
 extern "C" {
 #endif
 
+__asm__(
+"export _ll_shared:z/libmc_cmd_summon:\n"
+"    inline $execute store result score r0 vm_regs run summon $(entity_type) $(x) $(y) $(z)\n"
+"    ret\n"
+);
+
 static inline int
-summon_unsafe(McfString entity_type_name, McfString x, McfString y, McfString z)
+summon_unsafe(int entity_type_slot, int x_slot, int y_slot, int z_slot)
 {
     int ret;
-    int entity_type_slot;
-    int x_slot;
-    int y_slot;
-    int z_slot;
 
-    entity_type_slot = _McfString_GetSlotId(entity_type_name);
-    x_slot = _McfString_GetSlotId(x);
-    y_slot = _McfString_GetSlotId(y);
-    z_slot = _McfString_GetSlotId(z);
     if (entity_type_slot < 0 || x_slot < 0 || y_slot < 0 || z_slot < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.entity_type set from storage std:vm mcstr.slots[%1].value\n"
-        "inline data modify storage std:vm s0.x set from storage std:vm mcstr.slots[%2].value\n"
-        "inline data modify storage std:vm s0.y set from storage std:vm mcstr.slots[%3].value\n"
-        "inline data modify storage std:vm s0.z set from storage std:vm mcstr.slots[%4].value\n"
-        "inline execute store result score %0 vm_regs run summon $(entity_type) $(x) $(y) $(z)"
+        "inline data modify storage std:vm s6.cmd set value %{entity_type: \"\", x: \"\", y: \"\", z: \"\"%}\n"
+        "inline $data modify storage std:vm s6.cmd.entity_type set from storage std:vm mcstr.slots[%1].value\n"
+        "inline $data modify storage std:vm s6.cmd.x set from storage std:vm mcstr.slots[%2].value\n"
+        "inline $data modify storage std:vm s6.cmd.y set from storage std:vm mcstr.slots[%3].value\n"
+        "inline $data modify storage std:vm s6.cmd.z set from storage std:vm mcstr.slots[%4].value\n"
+        "inline function _ll_shared:z/libmc_cmd_summon with storage std:vm s6.cmd\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(entity_type_slot), "r"(x_slot), "r"(y_slot), "r"(z_slot)
     );
@@ -46,23 +46,31 @@ summon(EntityType type, Vec3d pos)
     McfString x;
     McfString y;
     McfString z;
+    int entity_type_slot;
+    int x_slot;
+    int y_slot;
+    int z_slot;
 
     entity_type_name = EntityType_EnsureMcfName(type);
-    if (entity_type_name == NULL) {
+    entity_type_slot = _McfString_GetSlotId(entity_type_name);
+    if (entity_type_slot < 0) {
         return -1;
     }
 
     x = _Command_FormatDouble(pos.x);
+    x_slot = _McfString_GetSlotId(x);
     y = _Command_FormatDouble(pos.y);
+    y_slot = _McfString_GetSlotId(y);
     z = _Command_FormatDouble(pos.z);
-    if (x == NULL || y == NULL || z == NULL) {
+    z_slot = _McfString_GetSlotId(z);
+    if (x_slot < 0 || y_slot < 0 || z_slot < 0) {
         McfString_Release(x);
         McfString_Release(y);
         McfString_Release(z);
         return -1;
     }
 
-    ret = summon_unsafe(entity_type_name, x, y, z);
+    ret = summon_unsafe(entity_type_slot, x_slot, y_slot, z_slot);
     McfString_Release(x);
     McfString_Release(y);
     McfString_Release(z);

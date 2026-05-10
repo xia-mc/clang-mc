@@ -14,6 +14,8 @@ struct _String {
     McfString mcf;
 };
 
+#define STRING_FLAG_BORROWED_DATA 1
+
 /* String_New/From* return owned objects. Pair them with String_Release(). */
 static void _String_Destroy(void *obj);
 
@@ -30,6 +32,27 @@ _String_EnsureCapacity(String s, size_t want)
 
     if (s == NULL) {
         return -1;
+    }
+    if ((s->flags & STRING_FLAG_BORROWED_DATA) != 0) {
+        cap = want;
+        if (cap < s->len + 1u) {
+            cap = s->len + 1u;
+        }
+        if (cap == 0u) {
+            cap = 1u;
+        }
+        buf = (char *)malloc(cap);
+        if (buf == NULL) {
+            return -1;
+        }
+        if (s->data != NULL && s->len != 0u) {
+            memcpy(buf, s->data, s->len);
+        }
+        buf[s->len] = '\0';
+        s->data = buf;
+        s->cap = cap;
+        s->flags &= ~STRING_FLAG_BORROWED_DATA;
+        return 0;
     }
     if (want <= s->cap) {
         return 0;
@@ -117,8 +140,28 @@ String_FromCString(const char *src)
 static inline String
 String_FromLiteral(const char *src)
 {
-    /* TODO: switch to compiler-backed literal pool when available. */
-    return String_FromCString(src);
+    String s;
+    size_t len;
+    McfString mcf;
+
+    s = (String)malloc(sizeof(_String));
+    if (s == NULL) {
+        return NULL;
+    }
+
+    len = src ? strlen(src) : 0u;
+    MC_REF_INIT_DYNAMIC(s, &_STRING_REF_OPS);
+    s->len = len;
+    s->cap = 0u;
+    s->data = (char *)(src ? src : "");
+    s->flags = STRING_FLAG_BORROWED_DATA;
+    mcf = McfString_FromLiteral(src);
+    if (mcf == NULL && src != NULL) {
+        free(s);
+        return NULL;
+    }
+    s->mcf = mcf;
+    return s;
 }
 
 static inline String
@@ -140,7 +183,9 @@ _String_Destroy(void *obj)
 
     s = (String)obj;
     _String_InvalidateMcf(s);
-    free(s->data);
+    if ((s->flags & STRING_FLAG_BORROWED_DATA) == 0) {
+        free(s->data);
+    }
     free(s);
 }
 
@@ -232,7 +277,11 @@ String_EnsureMcf(String s)
         return -1;
     }
     if (s->mcf == NULL) {
-        s->mcf = McfString_FromCString(s->data);
+        if ((s->flags & STRING_FLAG_BORROWED_DATA) != 0) {
+            s->mcf = McfString_FromLiteral(s->data);
+        } else {
+            s->mcf = McfString_FromCString(s->data);
+        }
         if (s->mcf == NULL) {
             return -1;
         }

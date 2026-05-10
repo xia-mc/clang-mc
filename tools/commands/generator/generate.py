@@ -67,12 +67,10 @@ def render_enum(enum_spec: dict) -> str:
 
 def render_setblock() -> str:
     return """static inline int
-setblock_unsafe(int x, int y, int z, McfString block_name, SetBlockMode mode)
+setblock_unsafe(int x, int y, int z, int slot_id, SetBlockMode mode)
 {
     int ret;
-    int slot_id;
 
-    slot_id = _McfString_GetSlotId(block_name);
     if (slot_id < 0) {
         return -1;
     }
@@ -80,26 +78,41 @@ setblock_unsafe(int x, int y, int z, McfString block_name, SetBlockMode mode)
     switch (mode) {
         case DESTROY:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%4].value\\n"
-                "inline execute store result score %0 vm_regs run setblock %1 %2 %3 $(block) destroy"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\\n"
+                "inline $execute store result score %0 vm_regs run setblock %1 %2 %3 $(block) destroy"
                 : "=r"(ret)
-                : "r"(x), "r"(y), "r"(z), "r"(slot_id)
+                : "r"(x), "r"(y), "r"(z)
             );
             return ret;
         case KEEP:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%4].value\\n"
-                "inline execute store result score %0 vm_regs run setblock %1 %2 %3 $(block) keep"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\\n"
+                "inline $execute store result score %0 vm_regs run setblock %1 %2 %3 $(block) keep"
                 : "=r"(ret)
-                : "r"(x), "r"(y), "r"(z), "r"(slot_id)
+                : "r"(x), "r"(y), "r"(z)
             );
             return ret;
         case REPLACE:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%4].value\\n"
-                "inline execute store result score %0 vm_regs run setblock %1 %2 %3 $(block)"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\\n"
+                "inline $execute store result score %0 vm_regs run setblock %1 %2 %3 $(block)"
                 : "=r"(ret)
-                : "r"(x), "r"(y), "r"(z), "r"(slot_id)
+                : "r"(x), "r"(y), "r"(z)
             );
             return ret;
         default:
@@ -111,12 +124,14 @@ static inline int
 setblock(Vec3i pos, Block block, SetBlockMode mode)
 {
     McfString block_name;
+    int slot_id;
 
     block_name = Block_EnsureMcfName(block);
-    if (block_name == NULL) {
+    slot_id = _McfString_GetSlotId(block_name);
+    if (slot_id < 0) {
         return -1;
     }
-    return setblock_unsafe(pos.x, pos.y, pos.z, block_name, mode);
+    return setblock_unsafe(pos.x, pos.y, pos.z, slot_id, mode);
 }
 """
 
@@ -125,12 +140,10 @@ def render_fill() -> str:
     return """static inline int
 fill_unsafe(int from_x, int from_y, int from_z,
             int to_x, int to_y, int to_z,
-            McfString block_name, FillMode mode)
+            int slot_id, FillMode mode)
 {
     int ret;
-    int slot_id;
 
-    slot_id = _McfString_GetSlotId(block_name);
     if (slot_id < 0) {
         return -1;
     }
@@ -138,47 +151,72 @@ fill_unsafe(int from_x, int from_y, int from_z,
     switch (mode) {
         case FILL_DESTROY:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%7].value\\n"
-                "inline execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block) destroy"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\\n"
+                "inline $execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block) destroy"
                 : "=r"(ret)
                 : "r"(from_x), "r"(from_y), "r"(from_z),
-                  "r"(to_x), "r"(to_y), "r"(to_z), "r"(slot_id)
+                  "r"(to_x), "r"(to_y), "r"(to_z)
             );
             return ret;
         case FILL_HOLLOW:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%7].value\\n"
-                "inline execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block) hollow"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\\n"
+                "inline $execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block) hollow"
                 : "=r"(ret)
                 : "r"(from_x), "r"(from_y), "r"(from_z),
-                  "r"(to_x), "r"(to_y), "r"(to_z), "r"(slot_id)
+                  "r"(to_x), "r"(to_y), "r"(to_z)
             );
             return ret;
         case FILL_KEEP:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%7].value\\n"
-                "inline execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block) keep"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\\n"
+                "inline $execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block) keep"
                 : "=r"(ret)
                 : "r"(from_x), "r"(from_y), "r"(from_z),
-                  "r"(to_x), "r"(to_y), "r"(to_z), "r"(slot_id)
+                  "r"(to_x), "r"(to_y), "r"(to_z)
             );
             return ret;
         case FILL_OUTLINE:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%7].value\\n"
-                "inline execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block) outline"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\\n"
+                "inline $execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block) outline"
                 : "=r"(ret)
                 : "r"(from_x), "r"(from_y), "r"(from_z),
-                  "r"(to_x), "r"(to_y), "r"(to_z), "r"(slot_id)
+                  "r"(to_x), "r"(to_y), "r"(to_z)
             );
             return ret;
         case FILL_REPLACE:
             __asm volatile (
-                "inline data modify storage std:vm s0.block set from storage std:vm mcstr.slots[%7].value\\n"
-                "inline execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block)"
+                "inline $data modify storage std:vm ls0.block set from storage std:vm mcstr.slots[%0].value"
+                :
+                : "r"(slot_id)
+            );
+            __asm volatile (
+                "$$direct_args\\n"
+                "inline $execute store result score %0 vm_regs run fill %1 %2 %3 %4 %5 %6 $(block)"
                 : "=r"(ret)
                 : "r"(from_x), "r"(from_y), "r"(from_z),
-                  "r"(to_x), "r"(to_y), "r"(to_z), "r"(slot_id)
+                  "r"(to_x), "r"(to_y), "r"(to_z)
             );
             return ret;
         default:
@@ -190,40 +228,42 @@ static inline int
 fill(Vec3i from, Vec3i to, Block block, FillMode mode)
 {
     McfString block_name;
+    int slot_id;
 
     block_name = Block_EnsureMcfName(block);
-    if (block_name == NULL) {
+    slot_id = _McfString_GetSlotId(block_name);
+    if (slot_id < 0) {
         return -1;
     }
-    return fill_unsafe(from.x, from.y, from.z, to.x, to.y, to.z, block_name, mode);
+    return fill_unsafe(from.x, from.y, from.z, to.x, to.y, to.z, slot_id, mode);
 }
 """
 
 
 def render_summon() -> str:
-    return """static inline int
-summon_unsafe(McfString entity_type_name, McfString x, McfString y, McfString z)
+    return """__asm__(
+"export _ll_shared:z/libmc_cmd_summon:\\n"
+"    inline $execute store result score r0 vm_regs run summon $(entity_type) $(x) $(y) $(z)\\n"
+"    ret\\n"
+);
+
+static inline int
+summon_unsafe(int entity_type_slot, int x_slot, int y_slot, int z_slot)
 {
     int ret;
-    int entity_type_slot;
-    int x_slot;
-    int y_slot;
-    int z_slot;
 
-    entity_type_slot = _McfString_GetSlotId(entity_type_name);
-    x_slot = _McfString_GetSlotId(x);
-    y_slot = _McfString_GetSlotId(y);
-    z_slot = _McfString_GetSlotId(z);
     if (entity_type_slot < 0 || x_slot < 0 || y_slot < 0 || z_slot < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.entity_type set from storage std:vm mcstr.slots[%1].value\\n"
-        "inline data modify storage std:vm s0.x set from storage std:vm mcstr.slots[%2].value\\n"
-        "inline data modify storage std:vm s0.y set from storage std:vm mcstr.slots[%3].value\\n"
-        "inline data modify storage std:vm s0.z set from storage std:vm mcstr.slots[%4].value\\n"
-        "inline execute store result score %0 vm_regs run summon $(entity_type) $(x) $(y) $(z)"
+        "inline data modify storage std:vm s6.cmd set value %{entity_type: \\\"\\\", x: \\\"\\\", y: \\\"\\\", z: \\\"\\\"%}\\n"
+        "inline $data modify storage std:vm s6.cmd.entity_type set from storage std:vm mcstr.slots[%1].value\\n"
+        "inline $data modify storage std:vm s6.cmd.x set from storage std:vm mcstr.slots[%2].value\\n"
+        "inline $data modify storage std:vm s6.cmd.y set from storage std:vm mcstr.slots[%3].value\\n"
+        "inline $data modify storage std:vm s6.cmd.z set from storage std:vm mcstr.slots[%4].value\\n"
+        "inline function _ll_shared:z/libmc_cmd_summon with storage std:vm s6.cmd\\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(entity_type_slot), "r"(x_slot), "r"(y_slot), "r"(z_slot)
     );
@@ -238,23 +278,31 @@ summon(EntityType type, Vec3d pos)
     McfString x;
     McfString y;
     McfString z;
+    int entity_type_slot;
+    int x_slot;
+    int y_slot;
+    int z_slot;
 
     entity_type_name = EntityType_EnsureMcfName(type);
-    if (entity_type_name == NULL) {
+    entity_type_slot = _McfString_GetSlotId(entity_type_name);
+    if (entity_type_slot < 0) {
         return -1;
     }
 
     x = _Command_FormatDouble(pos.x);
+    x_slot = _McfString_GetSlotId(x);
     y = _Command_FormatDouble(pos.y);
+    y_slot = _McfString_GetSlotId(y);
     z = _Command_FormatDouble(pos.z);
-    if (x == NULL || y == NULL || z == NULL) {
+    z_slot = _McfString_GetSlotId(z);
+    if (x_slot < 0 || y_slot < 0 || z_slot < 0) {
         McfString_Release(x);
         McfString_Release(y);
         McfString_Release(z);
         return -1;
     }
 
-    ret = summon_unsafe(entity_type_name, x, y, z);
+    ret = summon_unsafe(entity_type_slot, x_slot, y_slot, z_slot);
     McfString_Release(x);
     McfString_Release(y);
     McfString_Release(z);
@@ -264,20 +312,26 @@ summon(EntityType type, Vec3d pos)
 
 
 def render_kill() -> str:
-    return """static inline int
-kill_unsafe(McfString target_name)
+    return """__asm__(
+"export _ll_shared:z/libmc_cmd_kill:\\n"
+"    inline $execute store result score r0 vm_regs run kill $(target)\\n"
+"    ret\\n"
+);
+
+static inline int
+kill_unsafe(int slot_id)
 {
     int ret;
-    int slot_id;
 
-    slot_id = _McfString_GetSlotId(target_name);
     if (slot_id < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.target set from storage std:vm mcstr.slots[%1].value\\n"
-        "inline execute store result score %0 vm_regs run kill $(target)"
+        "inline data modify storage std:vm s6.cmd set value %{target: \\\"\\\"%}\\n"
+        "inline $data modify storage std:vm s6.cmd.target set from storage std:vm mcstr.slots[%1].value\\n"
+        "inline function _ll_shared:z/libmc_cmd_kill with storage std:vm s6.cmd\\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(slot_id)
     );
@@ -288,40 +342,50 @@ static inline int
 kill(Target target)
 {
     McfString target_name;
+    int slot_id;
 
     target_name = _Command_RequireTargetMcf(target);
-    if (target_name == NULL) {
+    slot_id = _McfString_GetSlotId(target_name);
+    if (slot_id < 0) {
         return -1;
     }
-    return kill_unsafe(target_name);
+    return kill_unsafe(slot_id);
 }
 """
 
 
 def render_tp() -> str:
-    return """static inline int
-tp_unsafe(McfString target_name, McfString x, McfString y, McfString z)
+    return """__asm__(
+"export _ll_shared:z/libmc_cmd_tp:\\n"
+"    inline $execute store result score r0 vm_regs run tp $(target) $(x) $(y) $(z)\\n"
+"    ret\\n"
+"\\n"
+"export _ll_shared:z/libmc_cmd_tp_rot:\\n"
+"    inline $execute store result score r0 vm_regs run tp $(target) $(x) $(y) $(z) $(yaw) $(pitch)\\n"
+"    ret\\n"
+"\\n"
+"export _ll_shared:z/libmc_cmd_tp_entity:\\n"
+"    inline $execute store result score r0 vm_regs run tp $(target) $(destination)\\n"
+"    ret\\n"
+);
+
+static inline int
+tp_unsafe(int target_slot, int x_slot, int y_slot, int z_slot)
 {
     int ret;
-    int target_slot;
-    int x_slot;
-    int y_slot;
-    int z_slot;
 
-    target_slot = _McfString_GetSlotId(target_name);
-    x_slot = _McfString_GetSlotId(x);
-    y_slot = _McfString_GetSlotId(y);
-    z_slot = _McfString_GetSlotId(z);
     if (target_slot < 0 || x_slot < 0 || y_slot < 0 || z_slot < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.target set from storage std:vm mcstr.slots[%1].value\\n"
-        "inline data modify storage std:vm s0.x set from storage std:vm mcstr.slots[%2].value\\n"
-        "inline data modify storage std:vm s0.y set from storage std:vm mcstr.slots[%3].value\\n"
-        "inline data modify storage std:vm s0.z set from storage std:vm mcstr.slots[%4].value\\n"
-        "inline execute store result score %0 vm_regs run tp $(target) $(x) $(y) $(z)"
+        "inline data modify storage std:vm s6.cmd set value %{target: \\\"\\\", x: \\\"\\\", y: \\\"\\\", z: \\\"\\\"%}\\n"
+        "inline $data modify storage std:vm s6.cmd.target set from storage std:vm mcstr.slots[%1].value\\n"
+        "inline $data modify storage std:vm s6.cmd.x set from storage std:vm mcstr.slots[%2].value\\n"
+        "inline $data modify storage std:vm s6.cmd.y set from storage std:vm mcstr.slots[%3].value\\n"
+        "inline $data modify storage std:vm s6.cmd.z set from storage std:vm mcstr.slots[%4].value\\n"
+        "inline function _ll_shared:z/libmc_cmd_tp with storage std:vm s6.cmd\\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(target_slot), "r"(x_slot), "r"(y_slot), "r"(z_slot)
     );
@@ -329,36 +393,26 @@ tp_unsafe(McfString target_name, McfString x, McfString y, McfString z)
 }
 
 static inline int
-tp_rot_unsafe(McfString target_name, McfString x, McfString y, McfString z,
-              McfString yaw, McfString pitch)
+tp_rot_unsafe(int target_slot, int x_slot, int y_slot, int z_slot,
+              int yaw_slot, int pitch_slot)
 {
     int ret;
-    int target_slot;
-    int x_slot;
-    int y_slot;
-    int z_slot;
-    int yaw_slot;
-    int pitch_slot;
 
-    target_slot = _McfString_GetSlotId(target_name);
-    x_slot = _McfString_GetSlotId(x);
-    y_slot = _McfString_GetSlotId(y);
-    z_slot = _McfString_GetSlotId(z);
-    yaw_slot = _McfString_GetSlotId(yaw);
-    pitch_slot = _McfString_GetSlotId(pitch);
     if (target_slot < 0 || x_slot < 0 || y_slot < 0 ||
         z_slot < 0 || yaw_slot < 0 || pitch_slot < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.target set from storage std:vm mcstr.slots[%1].value\\n"
-        "inline data modify storage std:vm s0.x set from storage std:vm mcstr.slots[%2].value\\n"
-        "inline data modify storage std:vm s0.y set from storage std:vm mcstr.slots[%3].value\\n"
-        "inline data modify storage std:vm s0.z set from storage std:vm mcstr.slots[%4].value\\n"
-        "inline data modify storage std:vm s0.yaw set from storage std:vm mcstr.slots[%5].value\\n"
-        "inline data modify storage std:vm s0.pitch set from storage std:vm mcstr.slots[%6].value\\n"
-        "inline execute store result score %0 vm_regs run tp $(target) $(x) $(y) $(z) $(yaw) $(pitch)"
+        "inline data modify storage std:vm s6.cmd set value %{target: \\\"\\\", x: \\\"\\\", y: \\\"\\\", z: \\\"\\\", yaw: \\\"\\\", pitch: \\\"\\\"%}\\n"
+        "inline $data modify storage std:vm s6.cmd.target set from storage std:vm mcstr.slots[%1].value\\n"
+        "inline $data modify storage std:vm s6.cmd.x set from storage std:vm mcstr.slots[%2].value\\n"
+        "inline $data modify storage std:vm s6.cmd.y set from storage std:vm mcstr.slots[%3].value\\n"
+        "inline $data modify storage std:vm s6.cmd.z set from storage std:vm mcstr.slots[%4].value\\n"
+        "inline $data modify storage std:vm s6.cmd.yaw set from storage std:vm mcstr.slots[%5].value\\n"
+        "inline $data modify storage std:vm s6.cmd.pitch set from storage std:vm mcstr.slots[%6].value\\n"
+        "inline function _ll_shared:z/libmc_cmd_tp_rot with storage std:vm s6.cmd\\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(target_slot), "r"(x_slot), "r"(y_slot), "r"(z_slot), "r"(yaw_slot), "r"(pitch_slot)
     );
@@ -366,22 +420,20 @@ tp_rot_unsafe(McfString target_name, McfString x, McfString y, McfString z,
 }
 
 static inline int
-tp_entity_unsafe(McfString target_name, McfString destination_name)
+tp_entity_unsafe(int target_slot, int destination_slot)
 {
     int ret;
-    int target_slot;
-    int destination_slot;
 
-    target_slot = _McfString_GetSlotId(target_name);
-    destination_slot = _McfString_GetSlotId(destination_name);
     if (target_slot < 0 || destination_slot < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.target set from storage std:vm mcstr.slots[%1].value\\n"
-        "inline data modify storage std:vm s0.destination set from storage std:vm mcstr.slots[%2].value\\n"
-        "inline execute store result score %0 vm_regs run tp $(target) $(destination)"
+        "inline data modify storage std:vm s6.cmd set value %{target: \\\"\\\", destination: \\\"\\\"%}\\n"
+        "inline $data modify storage std:vm s6.cmd.target set from storage std:vm mcstr.slots[%1].value\\n"
+        "inline $data modify storage std:vm s6.cmd.destination set from storage std:vm mcstr.slots[%2].value\\n"
+        "inline function _ll_shared:z/libmc_cmd_tp_entity with storage std:vm s6.cmd\\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(target_slot), "r"(destination_slot)
     );
@@ -396,23 +448,31 @@ tp(Target target, Vec3d pos)
     McfString x;
     McfString y;
     McfString z;
+    int target_slot;
+    int x_slot;
+    int y_slot;
+    int z_slot;
 
     target_name = _Command_RequireTargetMcf(target);
-    if (target_name == NULL) {
+    target_slot = _McfString_GetSlotId(target_name);
+    if (target_slot < 0) {
         return -1;
     }
 
     x = _Command_FormatDouble(pos.x);
+    x_slot = _McfString_GetSlotId(x);
     y = _Command_FormatDouble(pos.y);
+    y_slot = _McfString_GetSlotId(y);
     z = _Command_FormatDouble(pos.z);
-    if (x == NULL || y == NULL || z == NULL) {
+    z_slot = _McfString_GetSlotId(z);
+    if (x_slot < 0 || y_slot < 0 || z_slot < 0) {
         McfString_Release(x);
         McfString_Release(y);
         McfString_Release(z);
         return -1;
     }
 
-    ret = tp_unsafe(target_name, x, y, z);
+    ret = tp_unsafe(target_slot, x_slot, y_slot, z_slot);
     McfString_Release(x);
     McfString_Release(y);
     McfString_Release(z);
@@ -429,18 +489,30 @@ tp_rot(Target target, Vec3d pos, Vec2f rot)
     McfString z;
     McfString yaw;
     McfString pitch;
+    int target_slot;
+    int x_slot;
+    int y_slot;
+    int z_slot;
+    int yaw_slot;
+    int pitch_slot;
 
     target_name = _Command_RequireTargetMcf(target);
-    if (target_name == NULL) {
+    target_slot = _McfString_GetSlotId(target_name);
+    if (target_slot < 0) {
         return -1;
     }
 
     x = _Command_FormatDouble(pos.x);
+    x_slot = _McfString_GetSlotId(x);
     y = _Command_FormatDouble(pos.y);
+    y_slot = _McfString_GetSlotId(y);
     z = _Command_FormatDouble(pos.z);
+    z_slot = _McfString_GetSlotId(z);
     yaw = _Command_FormatFloat(rot.x);
+    yaw_slot = _McfString_GetSlotId(yaw);
     pitch = _Command_FormatFloat(rot.y);
-    if (x == NULL || y == NULL || z == NULL || yaw == NULL || pitch == NULL) {
+    pitch_slot = _McfString_GetSlotId(pitch);
+    if (x_slot < 0 || y_slot < 0 || z_slot < 0 || yaw_slot < 0 || pitch_slot < 0) {
         McfString_Release(x);
         McfString_Release(y);
         McfString_Release(z);
@@ -449,7 +521,7 @@ tp_rot(Target target, Vec3d pos, Vec2f rot)
         return -1;
     }
 
-    ret = tp_rot_unsafe(target_name, x, y, z, yaw, pitch);
+    ret = tp_rot_unsafe(target_slot, x_slot, y_slot, z_slot, yaw_slot, pitch_slot);
     McfString_Release(x);
     McfString_Release(y);
     McfString_Release(z);
@@ -463,32 +535,42 @@ tp_entity(Target target, Target destination)
 {
     McfString target_name;
     McfString destination_name;
+    int target_slot;
+    int destination_slot;
 
     target_name = _Command_RequireTargetMcf(target);
+    target_slot = _McfString_GetSlotId(target_name);
     destination_name = _Command_RequireTargetMcf(destination);
-    if (target_name == NULL || destination_name == NULL) {
+    destination_slot = _McfString_GetSlotId(destination_name);
+    if (target_slot < 0 || destination_slot < 0) {
         return -1;
     }
-    return tp_entity_unsafe(target_name, destination_name);
+    return tp_entity_unsafe(target_slot, destination_slot);
 }
 """
 
 
 def render_say() -> str:
-    return """static inline int
-say_unsafe(McfString text)
+    return """__asm__(
+"export _ll_shared:z/libmc_cmd_say:\\n"
+"    inline $execute store result score r0 vm_regs run say $(text)\\n"
+"    ret\\n"
+);
+
+static inline int
+say_unsafe(int slot_id)
 {
     int ret;
-    int slot_id;
 
-    slot_id = _McfString_GetSlotId(text);
     if (slot_id < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.text set from storage std:vm mcstr.slots[%1].value\\n"
-        "inline execute store result score %0 vm_regs run say $(text)"
+        "inline data modify storage std:vm s6.cmd set value %{text: \\\"\\\"%}\\n"
+        "inline $data modify storage std:vm s6.cmd.text set from storage std:vm mcstr.slots[%1].value\\n"
+        "inline function _ll_shared:z/libmc_cmd_say with storage std:vm s6.cmd\\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(slot_id)
     );
@@ -499,34 +581,40 @@ static inline int
 say(String text)
 {
     McfString text_mcf;
+    int slot_id;
 
     text_mcf = _Command_RequireStringMcf(text);
-    if (text_mcf == NULL) {
+    slot_id = _McfString_GetSlotId(text_mcf);
+    if (slot_id < 0) {
         return -1;
     }
-    return say_unsafe(text_mcf);
+    return say_unsafe(slot_id);
 }
 """
 
 
 def render_tellraw() -> str:
-    return """static inline int
-tellraw_unsafe(McfString target_name, McfString json_text)
+    return """__asm__(
+"export _ll_shared:z/libmc_cmd_tellraw:\\n"
+"    inline $execute store result score r0 vm_regs run tellraw $(target) $(json)\\n"
+"    ret\\n"
+);
+
+static inline int
+tellraw_unsafe(int target_slot, int json_slot)
 {
     int ret;
-    int target_slot;
-    int json_slot;
 
-    target_slot = _McfString_GetSlotId(target_name);
-    json_slot = _McfString_GetSlotId(json_text);
     if (target_slot < 0 || json_slot < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.target set from storage std:vm mcstr.slots[%1].value\\n"
-        "inline data modify storage std:vm s0.json set from storage std:vm mcstr.slots[%2].value\\n"
-        "inline execute store result score %0 vm_regs run tellraw $(target) $(json)"
+        "inline data modify storage std:vm s6.cmd set value %{target: \\\"\\\", json: \\\"\\\"%}\\n"
+        "inline $data modify storage std:vm s6.cmd.target set from storage std:vm mcstr.slots[%1].value\\n"
+        "inline $data modify storage std:vm s6.cmd.json set from storage std:vm mcstr.slots[%2].value\\n"
+        "inline function _ll_shared:z/libmc_cmd_tellraw with storage std:vm s6.cmd\\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(target_slot), "r"(json_slot)
     );
@@ -538,13 +626,17 @@ tellraw(Target target, String json)
 {
     McfString target_name;
     McfString json_text;
+    int target_slot;
+    int json_slot;
 
     target_name = _Command_RequireTargetMcf(target);
+    target_slot = _McfString_GetSlotId(target_name);
     json_text = _Command_RequireStringMcf(json);
-    if (target_name == NULL || json_text == NULL) {
+    json_slot = _McfString_GetSlotId(json_text);
+    if (target_slot < 0 || json_slot < 0) {
         return -1;
     }
-    return tellraw_unsafe(target_name, json_text);
+    return tellraw_unsafe(target_slot, json_slot);
 }
 """
 

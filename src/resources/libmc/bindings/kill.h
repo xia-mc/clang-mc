@@ -9,20 +9,26 @@
 extern "C" {
 #endif
 
+__asm__(
+"export _ll_shared:z/libmc_cmd_kill:\n"
+"    inline $execute store result score r0 vm_regs run kill $(target)\n"
+"    ret\n"
+);
+
 static inline int
-kill_unsafe(McfString target_name)
+kill_unsafe(int slot_id)
 {
     int ret;
-    int slot_id;
 
-    slot_id = _McfString_GetSlotId(target_name);
     if (slot_id < 0) {
         return -1;
     }
 
     __asm volatile (
-        "inline data modify storage std:vm s0.target set from storage std:vm mcstr.slots[%1].value\n"
-        "inline execute store result score %0 vm_regs run kill $(target)"
+        "inline data modify storage std:vm s6.cmd set value %{target: \"\"%}\n"
+        "inline $data modify storage std:vm s6.cmd.target set from storage std:vm mcstr.slots[%1].value\n"
+        "inline function _ll_shared:z/libmc_cmd_kill with storage std:vm s6.cmd\n"
+        "inline scoreboard players operation %0 vm_regs = r0 vm_regs"
         : "=r"(ret)
         : "r"(slot_id)
     );
@@ -33,12 +39,14 @@ static inline int
 kill(Target target)
 {
     McfString target_name;
+    int slot_id;
 
     target_name = _Command_RequireTargetMcf(target);
-    if (target_name == NULL) {
+    slot_id = _McfString_GetSlotId(target_name);
+    if (slot_id < 0) {
         return -1;
     }
-    return kill_unsafe(target_name);
+    return kill_unsafe(slot_id);
 }
 
 #ifdef __cplusplus

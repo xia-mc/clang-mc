@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define LIBC_HEAP_MIN_ADDR   0x004000
+#define LIBC_HEAP_MIN_ADDR   0x020000
 #define LIBC_HEAP_MAX_ADDR   0x800000
 #define LIBC_CTRL_MAGIC_ADDR (LIBC_HEAP_MIN_ADDR + 0)
 #define LIBC_CTRL_END_ADDR   (LIBC_HEAP_MIN_ADDR + 1)
@@ -55,18 +55,14 @@ ensure_heap_init(void)
 }
 
 static size_t
-align_up_4(size_t n)
-{
-    size_t rem = n % 4u;
-    if (rem == 0u)
-        return n;
-    return n + (4u - rem);
-}
-
-static size_t
 real_size_words(size_t user_bytes)
 {
-    size_t payload_words = align_up_4(user_bytes) / 4u;
+    /*
+     * mcasm addresses are word-backed, but C pointer arithmetic still advances
+     * by one address unit for one C byte. A request for N C bytes therefore
+     * needs N addressable VM words, not ceil(N / 4).
+     */
+    size_t payload_words = user_bytes;
     size_t total_words = payload_words + LIBC_BLOCK_HEADER_WORDS;
     if (total_words < LIBC_MIN_BLOCK_WORDS)
         total_words = LIBC_MIN_BLOCK_WORDS;
@@ -256,7 +252,7 @@ realloc(void *block_p, size_t sz)
 
         {
             void *result = malloc(sz);
-            size_t old_payload_bytes = (old_words - LIBC_BLOCK_HEADER_WORDS) * 4u;
+            size_t old_payload_bytes = old_words - LIBC_BLOCK_HEADER_WORDS;
             size_t copy_n = old_payload_bytes < sz ? old_payload_bytes : sz;
             if (result == NULL)
                 return NULL;

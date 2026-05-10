@@ -70,7 +70,18 @@ Target_FromCString(const char *expr)
 static inline Target
 Target_FromLiteral(const char *expr)
 {
-    return Target_FromCString(expr);
+    Target target;
+
+    target = _Target_NewWithExpr(expr, 0);
+    if (target == NULL) {
+        return NULL;
+    }
+    target->mcf = McfString_FromLiteral(expr);
+    if (target->mcf == NULL) {
+        free(target);
+        return NULL;
+    }
+    return target;
 }
 
 static inline Target
@@ -120,7 +131,11 @@ Target_EnsureMcf(Target target)
         return -1;
     }
     if (target->mcf == NULL) {
-        target->mcf = McfString_FromCString(target->expr);
+        if (target->owns_expr) {
+            target->mcf = McfString_FromCString(target->expr);
+        } else {
+            target->mcf = McfString_FromLiteral(target->expr);
+        }
         if (target->mcf == NULL) {
             return -1;
         }
